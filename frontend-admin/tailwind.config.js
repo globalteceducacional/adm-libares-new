@@ -18,6 +18,7 @@ export default {
         accent: "var(--teal)",
         success: "var(--success)",
         warning: "var(--warning)",
+        "warning-strong": "var(--warning-strong)",
         danger: "var(--danger)",
         border: "var(--border)",
         sidebar: {

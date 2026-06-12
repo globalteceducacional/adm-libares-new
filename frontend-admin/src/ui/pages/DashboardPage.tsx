@@ -12,16 +12,17 @@ import type {
   DashboardTopCommenter
 } from "../../types/dashboard";
 import { DataTable, type DataTableColumn } from "../components/table/DataTable";
+import { Skeleton } from "../../shared/ui";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 function DashboardSkeleton() {
   return (
-    <section className="dashboard-skeleton">
+    <section className="dashboard-skeleton" aria-busy="true" aria-label="Carregando dashboard">
       {Array.from({ length: 4 }).map((_, index) => (
-        <div key={`metric-${index}`} className="skeleton-card shimmer" />
+        <Skeleton key={`metric-${index}`} className="skeleton-card" />
       ))}
-      <div className="skeleton-chart shimmer" />
-      <div className="skeleton-chart shimmer" />
+      <Skeleton className="skeleton-chart" />
+      <Skeleton className="skeleton-chart" />
     </section>
   );
 }

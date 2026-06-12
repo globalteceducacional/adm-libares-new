@@ -11,7 +11,7 @@ import { useAdminListFilters } from "../../hooks/useAdminListFilters";
 import { useTimedMessage } from "../../hooks/useTimedMessage";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
 import type { CommentResponse } from "../../types/comments";
-import { StatusBadge } from "../../shared/ui";
+import { ConfirmDialog, StatusBadge } from "../../shared/ui";
 import { type DataTableColumn } from "../components/table/DataTable";
 
 export function CommentsPage() {
@@ -25,6 +25,7 @@ export function CommentsPage() {
     : undefined;
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const error = actionError || queryError;
 
@@ -46,11 +47,11 @@ export function CommentsPage() {
     }
   }
 
-  async function handleDelete(commentId: number) {
-    const confirmed = window.confirm("Deseja excluir este comentario?");
-    if (!confirmed) {
+  async function handleConfirmDelete() {
+    if (confirmDeleteId === null) {
       return;
     }
+    const commentId = confirmDeleteId;
     setActionError("");
     clearSuccess();
     setSaving(true);
@@ -64,6 +65,7 @@ export function CommentsPage() {
       setActionError(message);
     } finally {
       setSaving(false);
+      setConfirmDeleteId(null);
     }
   }
 
@@ -115,8 +117,9 @@ export function CommentsPage() {
               whileTap={{ scale: 0.98 }}
               className="table-btn danger icon"
               type="button"
-              onClick={() => handleDelete(comment.id)}
+              onClick={() => setConfirmDeleteId(comment.id)}
               disabled={saving}
+              aria-label={`Excluir o comentario #${comment.id}`}
             >
               <Trash2 size={14} />
               Excluir
@@ -208,8 +211,9 @@ export function CommentsPage() {
                 whileTap={{ scale: 0.98 }}
                 className="table-btn danger icon"
                 type="button"
-                onClick={() => handleDelete(comment.id)}
+                onClick={() => setConfirmDeleteId(comment.id)}
                 disabled={saving}
+                aria-label={`Excluir o comentario #${comment.id}`}
               >
                 <Trash2 size={14} />
                 Excluir
@@ -217,6 +221,16 @@ export function CommentsPage() {
             </div>
           </article>
         )}
+      />
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="Excluir comentario"
+        description="Esta acao nao pode ser desfeita. Deseja realmente excluir este comentario?"
+        confirmLabel="Excluir"
+        loading={saving}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
       />
     </motion.section>
   );

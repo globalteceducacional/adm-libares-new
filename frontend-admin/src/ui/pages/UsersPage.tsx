@@ -12,7 +12,7 @@ import { useTimedMessage } from "../../hooks/useTimedMessage";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
 import { LegacyImage } from "../components/LegacyImage";
 import type { UserResponse } from "../../types/users";
-import { StatusBadge } from "../../shared/ui";
+import { ConfirmDialog, StatusBadge } from "../../shared/ui";
 import { type DataTableColumn } from "../components/table/DataTable";
 
 export function UsersPage() {
@@ -26,6 +26,7 @@ export function UsersPage() {
     : undefined;
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const error = actionError || queryError;
 
@@ -47,11 +48,11 @@ export function UsersPage() {
     }
   }
 
-  async function handleDelete(userId: number) {
-    const confirmed = window.confirm("Deseja excluir este usuario?");
-    if (!confirmed) {
+  async function handleConfirmDelete() {
+    if (confirmDeleteId === null) {
       return;
     }
+    const userId = confirmDeleteId;
     setActionError("");
     clearSuccess();
     setSaving(true);
@@ -65,6 +66,7 @@ export function UsersPage() {
       setActionError(message);
     } finally {
       setSaving(false);
+      setConfirmDeleteId(null);
     }
   }
 
@@ -116,8 +118,9 @@ export function UsersPage() {
               whileTap={{ scale: 0.98 }}
               className="table-btn danger icon"
               type="button"
-              onClick={() => handleDelete(user.id)}
+              onClick={() => setConfirmDeleteId(user.id)}
               disabled={saving}
+              aria-label={`Excluir o usuario ${user.name}`}
             >
               <Trash2 size={14} />
               Excluir
@@ -207,8 +210,9 @@ export function UsersPage() {
                 whileTap={{ scale: 0.98 }}
                 className="table-btn danger icon"
                 type="button"
-                onClick={() => handleDelete(user.id)}
+                onClick={() => setConfirmDeleteId(user.id)}
                 disabled={saving}
+                aria-label={`Excluir o usuario ${user.name}`}
               >
                 <Trash2 size={14} />
                 Excluir
@@ -216,6 +220,16 @@ export function UsersPage() {
             </div>
           </article>
         )}
+      />
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="Excluir usuario"
+        description="Esta acao nao pode ser desfeita. Deseja realmente excluir este usuario?"
+        confirmLabel="Excluir"
+        loading={saving}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
       />
     </motion.section>
   );

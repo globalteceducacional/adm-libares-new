@@ -29,6 +29,13 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen bg-background lg:flex">
+      <a
+        href="#main-content"
+        className="sr-only left-4 top-4 z-[120] rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-card focus:not-sr-only focus:absolute"
+      >
+        Pular para o conteudo
+      </a>
+
       <AnimatePresence>
         {mobileSidebarOpen ? (
           <motion.button
@@ -47,7 +54,7 @@ export function AppLayout() {
 
       <div className={cn("flex min-w-0 flex-1 flex-col", sidebarCollapsed ? "lg:pl-0" : "")}>
         <Topbar title={title} breadcrumbs={breadcrumbs} />
-        <main className="flex-1 px-4 py-5 md:px-6 md:py-6">
+        <main id="main-content" tabIndex={-1} className="flex-1 px-4 py-5 outline-none md:px-6 md:py-6">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}

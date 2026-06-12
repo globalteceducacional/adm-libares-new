@@ -41,13 +41,14 @@ export function Sidebar({ collapsed, mobileOpen, onNavigate }: SidebarProps) {
           size="icon"
           className="hidden border-indigo-400/20 bg-white/5 text-indigo-100 hover:bg-white/10 lg:inline-flex"
           onClick={toggleSidebarCollapsed}
-          aria-label="Recolher menu"
+          aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
+          aria-expanded={!collapsed}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </Button>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1">
+      <nav className="flex flex-1 flex-col gap-1" aria-label="Navegacao principal">
         {NAV_ITEMS.map((item) => (
           <NavLink
             key={item.to}

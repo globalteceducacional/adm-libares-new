@@ -14,7 +14,7 @@ import { LegacyImage } from "../components/LegacyImage";
 import type { BookResponse, UpsertBookRequest } from "../../types/books";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
 import { useTimedMessage } from "../../hooks/useTimedMessage";
-import { StatusBadge } from "../../shared/ui";
+import { ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
 import { type DataTableColumn } from "../components/table/DataTable";
 
 export function BooksPage() {
@@ -22,6 +22,7 @@ export function BooksPage() {
   const booksQuery = useBooksQuery();
   const authorsQuery = useAuthorOptionsQuery();
   const invalidate = useInvalidateAdminQueries();
+  const { showToast } = useToast();
   const books = booksQuery.data ?? [];
   const authorOptions = authorsQuery.data ?? [];
   const loading = booksQuery.isLoading;
@@ -32,6 +33,7 @@ export function BooksPage() {
   const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState<UpsertBookRequest>({
     title: "",
     authorId: 1,
@@ -104,12 +106,11 @@ export function BooksPage() {
     });
   }
 
-  async function handleDelete(bookId: number) {
-    const confirmed = window.confirm("Deseja excluir este livro?");
-    if (!confirmed) {
+  async function handleConfirmDelete() {
+    if (confirmDeleteId === null) {
       return;
     }
-
+    const bookId = confirmDeleteId;
     setFormError("");
     clearSuccess();
     setSaving(true);
@@ -119,13 +120,16 @@ export function BooksPage() {
         resetForm();
       }
       showSuccess("Livro excluido com sucesso.");
+      showToast("Livro excluido com sucesso.", "success");
       await invalidate.books();
     } catch (deleteError) {
       const message =
         deleteError instanceof Error ? deleteError.message : "Falha ao excluir livro";
       setFormError(message);
+      showToast(message, "error");
     } finally {
       setSaving(false);
+      setConfirmDeleteId(null);
     }
   }
 
@@ -200,8 +204,9 @@ export function BooksPage() {
               whileTap={{ scale: 0.98 }}
               className="table-btn danger icon"
               type="button"
-              onClick={() => handleDelete(book.id)}
+              onClick={() => setConfirmDeleteId(book.id)}
               disabled={saving}
+              aria-label={`Excluir o livro ${book.title}`}
             >
               <Trash2 size={14} />
               Excluir
@@ -287,8 +292,9 @@ export function BooksPage() {
                 whileTap={{ scale: 0.98 }}
                 className="table-btn danger icon"
                 type="button"
-                onClick={() => handleDelete(book.id)}
+                onClick={() => setConfirmDeleteId(book.id)}
                 disabled={saving}
+                aria-label={`Excluir o livro ${book.title}`}
               >
                 <Trash2 size={14} />
                 Excluir
@@ -296,6 +302,16 @@ export function BooksPage() {
             </div>
           </article>
         )}
+      />
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="Excluir livro"
+        description="Esta acao nao pode ser desfeita. Deseja realmente excluir este livro?"
+        confirmLabel="Excluir"
+        loading={saving}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
       />
     </motion.section>
   );

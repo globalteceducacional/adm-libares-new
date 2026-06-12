@@ -3,11 +3,12 @@
   --surface: #ffffff;
   --surface-2: #eef2ff;
   --text: #161c2d;
-  --text-muted: #64748b;
+  --text-muted: #475569;
   --primary: #5e35b1;
   --primary-700: #4a2a90;
   --teal: #1fb2a5;
   --warning: #f59e0b;
+  --warning-strong: #b45309;
   --success: #22c55e;
   --danger: #ef4444;
   --border: #e2e8f0;
@@ -20,6 +21,7 @@
   --surface-2: #202a41;
   --text: #e5e7eb;
   --text-muted: #94a3b8;
+  --warning-strong: #fbbf24;
   --border: #2a3550;
   --shadow: 0 16px 32px rgba(4, 6, 14, 0.45);
 }
@@ -500,7 +502,7 @@ select {
 }
 
 .warning-text {
-  color: var(--warning);
+  color: var(--warning-strong);
   font-size: 0.82rem;
   margin-top: 2px;
 }

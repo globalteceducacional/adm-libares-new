@@ -1,4 +1,5 @@
 import { MouseEvent, ReactNode, useEffect, useRef, useState } from "react";
+import { Skeleton, TableSkeleton } from "../../../shared/ui";
 import { TablePagination } from "./TablePagination";
 
 export interface DataTableColumn<T = unknown> {
@@ -16,6 +17,8 @@ type DataTableProps<T = unknown> = {
   columns: DataTableColumn<T>[];
   data: T[];
   keyExtractor: (item: T) => string | number;
+  /** Legenda da tabela (visualmente oculta) para leitores de tela. */
+  caption?: ReactNode;
   emptyMessage?: string;
   loading?: boolean;
   onRowClick?: (item: T, event: MouseEvent<HTMLTableRowElement>) => void;
@@ -38,6 +41,7 @@ export function DataTable<T>({
   columns,
   data,
   keyExtractor,
+  caption,
   emptyMessage = "Nenhum registro encontrado",
   loading = false,
   onRowClick,
@@ -122,7 +126,11 @@ export function DataTable<T>({
       {hasMobileCards ? (
         <div className="dt-mobile-cards">
           {loading ? (
-            <p className="muted-text">Carregando...</p>
+            <div className="dt-mobile-card-list" aria-hidden="true">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <Skeleton key={index} className="h-28 w-full" />
+              ))}
+            </div>
           ) : visibleData.length === 0 ? (
             <p className="muted-text">{emptyMessage}</p>
           ) : (
@@ -147,7 +155,8 @@ export function DataTable<T>({
         </div>
 
         <div className={`table-scroll-shell ${wrapperClassName}`} ref={tableScrollRef} onScroll={handleTableScroll}>
-          <table className={`table ${tableClassName}`}>
+          <table className={`table ${tableClassName}`} aria-busy={loading}>
+            {caption ? <caption className="sr-only">{caption}</caption> : null}
             <thead>
               <tr>
                 {columns.map((col) => {
@@ -155,7 +164,11 @@ export function DataTable<T>({
                     return col.renderTh();
                   }
                   return (
-                    <th key={col.key} className={`${alignClass[col.align ?? "left"]} ${col.thClassName ?? ""}`}>
+                    <th
+                      key={col.key}
+                      scope="col"
+                      className={`${alignClass[col.align ?? "left"]} ${col.thClassName ?? ""}`}
+                    >
                       {col.label}
                     </th>
                   );
@@ -165,7 +178,9 @@ export function DataTable<T>({
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={colCount}>Carregando...</td>
+                  <td colSpan={colCount}>
+                    <TableSkeleton rows={5} />
+                  </td>
                 </tr>
               ) : visibleData.length === 0 ? (
                 <tr>
