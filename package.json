@@ -1,0 +1,10 @@
+{
+  "name": "restruturacao-projeto-php",
+  "private": true,
+  "description": "Scripts na raiz delegam para frontend-admin (npm nao encontra package.json na raiz sem este arquivo).",
+  "scripts": {
+    "build": "npm run build --prefix frontend-admin",
+    "dev": "npm run dev --prefix frontend-admin",
+    "preview": "npm run preview --prefix frontend-admin"
+  }
+}

@@ -1,0 +1,11 @@
+# Copie para application-local.yml (não versionado) e ajuste a senha.
+# Rode o backend com perfil local, por exemplo:
+#   PowerShell: $env:SPRING_PROFILES_ACTIVE = "local"; .\gradlew.bat bootRun
+#
+# Assets de capas (images/): com bootRun a partir de /backend, o Spring usa ../adm-libares automaticamente.
+# Para outro caminho: $env:LEGACY_ASSETS_ROOT = "C:\caminho\adm-libares"
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/adm_libare?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: SUA_SENHA_MYSQL_AQUI

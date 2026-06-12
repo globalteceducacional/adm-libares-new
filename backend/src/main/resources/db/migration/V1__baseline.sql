@@ -1,0 +1,4 @@
+-- Baseline sem DDL.
+-- Este backend reutiliza o schema legado do projeto PHP (tbl_admin, tbl_books, etc.).
+-- Mantemos a migration intencionalmente vazia para registrar o baseline no Flyway
+-- sem criar estruturas paralelas.

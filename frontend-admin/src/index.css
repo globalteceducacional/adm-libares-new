@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #f4f7ff;
+    --surface: #ffffff;
+    --surface-2: #eef2ff;
+    --text: #161c2d;
+    --text-muted: #64748b;
+    --primary: #5e35b1;
+    --primary-rgb: 94 53 177;
+    --primary-700: #4a2a90;
+    --teal: #1fb2a5;
+    --warning: #f59e0b;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --border: #e2e8f0;
+    --shadow: 0 8px 24px rgba(17, 24, 39, 0.08);
+  }
+
+  :root.dark {
+    --bg: #0f1320;
+    --surface: #181f31;
+    --surface-2: #202a41;
+    --text: #e5e7eb;
+    --text-muted: #94a3b8;
+    --border: #2a3550;
+    --shadow: 0 16px 32px rgba(4, 6, 14, 0.45);
+  }
+
+  html,
+  body,
+  #root {
+    @apply min-h-full;
+  }
+
+  body {
+    @apply m-0 font-sans text-foreground antialiased;
+    background: radial-gradient(circle at top right, #dfe6ff 0%, var(--bg) 30%);
+  }
+
+  :root.dark body {
+    background: radial-gradient(circle at top right, #1a2542 0%, var(--bg) 32%);
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible {
+    @apply outline-none ring-2 ring-primary/40 ring-offset-2 ring-offset-background;
+  }
+}

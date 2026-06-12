@@ -1,0 +1,49 @@
+# ===== Credenciais / segredos (NAO commitar) =====
+scripts/local/dev.local.ps1
+backend/src/main/resources/application-local.yml
+frontend-admin/.env
+.env
+*.env.local
+
+# ===== Node / frontend =====
+node_modules/
+frontend-admin/node_modules/
+frontend-admin/dist/
+frontend-admin/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ===== Java / Gradle (backend) =====
+.gradle/
+build/
+out/
+backend/.gradle/
+backend/build/
+backend/bin/
+*.class
+
+# ===== IDE / editores =====
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# ===== Sistema operacional =====
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# ===== Logs / temporarios =====
+*.log
+*.tmp
+*.bak
+my.ini.adm-libare.bak
+
+# ===== PHP legado (repositorio git proprio, fora do escopo deste repo) =====
+adm-libares/
