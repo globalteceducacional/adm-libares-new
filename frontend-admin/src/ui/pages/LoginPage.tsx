@@ -54,8 +54,8 @@ export function LoginPage() {
             <p className="text-sm text-muted">Use suas credenciais de administrador.</p>
           </div>
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <Field label="Usuario">
+          <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+            <Field label="Usuario" required>
               <Input
                 type="text"
                 value={username}
@@ -65,7 +65,7 @@ export function LoginPage() {
               />
             </Field>
 
-            <Field label="Senha">
+            <Field label="Senha" required>
               <Input
                 type="password"
                 value={password}

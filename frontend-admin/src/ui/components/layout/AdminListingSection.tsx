@@ -87,6 +87,7 @@ export function AdminListingSection<T>({
                   "focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 )}
                 value={statusFilter}
+                aria-label="Filtrar por status"
                 onChange={(event) =>
                   onStatusFilterChange!(event.target.value as AdminStatusFilter)
                 }
@@ -108,6 +109,7 @@ export function AdminListingSection<T>({
         data={data}
         loading={loading}
         keyExtractor={keyExtractor}
+        caption={title}
         emptyMessage={emptyMessage}
         renderMobileCard={renderMobileCard}
         paginate={paginate}

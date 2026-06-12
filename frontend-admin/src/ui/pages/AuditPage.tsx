@@ -10,6 +10,7 @@ import type {
   AuditSoftDeleteRow
 } from "../../types/audit";
 import { DataTable, type DataTableColumn } from "../components/table/DataTable";
+import { Skeleton, TableSkeleton } from "../../shared/ui";
 
 function auditReasonMessage(reason: string | undefined | null): string {
   switch (reason) {
@@ -111,6 +112,8 @@ export function AuditPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.24 }}
+        aria-busy="true"
+        aria-label="Carregando auditoria"
       >
         <article className="card page-card elevated">
           <div className="card-header">
@@ -119,7 +122,13 @@ export function AuditPage() {
               Auditoria
             </h2>
           </div>
-          <p className="muted-text">Carregando auditoria...</p>
+          <Skeleton className="h-4 w-64" />
+        </article>
+        <article className="card page-card elevated">
+          <TableSkeleton rows={4} />
+        </article>
+        <article className="card page-card elevated">
+          <TableSkeleton rows={6} />
         </article>
       </motion.section>
     );

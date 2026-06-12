@@ -29,6 +29,7 @@ export function TablePagination({
       <div className="dt-pagination-controls">
         <select
           value={safePageSize}
+          aria-label="Itens por pagina"
           onChange={(event) => onPageSizeChange(Number(event.target.value))}
         >
           {pageSizeOptions.map((option) => (
