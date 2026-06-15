@@ -1,13 +1,14 @@
-# Credenciais: DB_URL, DB_USER, DB_PASSWORD (padrão user root / senha root).
-# Se o MySQL local não usar essa senha, defina as variáveis no PowerShell ou use
+# Credenciais: DB_URL, DB_USER, DB_PASSWORD (padrão user postgres / senha admin).
+# Se o PostgreSQL local não usar essa senha, defina as variáveis no PowerShell ou use
 # application-local.yml (veja application-local.example.yml + perfil local).
 spring:
   application:
     name: adm-libare-backend
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/adm_libare?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
-    username: ${DB_USER:root}
-    password: ${DB_PASSWORD:root}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/adm_libare_core}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:admin}
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: validate
@@ -30,7 +31,7 @@ management:
 
 app:
   data:
-    mode: ${APP_DATA_MODE:legacy}
+    mode: ${APP_DATA_MODE:core}
   legacy:
     assets:
       # Raiz do PHP legado (pasta que contém images/). Vazio = tenta ../adm-libares a partir do user.dir.
