@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service
 @Service
 class GetDashboardSummaryUseCase(
     private val jdbc: JdbcTemplate,
-    @Value("\${app.data.mode:legacy}") private val dataMode: String,
+    @Value("\${app.data.mode:core}") private val dataMode: String,
 ) {
     fun execute(periodDays: Int?): DashboardSummaryResponse {
         // O modo legacy usa as tabelas tbl_* (schema PHP original); o modo core usa o schema novo.
@@ -27,11 +27,15 @@ class GetDashboardSummaryUseCase(
 
     private fun executeCore(periodDays: Int?): DashboardSummaryResponse {
         val selectedPeriodDays = normalizePeriodDays(periodDays)
-        val activeBooks = count("SELECT COUNT(*) FROM catalog_books WHERE deleted_at IS NULL AND is_active = 1")
-        val inactiveBooks = count("SELECT COUNT(*) FROM catalog_books WHERE deleted_at IS NULL AND is_active = 0")
-        val featuredBooks = count("SELECT COUNT(*) FROM catalog_books WHERE deleted_at IS NULL AND is_active = 1 AND is_featured = 1")
-        val booksWithoutCategory = count("SELECT COUNT(*) FROM catalog_books WHERE deleted_at IS NULL AND is_active = 1 AND category_id IS NULL")
-        val activeUsers = count("SELECT COUNT(*) FROM app_users WHERE deleted_at IS NULL AND is_active = 1")
+        val activeBooks = count("SELECT COUNT(*) FROM catalog_books WHERE deleted_at IS NULL AND is_active = TRUE")
+        val inactiveBooks = count("SELECT COUNT(*) FROM catalog_books WHERE deleted_at IS NULL AND is_active = FALSE")
+        val featuredBooks = count(
+            "SELECT COUNT(*) FROM catalog_books WHERE deleted_at IS NULL AND is_active = TRUE AND is_featured = TRUE"
+        )
+        val booksWithoutCategory = count(
+            "SELECT COUNT(*) FROM catalog_books WHERE deleted_at IS NULL AND is_active = TRUE AND category_id IS NULL"
+        )
+        val activeUsers = count("SELECT COUNT(*) FROM app_users WHERE deleted_at IS NULL AND is_active = TRUE")
         val activeUsersLast30Days = count(
             """
             SELECT COUNT(DISTINCT l.user_id)
@@ -39,19 +43,21 @@ class GetDashboardSummaryUseCase(
             INNER JOIN app_users u ON u.id = l.user_id
             WHERE l.deleted_at IS NULL
               AND u.deleted_at IS NULL
-              AND u.is_active = 1
-              AND l.created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL $selectedPeriodDays DAY)
+              AND u.is_active = TRUE
+              AND l.created_at >= (now() AT TIME ZONE 'UTC') - ($selectedPeriodDays || ' days')::interval
             """.trimIndent()
         )
-        val publishedComments = count("SELECT COUNT(*) FROM engagement_comments WHERE deleted_at IS NULL AND is_active = 1")
+        val publishedComments = count(
+            "SELECT COUNT(*) FROM engagement_comments WHERE deleted_at IS NULL AND is_active = TRUE"
+        )
         val commentsLast7Days = count(
             """
             SELECT COUNT(*)
             FROM engagement_comments
             WHERE deleted_at IS NULL
-              AND is_active = 1
+              AND is_active = TRUE
               AND commented_at_epoch IS NOT NULL
-              AND FROM_UNIXTIME(commented_at_epoch) >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL $selectedPeriodDays DAY)
+              AND to_timestamp(commented_at_epoch) >= (now() AT TIME ZONE 'UTC') - ($selectedPeriodDays || ' days')::interval
             """.trimIndent()
         )
         val commentsPrevious7Days = count(
@@ -59,21 +65,21 @@ class GetDashboardSummaryUseCase(
             SELECT COUNT(*)
             FROM engagement_comments
             WHERE deleted_at IS NULL
-              AND is_active = 1
+              AND is_active = TRUE
               AND commented_at_epoch IS NOT NULL
-              AND FROM_UNIXTIME(commented_at_epoch) >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ${selectedPeriodDays * 2} DAY)
-              AND FROM_UNIXTIME(commented_at_epoch) < DATE_SUB(UTC_TIMESTAMP(), INTERVAL $selectedPeriodDays DAY)
+              AND to_timestamp(commented_at_epoch) >= (now() AT TIME ZONE 'UTC') - (${selectedPeriodDays * 2} || ' days')::interval
+              AND to_timestamp(commented_at_epoch) < (now() AT TIME ZONE 'UTC') - ($selectedPeriodDays || ' days')::interval
             """.trimIndent()
         )
         val totalBookViews = count(
-            "SELECT COALESCE(SUM(views), 0) FROM catalog_books WHERE deleted_at IS NULL AND is_active = 1"
+            "SELECT COALESCE(SUM(views), 0) FROM catalog_books WHERE deleted_at IS NULL AND is_active = TRUE"
         )
         val averageViewsPerActiveBook = countDecimal(
             """
             SELECT COALESCE(AVG(views), 0)
             FROM catalog_books
             WHERE deleted_at IS NULL
-              AND is_active = 1
+              AND is_active = TRUE
             """.trimIndent()
         )
 
@@ -82,12 +88,12 @@ class GetDashboardSummaryUseCase(
             SELECT
                 b.title AS title,
                 b.views AS views,
-                COALESCE(CAST(b.category_id AS CHAR), '') AS categoryId,
+                COALESCE(b.category_id::text, '') AS categoryId,
                 COALESCE(c.name, 'Sem categoria') AS categoryName
             FROM catalog_books b
             LEFT JOIN catalog_categories c ON c.id = b.category_id AND c.deleted_at IS NULL
             WHERE b.deleted_at IS NULL
-              AND b.is_active = 1
+              AND b.is_active = TRUE
             ORDER BY b.views DESC
             LIMIT 8
             """.trimIndent(),
@@ -109,7 +115,7 @@ class GetDashboardSummaryUseCase(
             FROM engagement_comments c
             LEFT JOIN app_users u ON u.id = c.user_id AND u.deleted_at IS NULL
             WHERE c.deleted_at IS NULL
-              AND c.is_active = 1
+              AND c.is_active = TRUE
               AND c.user_id IS NOT NULL
             GROUP BY c.user_id
             ORDER BY cnt DESC
@@ -133,13 +139,13 @@ class GetDashboardSummaryUseCase(
         val booksByCategory = jdbc.query(
             """
             SELECT
-                COALESCE(CAST(b.category_id AS CHAR), '') AS categoryId,
+                COALESCE(b.category_id::text, '') AS categoryId,
                 COALESCE(c.name, 'Sem categoria') AS categoryName,
                 COUNT(*) AS bookCount
             FROM catalog_books b
             LEFT JOIN catalog_categories c ON c.id = b.category_id AND c.deleted_at IS NULL
             WHERE b.deleted_at IS NULL
-              AND b.is_active = 1
+              AND b.is_active = TRUE
             GROUP BY b.category_id, c.name
             ORDER BY bookCount DESC
             LIMIT 12
@@ -154,13 +160,13 @@ class GetDashboardSummaryUseCase(
 
         val commentsByDay = jdbc.query(
             """
-            SELECT DATE(FROM_UNIXTIME(commented_at_epoch)) AS day, COUNT(*) AS cnt
+            SELECT DATE(to_timestamp(commented_at_epoch)) AS day, COUNT(*) AS cnt
             FROM engagement_comments
             WHERE deleted_at IS NULL
-              AND is_active = 1
+              AND is_active = TRUE
               AND commented_at_epoch IS NOT NULL
-              AND FROM_UNIXTIME(commented_at_epoch) >= DATE_SUB(CURDATE(), INTERVAL $selectedPeriodDays DAY)
-            GROUP BY DATE(FROM_UNIXTIME(commented_at_epoch))
+              AND to_timestamp(commented_at_epoch) >= CURRENT_DATE - ($selectedPeriodDays || ' days')::interval
+            GROUP BY DATE(to_timestamp(commented_at_epoch))
             ORDER BY day ASC
             """.trimIndent(),
         ) { rs, _ ->
@@ -179,17 +185,17 @@ class GetDashboardSummaryUseCase(
                 activity.module,
                 activity.action,
                 activity.actor AS user,
-                DATE_FORMAT(activity.event_at, '%d/%m %H:%i') AS activityTime
+                to_char(activity.event_at, 'DD/MM HH24:MI') AS activityTime
             FROM (
                 SELECT
                     'Comentarios' AS module,
-                    CONCAT('Comentario no livro #', c.book_id) AS action,
-                    COALESCE(NULLIF(TRIM(c.user_name), ''), NULLIF(TRIM(u.display_name), ''), CONCAT('Usuario #', c.user_id)) AS actor,
-                    FROM_UNIXTIME(c.commented_at_epoch) AS event_at
+                    'Comentario no livro #' || c.book_id AS action,
+                    COALESCE(NULLIF(TRIM(c.user_name), ''), NULLIF(TRIM(u.display_name), ''), 'Usuario #' || c.user_id) AS actor,
+                    to_timestamp(c.commented_at_epoch) AS event_at
                 FROM engagement_comments c
                 LEFT JOIN app_users u ON u.id = c.user_id AND u.deleted_at IS NULL
                 WHERE c.deleted_at IS NULL
-                  AND c.is_active = 1
+                  AND c.is_active = TRUE
                   AND c.commented_at_epoch IS NOT NULL
 
                 UNION ALL
@@ -197,7 +203,7 @@ class GetDashboardSummaryUseCase(
                 SELECT
                     'Acesso' AS module,
                     'Login no aplicativo' AS action,
-                    COALESCE(NULLIF(TRIM(u.display_name), ''), CONCAT('Usuario #', l.user_id)) AS actor,
+                    COALESCE(NULLIF(TRIM(u.display_name), ''), 'Usuario #' || l.user_id) AS actor,
                     l.created_at AS event_at
                 FROM app_user_activity_logs l
                 LEFT JOIN app_users u ON u.id = l.user_id AND u.deleted_at IS NULL

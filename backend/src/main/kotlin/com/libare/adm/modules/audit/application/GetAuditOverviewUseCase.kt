@@ -17,7 +17,7 @@ import java.time.ZoneOffset
 @Service
 class GetAuditOverviewUseCase(
     private val jdbc: JdbcTemplate,
-    @Value("\${app.data.mode:legacy}") private val dataMode: String,
+    @Value("\${app.data.mode:core}") private val dataMode: String,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 

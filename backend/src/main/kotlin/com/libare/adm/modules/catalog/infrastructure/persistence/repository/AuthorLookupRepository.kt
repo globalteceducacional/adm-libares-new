@@ -1,8 +1,8 @@
 package com.libare.adm.modules.catalog.infrastructure.persistence.repository
 
 import com.libare.adm.modules.catalog.infrastructure.persistence.entity.AuthorEntity
-import org.springframework.data.jpa.repository.Query
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
 
 interface AuthorLookupRepository : JpaRepository<AuthorEntity, Long> {
     interface AuthorProjection {
@@ -13,13 +13,15 @@ interface AuthorLookupRepository : JpaRepository<AuthorEntity, Long> {
 
     @Query(
         value = """
-            SELECT 
-                a.author_id AS id,
-                a.author_name AS name,
-                a.author_image AS image
-            FROM tbl_author a
-            WHERE a.a_status = '1'
-            ORDER BY a.author_name ASC
+            SELECT
+                a.id AS id,
+                a.name AS name,
+                '' AS image
+            FROM catalog_authors a
+            WHERE a.deleted_at IS NULL
+              AND a.is_active = TRUE
+              AND a.author_type = 'BOOK'
+            ORDER BY a.name ASC
         """,
         nativeQuery = true
     )

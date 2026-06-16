@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class DataModeStartupValidator(
-    @Value("\${app.data.mode:legacy}") private val dataMode: String,
+    @Value("\${app.data.mode:core}") private val dataMode: String,
     private val jdbcTemplate: JdbcTemplate
 ) : CommandLineRunner {
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -24,39 +24,40 @@ class DataModeStartupValidator(
             throw IllegalStateException("Valor invalido para app.data.mode: '$dataMode'. Use 'legacy' ou 'core'.")
         }
 
-        val requiredViews = listOf(
-            "tbl_admin",
-            "tbl_users",
-            "tbl_category",
-            "tbl_author",
-            "tbl_books",
-            "tbl_comments",
-            "tbl_active_log",
-            "tbl_settings"
+        val requiredTables = listOf(
+            "app_admin_users",
+            "app_users",
+            "catalog_categories",
+            "catalog_authors",
+            "catalog_books",
+            "engagement_comments",
+            "app_settings",
+            "app_user_activity_logs",
         )
 
-        val missing = requiredViews.filterNot { viewExists(it) }
+        val missing = requiredTables.filterNot { tableExists(it) }
         if (missing.isNotEmpty()) {
             throw IllegalStateException(
-                "APP_DATA_MODE=core ativo, mas faltam views de compatibilidade: ${
-                    missing.joinToString(", ")
-                }. Execute scripts/migration/007_create_legacy_compat_views.sql"
+                "APP_DATA_MODE=core ativo, mas faltam tabelas do schema core: ${missing.joinToString(", ")}. " +
+                    "Execute as migrations Flyway (V1__core_schema.sql)."
             )
         }
 
-        logger.info("APP_DATA_MODE=core ativo: views de compatibilidade validadas com sucesso.")
+        logger.info("APP_DATA_MODE=core ativo: tabelas do schema core validadas com sucesso.")
     }
 
-    private fun viewExists(viewName: String): Boolean {
+    private fun tableExists(tableName: String): Boolean {
         val count = jdbcTemplate.queryForObject(
             """
             SELECT COUNT(*)
-            FROM information_schema.views
-            WHERE table_schema = DATABASE() AND table_name = ?
+            FROM information_schema.tables
+            WHERE table_schema = current_schema()
+              AND table_name = ?
+              AND table_type = 'BASE TABLE'
             """.trimIndent(),
             Long::class.java,
-            viewName
+            tableName
         )
-        return count > 0
+        return (count ?: 0L) > 0
     }
 }

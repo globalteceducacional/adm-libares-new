@@ -16,16 +16,17 @@ interface BookJpaRepository : JpaRepository<BookEntity, Long> {
 
     @Query(
         value = """
-            SELECT 
+            SELECT
                 b.id AS id,
-                b.book_title AS title,
-                b.aid AS authorId,
-                a.author_name AS authorName,
-                b.book_cover_img AS bookCoverImage,
-                b.status AS status
-            FROM tbl_books b
-            LEFT JOIN tbl_author a ON a.author_id = b.aid
-            WHERE b.status = '1'
+                b.title AS title,
+                b.author_id AS authorId,
+                a.name AS authorName,
+                '' AS bookCoverImage,
+                CASE WHEN b.is_active THEN '1' ELSE '0' END AS status
+            FROM catalog_books b
+            LEFT JOIN catalog_authors a ON a.id = b.author_id AND a.deleted_at IS NULL
+            WHERE b.deleted_at IS NULL
+              AND b.is_active = TRUE
             ORDER BY b.id DESC
         """,
         nativeQuery = true

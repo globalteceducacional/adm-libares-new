@@ -8,15 +8,15 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 
 @Entity
-@Table(name = "tbl_admin")
+@Table(name = "app_admin_users")
 class AdminUserEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    @Column(name = "username", nullable = false, unique = true, length = 100)
+    @Column(name = "username", nullable = false, unique = true, length = 120)
     val username: String,
 
-    @Column(name = "password", nullable = false, length = 255)
+    @Column(name = "password_hash", nullable = false, length = 255)
     val passwordHash: String,
 )

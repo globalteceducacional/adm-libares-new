@@ -13,8 +13,9 @@ class AuditSessionContext {
         if (actorId == null) {
             return
         }
-        entityManager.createNativeQuery("SET @app_user_id = :actorId")
-            .setParameter("actorId", actorId)
-            .executeUpdate()
+        // PostgreSQL: variavel de sessao via set_config (equivalente ao SET @app_user_id do MySQL).
+        entityManager.createNativeQuery("SELECT set_config('app.user_id', :actorId, false)")
+            .setParameter("actorId", actorId.toString())
+            .singleResult
     }
 }
