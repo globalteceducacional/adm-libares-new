@@ -20,6 +20,9 @@ class UserEntity(
     @Column(name = "email", nullable = false, length = 190)
     val email: String,
 
+    @Column(name = "password", nullable = false, length = 255)
+    val password: String = "",
+
     @Column(name = "phone", length = 40)
     val phone: String? = null,
 
@@ -28,6 +31,21 @@ class UserEntity(
 
     @Column(name = "user_image", length = 255)
     val userImage: String? = null,
+
+    @Column(name = "auth_id", nullable = false, length = 255)
+    val authId: String = "",
+
+    @Column(name = "is_deleted", nullable = false)
+    val isDeleted: Int = 0,
+
+    @Column(name = "registered_on", nullable = false, length = 200)
+    val registeredOn: String = "",
+
+    @Column(name = "acervo_id")
+    val acervoId: Int? = null,
+
+    @Column(name = "school_id")
+    val schoolId: Long? = null,
 
     @Column(name = "status", nullable = false, length = 1)
     val status: String = "1"

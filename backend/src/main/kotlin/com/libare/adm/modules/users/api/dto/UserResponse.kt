@@ -7,5 +7,7 @@ data class UserResponse(
     val phone: String?,
     val userType: String,
     val userImage: String?,
-    val status: String
+    val status: String,
+    val acervoId: Long? = null,
+    val acervoName: String? = null
 )
