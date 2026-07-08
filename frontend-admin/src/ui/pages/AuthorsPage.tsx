@@ -1,23 +1,184 @@
 import { motion } from "framer-motion";
-import { useMemo } from "react";
+import { Pencil, Trash2, UserRound } from "lucide-react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
+import {
+  createAuthor,
+  deleteAuthor,
+  updateAuthor,
+  uploadAuthorImage
+} from "../../services/authorsService";
 import {
   getQueryErrorMessage,
-  useAuthorOptionsQuery
+  useAuthorsQuery,
+  useInvalidateAdminQueries
 } from "../../features/shared/api/queries";
-import { useAdminListFilters } from "../../hooks/useAdminListFilters";
+import { buildBreadcrumbs } from "../../features/layout/config/navigation";
+import { PermissionGate } from "../../features/auth/PermissionGate";
+import { useAnyPermission } from "../../features/auth/usePermission";
+import { AuthorDetailModal } from "../components/authors/AuthorDetailModal";
+import { AuthorsForm } from "../components/authors/AuthorsForm";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
+import { BerryFormPanel } from "../components/layout/BerryFormPanel";
+import { ListingMiniStats } from "../components/layout/ListingMiniStats";
+import { ListingPageShell } from "../components/layout/ListingPageShell";
+import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import { LegacyImage } from "../components/LegacyImage";
-import type { AuthorOptionResponse } from "../../types/authors";
+import type { AuthorResponse, UpsertAuthorRequest } from "../../types/authors";
+import { useAdminListFilters } from "../../hooks/useAdminListFilters";
+import { useTimedMessage } from "../../hooks/useTimedMessage";
+import { Alert, ConfirmDialog, StatusBadge } from "../../shared/ui";
+import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
+import { stripHtml } from "../../shared/lib/stripHtml";
 import { type DataTableColumn } from "../components/table/DataTable";
+import { TableRowActions } from "../components/table/TableRowActions";
 
 export function AuthorsPage() {
-  const { search, setSearch } = useAdminListFilters({ syncStatus: false });
-  const { data: authors = [], isLoading, error } = useAuthorOptionsQuery();
-  const errorMessage = error
-    ? getQueryErrorMessage(error, "Falha ao carregar autores")
+  const location = useLocation();
+  const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
+  const authorsQuery = useAuthorsQuery();
+  const invalidate = useInvalidateAdminQueries();
+  const authors = authorsQuery.data ?? [];
+  const loading = authorsQuery.isLoading;
+  const listingError = authorsQuery.error
+    ? getQueryErrorMessage(authorsQuery.error, "Falha ao carregar autores")
     : undefined;
 
-  const columns = useMemo<DataTableColumn<AuthorOptionResponse>[]>(
+  const [formError, setFormError] = useState("");
+  const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
+  const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [selectedAuthor, setSelectedAuthor] = useState<AuthorResponse | null>(null);
+  const [form, setForm] = useState<UpsertAuthorRequest>({
+    name: "",
+    description: "",
+    image: "",
+    status: "1"
+  });
+
+  const isNameInvalid = form.name.trim().length === 0;
+  const isFormInvalid = isNameInvalid;
+  const canUpdateAuthor = useAnyPermission(["books.update"]);
+  const canDeleteAuthor = useAnyPermission(["books.delete"]);
+
+  function resetForm() {
+    setForm({ name: "", description: "", image: "", status: "1" });
+    setEditingId(null);
+  }
+
+  useEffect(() => {
+    setSelectedAuthor((current) => {
+      if (!current) {
+        return null;
+      }
+      return authors.find((item) => item.id === current.id) ?? null;
+    });
+  }, [authors]);
+
+  async function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) {
+      return;
+    }
+    setFormError("");
+    setUploadingImage(true);
+    try {
+      const response = await uploadAuthorImage(file);
+      setForm((current) => ({ ...current, image: response.filename }));
+    } catch (uploadError) {
+      setFormError(uploadError instanceof Error ? uploadError.message : "Falha ao enviar imagem");
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    setFormError("");
+    clearSuccess();
+    setSaving(true);
+
+    try {
+      const payload: UpsertAuthorRequest = {
+        name: form.name.trim(),
+        description: form.description?.trim() || undefined,
+        image: form.image?.trim() || undefined,
+        status: form.status
+      };
+      if (editingId) {
+        await updateAuthor(editingId, payload);
+        resetForm();
+        showSuccess("Autor atualizado com sucesso.");
+      } else {
+        await createAuthor(payload);
+        resetForm();
+        showSuccess("Autor criado com sucesso.");
+      }
+      await invalidate.authors();
+      await invalidate.authorOptions();
+    } catch (submitError) {
+      setFormError(submitError instanceof Error ? submitError.message : "Falha ao salvar autor");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleEdit(author: AuthorResponse) {
+    setEditingId(author.id);
+    setForm({
+      name: decodeHtmlEntities(author.name),
+      description: stripHtml(author.description) ?? "",
+      image: author.image ?? "",
+      status: author.status
+    });
+    document.getElementById("author-form-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function handleConfirmDelete() {
+    if (confirmDeleteId === null) {
+      return;
+    }
+    const authorId = confirmDeleteId;
+    setFormError("");
+    clearSuccess();
+    setSaving(true);
+    try {
+      await deleteAuthor(authorId);
+      if (editingId === authorId) {
+        resetForm();
+      }
+      if (selectedAuthor?.id === authorId) {
+        setSelectedAuthor(null);
+      }
+      showSuccess("Autor desativado com sucesso.");
+      await invalidate.authors();
+      await invalidate.authorOptions();
+    } catch (deleteError) {
+      setFormError(deleteError instanceof Error ? deleteError.message : "Falha ao desativar autor");
+    } finally {
+      setSaving(false);
+      setConfirmDeleteId(null);
+    }
+  }
+
+  const filteredAuthors = useMemo(() => {
+    return authors.filter((author) => {
+      const byStatus = statusFilter === "all" || author.status === statusFilter;
+      const normalized = search.trim().toLowerCase();
+      const description = stripHtml(author.description)?.toLowerCase() ?? "";
+      const byText =
+        normalized.length === 0 ||
+        decodeHtmlEntities(author.name).toLowerCase().includes(normalized) ||
+        description.includes(normalized) ||
+        String(author.id).includes(normalized);
+      return byStatus && byText;
+    });
+  }, [authors, search, statusFilter]);
+
+  const columns = useMemo<DataTableColumn<AuthorResponse>[]>(
     () => [
       { key: "id", label: "ID", render: (author) => author.id },
       {
@@ -27,74 +188,174 @@ export function AuthorsPage() {
           <LegacyImage
             legacyPath={author.image}
             folder="images"
-            alt={`Foto de ${author.name}`}
+            alt={`Foto de ${decodeHtmlEntities(author.name)}`}
             className="table-avatar"
             fallbackClassName="table-avatar-placeholder"
-            fallbackText={author.name.charAt(0).toUpperCase()}
+            fallbackText={decodeHtmlEntities(author.name).charAt(0).toUpperCase()}
           />
         )
       },
-      { key: "name", label: "Nome", render: (author) => author.name }
+      { key: "name", label: "Nome", render: (author) => decodeHtmlEntities(author.name) },
+      {
+        key: "status",
+        label: "Status",
+        render: (author) => <StatusBadge active={author.status === "1"} />
+      },
+      {
+        key: "actions",
+        label: "Acoes",
+        stopRowClick: true,
+        render: (author) => (
+          <TableRowActions>
+            {canUpdateAuthor ? (
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.98 }}
+                className="table-btn icon"
+                type="button"
+                onClick={() => handleEdit(author)}
+                disabled={saving}
+              >
+                <Pencil size={14} />
+                Editar
+              </motion.button>
+            ) : null}
+            {canDeleteAuthor ? (
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.98 }}
+                className="table-btn danger icon"
+                type="button"
+                onClick={() => setConfirmDeleteId(author.id)}
+                disabled={saving}
+              >
+                <Trash2 size={14} />
+                Desativar
+              </motion.button>
+            ) : null}
+          </TableRowActions>
+        )
+      }
     ],
-    []
+    [saving, canUpdateAuthor, canDeleteAuthor]
   );
 
-  const filteredAuthors = useMemo(() => {
-    const normalized = search.trim().toLowerCase();
-    if (normalized.length === 0) {
-      return authors;
-    }
-    return authors.filter(
-      (author) =>
-        author.name.toLowerCase().includes(normalized) || String(author.id).includes(normalized)
-    );
-  }, [authors, search]);
-
-  const emptyMessage = useMemo(
-    () =>
-      authors.length === 0 ? "Nenhum autor encontrado." : "Nenhum autor corresponde ao filtro.",
-    [authors.length]
-  );
+  const listStats = useMemo(() => {
+    const active = authors.filter((author) => author.status === "1").length;
+    return [
+      { label: "Total de autores", value: authors.length },
+      { label: "Ativos", value: active },
+      {
+        label: "Exibidos",
+        value: filteredAuthors.length,
+        hint: "com filtros atuais"
+      }
+    ];
+  }, [authors, filteredAuthors]);
 
   return (
-    <motion.section
-      className="space-y-4"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.24 }}
+    <ListingPageShell
+      breadcrumbs={buildBreadcrumbs(location.pathname)}
+      hero={
+        <PageHeroStrip
+          icon={UserRound}
+          title="Autores"
+          description="Gerencie autores do catalogo, fotos e status para vincular aos livros."
+          tone="success"
+        />
+      }
+      stats={<ListingMiniStats items={listStats} />}
     >
-      <AdminListingSection<AuthorOptionResponse>
-        title="Gestao de Autores"
+      <PermissionGate anyOf={["books.create", "books.update"]}>
+        <BerryFormPanel
+          id="author-form-section"
+          icon={UserRound}
+          title={editingId ? "Editar autor" : "Cadastrar novo autor"}
+          description="Preencha nome, descricao e foto para organizar o catalogo de autores."
+        >
+          <AuthorsForm
+            form={form}
+            editingId={editingId}
+            saving={saving}
+            uploadingImage={uploadingImage}
+            isNameInvalid={isNameInvalid}
+            isFormInvalid={isFormInvalid}
+            onSubmit={handleSubmit}
+            onReset={() => {
+              resetForm();
+              clearSuccess();
+              setFormError("");
+            }}
+            onChange={setForm}
+            onImageChange={handleImageChange}
+          />
+          {success ? (
+            <Alert tone="success" className="mt-3">
+              {success}
+            </Alert>
+          ) : null}
+          {formError ? (
+            <Alert tone="danger" className="mt-3">
+              {formError}
+            </Alert>
+          ) : null}
+        </BerryFormPanel>
+      </PermissionGate>
+
+      <AdminListingSection<AuthorResponse>
+        title="Listagem de autores"
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Buscar por nome ou ID"
-        searchAriaLabel="Filtrar autores"
+        searchPlaceholder="Buscar por nome, descricao ou ID"
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
         columns={columns}
         data={filteredAuthors}
-        loading={isLoading}
+        loading={loading}
         keyExtractor={(author) => author.id}
-        emptyMessage={emptyMessage}
+        emptyMessage="Nenhum autor encontrado para os filtros aplicados."
         countLabel={`${filteredAuthors.length} autor(es) com o filtro atual`}
-        error={errorMessage}
+        error={listingError}
+        onRowClick={setSelectedAuthor}
         renderMobileCard={(author) => (
           <article className="book-card">
             <div className="book-card-media">
               <LegacyImage
                 legacyPath={author.image}
                 folder="images"
-                alt={`Foto de ${author.name}`}
+                alt={`Foto de ${decodeHtmlEntities(author.name)}`}
                 className="table-avatar"
                 fallbackClassName="table-avatar-placeholder"
-                fallbackText={author.name.charAt(0).toUpperCase()}
+                fallbackText={decodeHtmlEntities(author.name).charAt(0).toUpperCase()}
               />
             </div>
             <div className="book-card-body">
               <p className="book-card-id">#{author.id}</p>
-              <h3>{author.name}</h3>
+              <h3>{decodeHtmlEntities(author.name)}</h3>
+              <StatusBadge active={author.status === "1"} />
             </div>
           </article>
         )}
       />
-    </motion.section>
+
+      <AuthorDetailModal
+        author={selectedAuthor}
+        open={selectedAuthor !== null}
+        saving={saving}
+        onClose={() => setSelectedAuthor(null)}
+        onEdit={handleEdit}
+        onDelete={(author) => setConfirmDeleteId(author.id)}
+      />
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="Desativar autor"
+        description="O autor sera marcado como inativo. Deseja continuar?"
+        confirmLabel="Desativar"
+        loading={saving}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
+    </ListingPageShell>
   );
 }
