@@ -8,15 +8,19 @@ type AuthorDetailModalProps = {
   author: AuthorResponse | null;
   open: boolean;
   saving?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
   onClose: () => void;
-  onEdit: (author: AuthorResponse) => void;
-  onDelete: (author: AuthorResponse) => void;
+  onEdit?: (author: AuthorResponse) => void;
+  onDelete?: (author: AuthorResponse) => void;
 };
 
 export function AuthorDetailModal({
   author,
   open,
   saving = false,
+  canUpdate = false,
+  canDelete = false,
   onClose,
   onEdit,
   onDelete
@@ -40,26 +44,30 @@ export function AuthorDetailModal({
           <Button variant="secondary" onClick={onClose} disabled={saving}>
             Fechar
           </Button>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              onEdit(author);
-              onClose();
-            }}
-            disabled={saving}
-          >
-            Editar
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => {
-              onDelete(author);
-              onClose();
-            }}
-            disabled={saving}
-          >
-            Desativar
-          </Button>
+          {canUpdate && onEdit ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                onEdit(author);
+                onClose();
+              }}
+              disabled={saving}
+            >
+              Editar
+            </Button>
+          ) : null}
+          {canDelete && onDelete ? (
+            <Button
+              variant="danger"
+              onClick={() => {
+                onDelete(author);
+                onClose();
+              }}
+              disabled={saving}
+            >
+              Desativar
+            </Button>
+          ) : null}
         </>
       }
     >

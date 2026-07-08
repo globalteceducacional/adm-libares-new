@@ -58,3 +58,46 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   return (await response.json()) as T;
 }
+
+export async function apiUploadForm<T>(path: string, formData: FormData): Promise<T> {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method: "POST",
+      headers,
+      body: formData
+    });
+  } catch {
+    throw new Error(
+      "Nao foi possivel contactar o servidor. Verifique se o backend esta ativo em http://localhost:8080."
+    );
+  }
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      clearToken();
+      window.location.href = "/login";
+      throw new Error("Sessao invalida ou expirada. Faca login novamente.");
+    }
+
+    let message = "Erro ao enviar arquivo";
+    try {
+      const body = (await response.json()) as { message?: string };
+      if (body.message) {
+        message = body.message;
+      }
+    } catch {
+      // Mantem mensagem padrao.
+    }
+    throw new Error(message);
+  }
+
+  return (await response.json()) as T;
+}

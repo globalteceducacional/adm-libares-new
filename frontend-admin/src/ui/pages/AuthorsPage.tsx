@@ -15,7 +15,7 @@ import {
 } from "../../features/shared/api/queries";
 import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { PermissionGate } from "../../features/auth/PermissionGate";
-import { useAnyPermission } from "../../features/auth/usePermission";
+import { usePermission } from "../../features/auth/usePermission";
 import { AuthorDetailModal } from "../components/authors/AuthorDetailModal";
 import { AuthorsForm } from "../components/authors/AuthorsForm";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
@@ -60,8 +60,9 @@ export function AuthorsPage() {
 
   const isNameInvalid = form.name.trim().length === 0;
   const isFormInvalid = isNameInvalid;
-  const canUpdateAuthor = useAnyPermission(["books.update"]);
-  const canDeleteAuthor = useAnyPermission(["books.delete"]);
+  const canCreateAuthor = usePermission("books.create");
+  const canUpdateAuthor = usePermission("books.update");
+  const canDeleteAuthor = usePermission("books.delete");
 
   function resetForm() {
     setForm({ name: "", description: "", image: "", status: "1" });
@@ -97,6 +98,10 @@ export function AuthorsPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    if (editingId ? !canUpdateAuthor : !canCreateAuthor) {
+      setFormError("Sem permissao para esta acao.");
+      return;
+    }
     setFormError("");
     clearSuccess();
     setSaving(true);
@@ -266,7 +271,7 @@ export function AuthorsPage() {
       }
       stats={<ListingMiniStats items={listStats} />}
     >
-      <PermissionGate anyOf={["books.create", "books.update"]}>
+      <PermissionGate permission={editingId ? "books.update" : "books.create"}>
         <BerryFormPanel
           id="author-form-section"
           icon={UserRound}
@@ -342,6 +347,8 @@ export function AuthorsPage() {
         author={selectedAuthor}
         open={selectedAuthor !== null}
         saving={saving}
+        canUpdate={canUpdateAuthor}
+        canDelete={canDeleteAuthor}
         onClose={() => setSelectedAuthor(null)}
         onEdit={handleEdit}
         onDelete={(author) => setConfirmDeleteId(author.id)}
