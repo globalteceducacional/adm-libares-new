@@ -2,6 +2,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { listBooks } from "../../../services/booksService";
 import { listAuthorOptions, listAuthors } from "../../../services/authorsService";
 import { listCategories, listCategoryOptions } from "../../../services/categoriesService";
+import {
+  listHomeSections,
+  listHomeSectionOptionsFromSections
+} from "../../../services/homeSectionsService";
 import { getDashboardSummary } from "../../../services/dashboardService";
 import { listComments } from "../../../services/commentsService";
 import { listUsers } from "../../../services/usersService";
@@ -13,6 +17,8 @@ export const queryKeys = {
   authorOptions: ["author-options"] as const,
   categories: ["categories"] as const,
   categoryOptions: ["category-options"] as const,
+  homeSections: ["home-sections"] as const,
+  homeSectionOptions: ["home-section-options"] as const,
   dashboard: (periodDays: number) => ["dashboard", periodDays] as const,
   comments: ["comments"] as const,
   users: ["users"] as const,
@@ -43,6 +49,17 @@ export function useCategoryOptionsQuery() {
   return useQuery({ queryKey: queryKeys.categoryOptions, queryFn: listCategoryOptions });
 }
 
+export function useHomeSectionsQuery() {
+  return useQuery({ queryKey: queryKeys.homeSections, queryFn: listHomeSections });
+}
+
+export function useHomeSectionOptionsQuery() {
+  return useQuery({
+    queryKey: queryKeys.homeSectionOptions,
+    queryFn: listHomeSectionOptionsFromSections
+  });
+}
+
 export function useDashboardQuery(periodDays: 7 | 30 | 90) {
   return useQuery({
     queryKey: queryKeys.dashboard(periodDays),
@@ -71,6 +88,9 @@ export function useInvalidateAdminQueries() {
     authorOptions: () => queryClient.invalidateQueries({ queryKey: queryKeys.authorOptions }),
     categories: () => queryClient.invalidateQueries({ queryKey: queryKeys.categories }),
     categoryOptions: () => queryClient.invalidateQueries({ queryKey: queryKeys.categoryOptions }),
+    homeSections: () => queryClient.invalidateQueries({ queryKey: queryKeys.homeSections }),
+    homeSectionOptions: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.homeSectionOptions }),
     comments: () => queryClient.invalidateQueries({ queryKey: queryKeys.comments }),
     users: () => queryClient.invalidateQueries({ queryKey: queryKeys.users }),
     audit: () => queryClient.invalidateQueries({ queryKey: queryKeys.audit }),

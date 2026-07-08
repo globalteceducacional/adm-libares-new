@@ -3,6 +3,7 @@ import {
   BookOpen,
   ClipboardList,
   LayoutDashboard,
+  LayoutList,
   MessageSquareText,
   Pencil,
   Tags,
@@ -21,6 +22,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/livros", label: "Livros", icon: BookOpen, description: "Catalogo e cadastro" },
   { to: "/autores", label: "Autores", icon: Pencil, description: "Autores do catalogo" },
   { to: "/categorias", label: "Categorias", icon: Tags, description: "Categorias do catalogo" },
+  { to: "/secoes", label: "Secoes", icon: LayoutList, description: "Secoes da home" },
   { to: "/usuarios", label: "Usuarios", icon: Users, description: "Gestao de usuarios" },
   { to: "/comentarios", label: "Comentarios", icon: MessageSquareText, description: "Moderacao" },
   { to: "/auditoria", label: "Auditoria", icon: ClipboardList, description: "Logs e consistencia" }

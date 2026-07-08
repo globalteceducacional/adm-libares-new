@@ -21,6 +21,9 @@ const AuthorsPage = lazy(() =>
 const CategoriesPage = lazy(() =>
   import("./ui/pages/CategoriesPage").then((module) => ({ default: module.CategoriesPage }))
 );
+const HomeSectionsPage = lazy(() =>
+  import("./ui/pages/HomeSectionsPage").then((module) => ({ default: module.HomeSectionsPage }))
+);
 const AuditPage = lazy(() =>
   import("./ui/pages/AuditPage").then((module) => ({ default: module.AuditPage }))
 );
@@ -51,6 +54,7 @@ export function AppRouter() {
           <Route path="/livros" element={<BooksPage />} />
           <Route path="/autores" element={<AuthorsPage />} />
           <Route path="/categorias" element={<CategoriesPage />} />
+          <Route path="/secoes" element={<HomeSectionsPage />} />
           <Route path="/usuarios" element={<UsersPage />} />
           <Route path="/comentarios" element={<CommentsPage />} />
           <Route path="/auditoria" element={<AuditPage />} />
