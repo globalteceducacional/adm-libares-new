@@ -66,8 +66,11 @@ class UpdateAuthorUseCase(
                 id = existing.id,
                 name = name,
                 image = request.image?.trim() ?: existing.image,
-                // Legacy LONGTEXT NOT NULL — never persist null
-                description = request.description?.trim()?.ifBlank { "" } ?: "",
+                // null = omit/preserve (like image); blank string = clear to ""
+                description = when {
+                    request.description == null -> existing.description ?: ""
+                    else -> request.description.trim().ifBlank { "" }
+                },
                 status = if (request.status.trim() == "0") "0" else "1"
             )
         )

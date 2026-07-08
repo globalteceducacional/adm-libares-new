@@ -1,7 +1,10 @@
 package com.libare.adm.catalog
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -13,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
+import org.springframework.test.web.servlet.put
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -23,21 +27,27 @@ class AuthorCrudIT {
     @Autowired
     private lateinit var jdbcTemplate: JdbcTemplate
 
-    private val uniqueName = "IT Author ${System.currentTimeMillis()}"
-    private var createdAuthorId: Long = 0
+    private val objectMapper = ObjectMapper()
+    private val createdAuthorIds = mutableListOf<Long>()
+    private val createdAuthorNames = mutableListOf<String>()
 
     @AfterEach
     fun tearDown() {
-        if (createdAuthorId > 0) {
-            jdbcTemplate.update("DELETE FROM tbl_author WHERE author_id = ?", createdAuthorId)
-        } else {
-            jdbcTemplate.update("DELETE FROM tbl_author WHERE author_name = ?", uniqueName)
+        createdAuthorIds.forEach { id ->
+            jdbcTemplate.update("DELETE FROM tbl_author WHERE author_id = ?", id)
         }
+        createdAuthorNames.forEach { name ->
+            jdbcTemplate.update("DELETE FROM tbl_author WHERE author_name = ?", name)
+        }
+        createdAuthorIds.clear()
+        createdAuthorNames.clear()
     }
 
     @Test
     fun `create list and soft-delete author`() {
         val token = login("teste.admin", "Admin@123")
+        val uniqueName = "IT Author ${System.currentTimeMillis()}"
+        createdAuthorNames += uniqueName
 
         val createBody = """
             {
@@ -58,10 +68,11 @@ class AuthorCrudIT {
             .response
             .contentAsString
 
-        assertTrue(createJson.contains(uniqueName), "Resposta de create deve conter o nome do autor")
-
-        createdAuthorId = Regex(""""id"\s*:\s*(\d+)""").find(createJson)?.groupValues?.get(1)?.toLong()
-            ?: error("Create nao retornou id: $createJson")
+        val created = objectMapper.readTree(createJson)
+        assertEquals(uniqueName, created.path("name").asText())
+        val createdAuthorId = created.path("id").asLong()
+        assertTrue(createdAuthorId > 0, "Create deve retornar id > 0")
+        createdAuthorIds += createdAuthorId
 
         val listJson = mockMvc.get("/api/v1/authors") {
             header("Authorization", "Bearer $token")
@@ -71,11 +82,10 @@ class AuthorCrudIT {
             .response
             .contentAsString
 
-        assertTrue(listJson.contains(uniqueName), "Lista deve conter o autor criado")
-        assertTrue(
-            Regex(""""id"\s*:\s*$createdAuthorId""").containsMatchIn(listJson),
-            "Lista deve conter o id $createdAuthorId"
-        )
+        val listed = findAuthorInList(listJson, createdAuthorId)
+        assertNotNull(listed, "Lista deve conter o autor criado id=$createdAuthorId")
+        assertEquals(uniqueName, listed!!.path("name").asText())
+        assertEquals("1", listed.path("status").asText())
 
         mockMvc.delete("/api/v1/authors/$createdAuthorId") {
             header("Authorization", "Bearer $token")
@@ -96,13 +106,129 @@ class AuthorCrudIT {
             .response
             .contentAsString
 
-        assertTrue(
-            listAfterDelete.contains(""""id":$createdAuthorId""") ||
-                Regex(""""id"\s*:\s*$createdAuthorId[\s\S]*?"status"\s*:\s*"0"""").containsMatchIn(listAfterDelete) ||
-                Regex(""""status"\s*:\s*"0"[\s\S]*?"id"\s*:\s*$createdAuthorId""").containsMatchIn(listAfterDelete) ||
-                listAfterDelete.contains(uniqueName),
-            "Lista pos-delete ainda deve expor o autor com status soft-deleted"
+        val softDeleted = findAuthorInList(listAfterDelete, createdAuthorId)
+        assertNotNull(softDeleted, "Lista pos-delete deve expor o autor id=$createdAuthorId")
+        assertEquals("0", softDeleted!!.path("status").asText(), "Autor soft-deleted deve ter status 0 na lista")
+        assertEquals(uniqueName, softDeleted.path("name").asText())
+    }
+
+    @Test
+    fun `update preserves description when omitted and when re-sent`() {
+        val token = login("teste.admin", "Admin@123")
+        val ts = System.currentTimeMillis()
+        val originalName = "IT Author Bio $ts"
+        val renamed = "IT Author Bio Renamed $ts"
+        createdAuthorNames += originalName
+        createdAuthorNames += renamed
+
+        val createJson = mockMvc.post("/api/v1/authors") {
+            header("Authorization", "Bearer $token")
+            contentType = MediaType.APPLICATION_JSON
+            content = """
+                {
+                  "name": "$originalName",
+                  "image": "",
+                  "description": "Bio Keep",
+                  "status": "1"
+                }
+            """.trimIndent()
+        }
+            .andExpect { status { isCreated() } }
+            .andReturn()
+            .response
+            .contentAsString
+
+        val authorId = objectMapper.readTree(createJson).path("id").asLong()
+        createdAuthorIds += authorId
+
+        // PUT renomeando e reenviando a mesma description
+        val putResendJson = mockMvc.put("/api/v1/authors/$authorId") {
+            header("Authorization", "Bearer $token")
+            contentType = MediaType.APPLICATION_JSON
+            content = """
+                {
+                  "name": "$renamed",
+                  "image": "",
+                  "description": "Bio Keep",
+                  "status": "1"
+                }
+            """.trimIndent()
+        }
+            .andExpect { status { isOk() } }
+            .andReturn()
+            .response
+            .contentAsString
+
+        val afterResend = objectMapper.readTree(putResendJson)
+        assertEquals(renamed, afterResend.path("name").asText())
+        assertEquals("Bio Keep", afterResend.path("description").asText())
+
+        // PUT sem a chave description (Jackson → null) deve preservar a bio
+        val putOmitJson = mockMvc.put("/api/v1/authors/$authorId") {
+            header("Authorization", "Bearer $token")
+            contentType = MediaType.APPLICATION_JSON
+            content = """
+                {
+                  "name": "$renamed",
+                  "image": "",
+                  "status": "1"
+                }
+            """.trimIndent()
+        }
+            .andExpect { status { isOk() } }
+            .andReturn()
+            .response
+            .contentAsString
+
+        val afterOmit = objectMapper.readTree(putOmitJson)
+        assertEquals("Bio Keep", afterOmit.path("description").asText(), "Description omitida no PUT deve ser preservada")
+
+        val dbDescription = jdbcTemplate.queryForObject(
+            "SELECT author_description FROM tbl_author WHERE author_id = ?",
+            String::class.java,
+            authorId
         )
+        assertEquals("Bio Keep", dbDescription)
+    }
+
+    @Test
+    fun `create rejects duplicate author name with 400`() {
+        val token = login("teste.admin", "Admin@123")
+        val uniqueName = "IT Author Dup ${System.currentTimeMillis()}"
+        createdAuthorNames += uniqueName
+
+        val body = """
+            {
+              "name": "$uniqueName",
+              "image": "",
+              "description": "Primeiro",
+              "status": "1"
+            }
+        """.trimIndent()
+
+        val firstJson = mockMvc.post("/api/v1/authors") {
+            header("Authorization", "Bearer $token")
+            contentType = MediaType.APPLICATION_JSON
+            content = body
+        }
+            .andExpect { status { isCreated() } }
+            .andReturn()
+            .response
+            .contentAsString
+
+        createdAuthorIds += objectMapper.readTree(firstJson).path("id").asLong()
+
+        mockMvc.post("/api/v1/authors") {
+            header("Authorization", "Bearer $token")
+            contentType = MediaType.APPLICATION_JSON
+            content = body
+        }.andExpect { status { isBadRequest() } }
+    }
+
+    private fun findAuthorInList(listJson: String, authorId: Long): JsonNode? {
+        val root = objectMapper.readTree(listJson)
+        require(root.isArray) { "GET /authors deve retornar array JSON: $listJson" }
+        return root.firstOrNull { it.path("id").asLong() == authorId }
     }
 
     private fun login(username: String, password: String): String {
