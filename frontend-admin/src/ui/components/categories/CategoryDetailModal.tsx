@@ -1,0 +1,91 @@
+import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
+import { Button, DetailField, Modal, StatusBadge } from "../../../shared/ui";
+import type { CategoryResponse } from "../../../types/categories";
+import { LegacyImage } from "../LegacyImage";
+
+type CategoryDetailModalProps = {
+  category: CategoryResponse | null;
+  open: boolean;
+  saving?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
+  onClose: () => void;
+  onEdit?: (category: CategoryResponse) => void;
+  onDelete?: (category: CategoryResponse) => void;
+};
+
+export function CategoryDetailModal({
+  category,
+  open,
+  saving = false,
+  canUpdate = false,
+  canDelete = false,
+  onClose,
+  onEdit,
+  onDelete
+}: CategoryDetailModalProps) {
+  if (!category) {
+    return null;
+  }
+
+  const name = decodeHtmlEntities(category.name);
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={name}
+      description={`Detalhes da categoria #${category.id}`}
+      size="md"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={saving}>
+            Fechar
+          </Button>
+          {canUpdate && onEdit ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                onEdit(category);
+                onClose();
+              }}
+              disabled={saving}
+            >
+              Editar
+            </Button>
+          ) : null}
+          {canDelete && onDelete ? (
+            <Button
+              variant="danger"
+              onClick={() => {
+                onDelete(category);
+                onClose();
+              }}
+              disabled={saving}
+            >
+              Desativar
+            </Button>
+          ) : null}
+        </>
+      }
+    >
+      <div className="grid gap-5 sm:grid-cols-[96px_minmax(0,1fr)]">
+        <div className="flex justify-center sm:justify-start">
+          <LegacyImage
+            legacyPath={category.image}
+            folder="images"
+            alt={`Imagem de ${name}`}
+            className="table-avatar h-24 w-24 text-lg"
+            fallbackClassName="table-avatar-placeholder h-24 w-24 text-lg"
+            fallbackText={name.charAt(0).toUpperCase()}
+          />
+        </div>
+        <dl className="grid gap-4">
+          <DetailField label="ID" value={`#${category.id}`} />
+          <DetailField label="Nome" value={name} />
+          <DetailField label="Status" value={<StatusBadge active={category.status === "1"} />} />
+        </dl>
+      </div>
+    </Modal>
+  );
+}

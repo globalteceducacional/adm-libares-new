@@ -18,6 +18,9 @@ const CommentsPage = lazy(() =>
 const AuthorsPage = lazy(() =>
   import("./ui/pages/AuthorsPage").then((module) => ({ default: module.AuthorsPage }))
 );
+const CategoriesPage = lazy(() =>
+  import("./ui/pages/CategoriesPage").then((module) => ({ default: module.CategoriesPage }))
+);
 const AuditPage = lazy(() =>
   import("./ui/pages/AuditPage").then((module) => ({ default: module.AuditPage }))
 );
@@ -47,6 +50,7 @@ export function AppRouter() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/livros" element={<BooksPage />} />
           <Route path="/autores" element={<AuthorsPage />} />
+          <Route path="/categorias" element={<CategoriesPage />} />
           <Route path="/usuarios" element={<UsersPage />} />
           <Route path="/comentarios" element={<CommentsPage />} />
           <Route path="/auditoria" element={<AuditPage />} />

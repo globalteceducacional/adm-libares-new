@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { listBooks } from "../../../services/booksService";
 import { listAuthorOptions, listAuthors } from "../../../services/authorsService";
+import { listCategories, listCategoryOptions } from "../../../services/categoriesService";
 import { getDashboardSummary } from "../../../services/dashboardService";
 import { listComments } from "../../../services/commentsService";
 import { listUsers } from "../../../services/usersService";
@@ -10,6 +11,8 @@ export const queryKeys = {
   books: ["books"] as const,
   authors: ["authors"] as const,
   authorOptions: ["author-options"] as const,
+  categories: ["categories"] as const,
+  categoryOptions: ["category-options"] as const,
   dashboard: (periodDays: number) => ["dashboard", periodDays] as const,
   comments: ["comments"] as const,
   users: ["users"] as const,
@@ -30,6 +33,14 @@ export function useAuthorsQuery() {
 
 export function useAuthorOptionsQuery() {
   return useQuery({ queryKey: queryKeys.authorOptions, queryFn: listAuthorOptions });
+}
+
+export function useCategoriesQuery() {
+  return useQuery({ queryKey: queryKeys.categories, queryFn: listCategories });
+}
+
+export function useCategoryOptionsQuery() {
+  return useQuery({ queryKey: queryKeys.categoryOptions, queryFn: listCategoryOptions });
 }
 
 export function useDashboardQuery(periodDays: 7 | 30 | 90) {
@@ -58,6 +69,8 @@ export function useInvalidateAdminQueries() {
     books: () => queryClient.invalidateQueries({ queryKey: queryKeys.books }),
     authors: () => queryClient.invalidateQueries({ queryKey: queryKeys.authors }),
     authorOptions: () => queryClient.invalidateQueries({ queryKey: queryKeys.authorOptions }),
+    categories: () => queryClient.invalidateQueries({ queryKey: queryKeys.categories }),
+    categoryOptions: () => queryClient.invalidateQueries({ queryKey: queryKeys.categoryOptions }),
     comments: () => queryClient.invalidateQueries({ queryKey: queryKeys.comments }),
     users: () => queryClient.invalidateQueries({ queryKey: queryKeys.users }),
     audit: () => queryClient.invalidateQueries({ queryKey: queryKeys.audit }),
