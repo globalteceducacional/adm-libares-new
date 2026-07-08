@@ -21,6 +21,9 @@ class AuthorEntity(
     @Column(name = "author_image", nullable = false, length = 255)
     val image: String = "",
 
+    @Column(name = "author_description", columnDefinition = "LONGTEXT")
+    val description: String? = null,
+
     @Column(name = "a_status", nullable = false)
     val status: String = "1"
 )
