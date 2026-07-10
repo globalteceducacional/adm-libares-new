@@ -158,24 +158,4 @@ As APIs Site do leitor (`api_sites.php`) podem entrar nesta spec de cutover **an
 ## Próximo passo
 
 Após aprovação desta spec: `writing-plans` → plano por onda (1–6), depois execução. Em paralelo ou em seguida: brainstorming dos menus admin (Perfil → Config → Notificações → Site).
-Welcome to Ubuntu 24.04.4 LTS (GNU/Linux 6.8.0-134-generic x86_64)
-
- * Documentation:  https://help.ubuntu.com
- * Management:     https://landscape.canonical.com
- * Support:        https://ubuntu.com/pro
-
-
-Expanded Security Maintenance for Applications is not enabled.
-
-0 updates can be applied immediately.
-
-Enable ESM Apps to receive additional future security updates.
-See https://ubuntu.com/esm or run: sudo pro status
-
-
-Last login: Tue Jul  7 12:16:44 2026 from 169.254.0.1
-root@srv1802676:~# cd ..
-root@srv1802676:/# cd opt
-root@srv1802676:/opt# 
-
 
