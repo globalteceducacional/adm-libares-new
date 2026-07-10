@@ -1,12 +1,10 @@
-// Por defeito usa o mesmo host da API + /legacy/assets (Spring serve ../adm-libares quando existir).
+import { decodeHtmlEntities } from "../shared/lib/decodeHtmlEntities";
+
 const apiBase =
   (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
 
-/**
- * Base HTTP onde o Spring expõe ficheiros estáticos com `permitAll` em `/legacy/assets/**`.
- * Se `VITE_LEGACY_ASSETS_BASE_URL` apontar só para o host da API (ex.: http://localhost:8080),
- * anexamos `/legacy/assets` — caso contrário os `<img>` batem em rotas protegidas e recebem 403.
- */
+const DEFAULT_REMOTE_IMAGES_BASE_URL = "https://ebook.alenxandriaglobaltec.com/images";
+
 function resolveLegacyAssetsBaseUrl(): string {
   const raw = (import.meta.env.VITE_LEGACY_ASSETS_BASE_URL as string | undefined)?.trim();
   if (!raw) {
@@ -19,13 +17,22 @@ function resolveLegacyAssetsBaseUrl(): string {
   return `${withoutTrailingSlash}/legacy/assets`;
 }
 
+function resolveRemoteImagesBaseUrl(): string {
+  const raw = (import.meta.env.VITE_LEGACY_REMOTE_IMAGES_BASE_URL as string | undefined)?.trim();
+  return (raw || DEFAULT_REMOTE_IMAGES_BASE_URL).replace(/\/+$/, "");
+}
+
 const LEGACY_ASSETS_BASE_URL = resolveLegacyAssetsBaseUrl();
+const REMOTE_IMAGES_BASE_URL = resolveRemoteImagesBaseUrl();
 
 function normalizeBaseUrl(baseUrl: string): string {
   return baseUrl.replace(/\/+$/, "");
 }
 
-/** Codifica cada segmento do caminho (evita `&` em nomes de ficheiro ser lido como query string). */
+function normalizeLegacyPath(legacyPath: string): string {
+  return decodeHtmlEntities(legacyPath).trim();
+}
+
 function encodePathSegments(path: string): string {
   return path
     .split("/")
@@ -40,17 +47,10 @@ function encodePathSegments(path: string): string {
     .join("/");
 }
 
-export function resolveLegacyAssetUrl(
-  legacyPath: string | null | undefined,
-  folder = "images"
-): string | null {
-  if (!legacyPath) {
-    return null;
-  }
-
-  const trimmed = legacyPath.trim();
+function buildAssetUrl(baseUrl: string, legacyPath: string, folder: string): string {
+  const trimmed = normalizeLegacyPath(legacyPath);
   if (!trimmed) {
-    return null;
+    return "";
   }
 
   if (/^https?:\/\//i.test(trimmed)) {
@@ -64,12 +64,64 @@ export function resolveLegacyAssetUrl(
     }
   }
 
-  const baseUrl = normalizeBaseUrl(LEGACY_ASSETS_BASE_URL);
-
+  const normalizedBase = normalizeBaseUrl(baseUrl);
   if (trimmed.startsWith("/")) {
-    const relative = trimmed.startsWith("/") ? trimmed.slice(1) : trimmed;
-    return `${baseUrl}/${encodePathSegments(relative)}`;
+    return `${normalizedBase}/${encodePathSegments(trimmed.slice(1))}`;
   }
 
-  return `${baseUrl}/${encodePathSegments(`${folder}/${trimmed}`)}`;
+  const hasFolderPrefix = trimmed.startsWith(`${folder}/`) || trimmed.startsWith("images/");
+  const relativePath = hasFolderPrefix ? trimmed : `${folder}/${trimmed}`;
+  return `${normalizedBase}/${encodePathSegments(relativePath)}`;
+}
+
+function pushUnique(urls: string[], url: string) {
+  if (url && !urls.includes(url)) {
+    urls.push(url);
+  }
+}
+
+export function resolveLegacyAssetUrl(
+  legacyPath: string | null | undefined,
+  folder = "images"
+): string | null {
+  const urls = resolveLegacyAssetUrls(legacyPath, folder);
+  return urls[0] ?? null;
+}
+
+function buildRemoteImageUrl(legacyPath: string): string {
+  const trimmed = normalizeLegacyPath(legacyPath);
+  if (!trimmed) {
+    return "";
+  }
+  if (/^https?:\/\//i.test(trimmed)) {
+    return buildAssetUrl(REMOTE_IMAGES_BASE_URL, trimmed, "images");
+  }
+  const fileName = trimmed.replace(/^\/+/, "").replace(/^images\//, "");
+  return `${normalizeBaseUrl(REMOTE_IMAGES_BASE_URL)}/${encodePathSegments(fileName)}`;
+}
+
+export function resolveLegacyAssetUrls(
+  legacyPath: string | null | undefined,
+  folder = "images"
+): string[] {
+  if (!legacyPath) {
+    return [];
+  }
+
+  const raw = legacyPath.trim();
+  if (!raw) {
+    return [];
+  }
+
+  const urls: string[] = [];
+  pushUnique(urls, buildAssetUrl(LEGACY_ASSETS_BASE_URL, raw, folder));
+  pushUnique(urls, buildRemoteImageUrl(raw));
+
+  const decoded = normalizeLegacyPath(raw);
+  if (decoded !== raw) {
+    pushUnique(urls, buildAssetUrl(LEGACY_ASSETS_BASE_URL, decoded, folder));
+    pushUnique(urls, buildRemoteImageUrl(decoded));
+  }
+
+  return urls;
 }

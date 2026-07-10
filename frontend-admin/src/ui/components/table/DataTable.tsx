@@ -21,7 +21,7 @@ type DataTableProps<T = unknown> = {
   caption?: ReactNode;
   emptyMessage?: string;
   loading?: boolean;
-  onRowClick?: (item: T, event: MouseEvent<HTMLTableRowElement>) => void;
+  onRowClick?: (item: T, event?: MouseEvent<HTMLTableRowElement>) => void;
   rowClassName?: (item: T) => string;
   wrapperClassName?: string;
   tableClassName?: string;
@@ -135,11 +135,32 @@ export function DataTable<T>({
             <p className="muted-text">{emptyMessage}</p>
           ) : (
             <div className="dt-mobile-card-list">
-              {visibleData.map((item) => (
-                <div key={keyExtractor(item)} className={rowClassName ? rowClassName(item) : ""}>
-                  {renderMobileCard ? renderMobileCard(item) : null}
-                </div>
-              ))}
+              {visibleData.map((item) => {
+                const rowKey = keyExtractor(item);
+                const extraClass = rowClassName ? rowClassName(item) : "";
+                const clickable = Boolean(onRowClick);
+                return (
+                  <div
+                    key={rowKey}
+                    className={`${clickable ? "dt-mobile-card-clickable" : ""} ${extraClass}`.trim()}
+                    onClick={onRowClick ? () => onRowClick(item) : undefined}
+                    onKeyDown={
+                      onRowClick
+                        ? (event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              onRowClick(item);
+                            }
+                          }
+                        : undefined
+                    }
+                    role={clickable ? "button" : undefined}
+                    tabIndex={clickable ? 0 : undefined}
+                  >
+                    {renderMobileCard ? renderMobileCard(item) : null}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -196,6 +217,18 @@ export function DataTable<T>({
                       key={rowKey}
                       className={`${clickable ? "dt-row-clickable" : ""} ${extraClass}`}
                       onClick={onRowClick ? (event) => onRowClick(item, event) : undefined}
+                      tabIndex={clickable ? 0 : undefined}
+                      onKeyDown={
+                        clickable && onRowClick
+                          ? (event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                onRowClick(item, event as unknown as MouseEvent<HTMLTableRowElement>);
+                              }
+                            }
+                          : undefined
+                      }
+                      aria-label={clickable ? "Ver detalhes do registro" : undefined}
                     >
                       {columns.map((col) => (
                         <td

@@ -18,6 +18,7 @@ Param(
 $ErrorActionPreference = "Stop"
 
 . (Join-Path $PSScriptRoot "Get-DevDbConfig.ps1")
+. (Join-Path $PSScriptRoot "Get-DevProjectRoot.ps1")
 
 function Write-Step([string]$message) {
     Write-Host ""
@@ -53,10 +54,15 @@ function Wait-HttpOk([string]$url, [int]$maxAttempts, [int]$sleepSeconds) {
 }
 
 try {
-    $root = Resolve-Path (Join-Path $PSScriptRoot "../..")
-    $backendPath = Join-Path $root "backend"
+    $paths = Get-DevProjectRoot -ScriptRoot $PSScriptRoot
+    $root = $paths.Root
+    $backendPath = Join-Path $paths.GradleRoot "backend"
     $frontendPath = Join-Path $root "frontend-admin"
     $startDbScript = Join-Path $PSScriptRoot "start-db.ps1"
+
+    if ($paths.UsesJunction) {
+        Write-Host "[INFO] Gradle usa junction: $($paths.GradleRoot)" -ForegroundColor DarkGray
+    }
 
     if (-not (Test-Path -LiteralPath $backendPath)) {
         throw "Backend nao encontrado: $backendPath"
@@ -102,12 +108,14 @@ try {
                 Write-Host "        Backend nao sera iniciado." -ForegroundColor Yellow
             } else {
             Set-DevDbEnvironment $dbSettings
+            $env:JAVA_TOOL_OPTIONS = "-Dfile.encoding=UTF-8"
 
             $backendCmd = @"
-Set-Location '$backendPath'
+Set-Location -LiteralPath '$backendPath'
 `$env:DB_URL = '$($dbSettings.Url)'
 `$env:DB_USER = '$($dbSettings.User)'
 `$env:DB_PASSWORD = '$($dbSettings.Password -replace "'", "''")'
+`$env:JAVA_TOOL_OPTIONS = '-Dfile.encoding=UTF-8'
 Write-Host 'Iniciando backend (bootRun)...' -ForegroundColor Cyan
 .\gradlew.bat bootRun --no-daemon
 "@

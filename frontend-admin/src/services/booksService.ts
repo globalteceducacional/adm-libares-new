@@ -1,8 +1,36 @@
-import { apiRequest } from "../lib/api";
-import type { BookResponse, UpsertBookRequest } from "../types/books";
+import { apiRequest, apiUploadForm } from "../lib/api";
+import type {
+  BookCoverUploadResponse,
+  BookFileUploadResponse,
+  BookResponse,
+  CategoryOptionResponse,
+  HomeSectionOptionResponse,
+  UpsertBookRequest
+} from "../types/books";
 
-export function listBooks(): Promise<BookResponse[]> {
-  return apiRequest<BookResponse[]>("/api/v1/books");
+export function listBooks(acervoId?: number): Promise<BookResponse[]> {
+  const query = acervoId ? `?acervoId=${acervoId}` : "";
+  return apiRequest<BookResponse[]>(`/api/v1/books${query}`);
+}
+
+export function listCategoryOptions(): Promise<CategoryOptionResponse[]> {
+  return apiRequest<CategoryOptionResponse[]>("/api/v1/books/category-options");
+}
+
+export function listHomeSectionOptions(): Promise<HomeSectionOptionResponse[]> {
+  return apiRequest<HomeSectionOptionResponse[]>("/api/v1/books/home-section-options");
+}
+
+export function uploadBookCover(file: File): Promise<BookCoverUploadResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiUploadForm<BookCoverUploadResponse>("/api/v1/books/upload/cover", formData);
+}
+
+export function uploadBookFile(file: File): Promise<BookFileUploadResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiUploadForm<BookFileUploadResponse>("/api/v1/books/upload/file", formData);
 }
 
 export function createBook(payload: UpsertBookRequest): Promise<BookResponse> {

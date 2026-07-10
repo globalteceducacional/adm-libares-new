@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { resolveLegacyAssetUrl } from "../../lib/legacyAssets";
+import { useEffect, useMemo, useState } from "react";
+import { resolveLegacyAssetUrls } from "../../lib/legacyAssets";
 
 type LegacyImageProps = {
   legacyPath?: string | null;
@@ -18,10 +18,18 @@ export function LegacyImage({
   fallbackClassName,
   fallbackText
 }: LegacyImageProps) {
-  const [failed, setFailed] = useState(false);
-  const resolvedUrl = resolveLegacyAssetUrl(legacyPath, folder);
+  const candidates = useMemo(() => resolveLegacyAssetUrls(legacyPath, folder), [legacyPath, folder]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [exhausted, setExhausted] = useState(false);
 
-  if (!resolvedUrl || failed) {
+  useEffect(() => {
+    setActiveIndex(0);
+    setExhausted(false);
+  }, [legacyPath, folder, candidates]);
+
+  const resolvedUrl = candidates[activeIndex] ?? null;
+
+  if (!resolvedUrl || exhausted) {
     return <div className={fallbackClassName}>{fallbackText}</div>;
   }
 
@@ -31,7 +39,13 @@ export function LegacyImage({
       src={resolvedUrl}
       alt={alt}
       loading="lazy"
-      onError={() => setFailed(true)}
+      onError={() => {
+        if (activeIndex + 1 < candidates.length) {
+          setActiveIndex((current) => current + 1);
+        } else {
+          setExhausted(true);
+        }
+      }}
     />
   );
 }

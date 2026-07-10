@@ -1,20 +1,26 @@
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { deleteComment, updateCommentStatus } from "../../services/commentsService";
 import {
   getQueryErrorMessage,
   useCommentsQuery,
   useInvalidateAdminQueries
 } from "../../features/shared/api/queries";
+import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
 import { useTimedMessage } from "../../hooks/useTimedMessage";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
+import { CommentDetailModal } from "../components/comments/CommentDetailModal";
 import type { CommentResponse } from "../../types/comments";
-import { ConfirmDialog, StatusBadge } from "../../shared/ui";
+import { ConfirmDialog, PageShell, StatusBadge } from "../../shared/ui";
+import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
+import { TableRowActions } from "../components/table/TableRowActions";
 
 export function CommentsPage() {
+  const location = useLocation();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const commentsQuery = useCommentsQuery();
   const invalidate = useInvalidateAdminQueries();
@@ -26,8 +32,18 @@ export function CommentsPage() {
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [selectedComment, setSelectedComment] = useState<CommentResponse | null>(null);
   const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const error = actionError || queryError;
+
+  useEffect(() => {
+    setSelectedComment((current) => {
+      if (!current) {
+        return null;
+      }
+      return comments.find((comment) => comment.id === current.id) ?? null;
+    });
+  }, [comments]);
 
   async function handleToggleStatus(comment: CommentResponse) {
     setActionError("");
@@ -57,6 +73,9 @@ export function CommentsPage() {
     setSaving(true);
     try {
       await deleteComment(commentId);
+      if (selectedComment?.id === commentId) {
+        setSelectedComment(null);
+      }
       showSuccess("Comentario excluido com sucesso.");
       await invalidate.comments();
     } catch (requestError) {
@@ -72,17 +91,17 @@ export function CommentsPage() {
   const columns = useMemo<DataTableColumn<CommentResponse>[]>(
     () => [
       { key: "id", label: "ID", render: (comment) => comment.id },
-      { key: "book", label: "Livro", render: (comment) => comment.bookTitle || `#${comment.bookId}` },
+      { key: "book", label: "Livro", render: (comment) => decodeHtmlEntities(comment.bookTitle) || `#${comment.bookId}` },
       {
         key: "user",
         label: "Usuario",
-        render: (comment) => comment.userName || (comment.userId ? `#${comment.userId}` : "-")
+        render: (comment) => decodeHtmlEntities(comment.userName) || (comment.userId ? `#${comment.userId}` : "-")
       },
       {
         key: "text",
         label: "Comentario",
         tdClassName: "text-truncate-cell",
-        render: (comment) => comment.commentText
+        render: (comment) => decodeHtmlEntities(comment.commentText)
       },
       {
         key: "status",
@@ -100,7 +119,7 @@ export function CommentsPage() {
         label: "Acoes",
         stopRowClick: true,
         render: (comment) => (
-          <>
+          <TableRowActions>
             <motion.button
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.98 }}
@@ -124,7 +143,7 @@ export function CommentsPage() {
               <Trash2 size={14} />
               Excluir
             </motion.button>
-          </>
+          </TableRowActions>
         )
       }
     ],
@@ -137,9 +156,9 @@ export function CommentsPage() {
       const byStatus = statusFilter === "all" || comment.status === statusFilter;
       const byText =
         normalized.length === 0 ||
-        comment.commentText.toLowerCase().includes(normalized) ||
-        (comment.bookTitle ?? "").toLowerCase().includes(normalized) ||
-        (comment.userName ?? "").toLowerCase().includes(normalized) ||
+        decodeHtmlEntities(comment.commentText).toLowerCase().includes(normalized) ||
+        decodeHtmlEntities(comment.bookTitle ?? "").toLowerCase().includes(normalized) ||
+        decodeHtmlEntities(comment.userName ?? "").toLowerCase().includes(normalized) ||
         String(comment.id).includes(normalized);
       return byStatus && byText;
     });
@@ -154,14 +173,18 @@ export function CommentsPage() {
   );
 
   return (
-    <motion.section
-      className="space-y-4"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.24 }}
+    <PageShell
+      title="Comentarios"
+      description="Modere comentarios publicados nos livros e controle a visibilidade."
+      breadcrumbs={buildBreadcrumbs(location.pathname)}
     >
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.24 }}
+      >
       <AdminListingSection<CommentResponse>
-        title="Gestao de Comentarios"
+        title="Lista de comentarios"
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Buscar por livro, usuario, texto ou ID"
@@ -179,23 +202,30 @@ export function CommentsPage() {
         success={success}
         legendActiveLabel="Publicado"
         legendInactiveLabel="Oculto"
+        onRowClick={setSelectedComment}
         renderMobileCard={(comment) => (
           <article className="book-card">
             <div className="book-card-body">
               <p className="book-card-id">#{comment.id}</p>
-              <h3>{comment.bookTitle || `Livro #${comment.bookId}`}</h3>
+              <h3>{decodeHtmlEntities(comment.bookTitle) || `Livro #${comment.bookId}`}</h3>
               <p className="book-card-author">
-                {comment.userName || (comment.userId ? `Usuario #${comment.userId}` : "Usuario anonimo")}
+                {decodeHtmlEntities(comment.userName) ||
+                  (comment.userId ? `Usuario #${comment.userId}` : "Usuario anonimo")}
               </p>
-              <p className="book-card-author">{comment.commentText}</p>
+              <p className="book-card-author">{decodeHtmlEntities(comment.commentText)}</p>
               <StatusBadge
                 active={comment.status === "1"}
                 activeLabel="Publicado"
                 inactiveLabel="Oculto"
               />
             </div>
-            <div className="book-card-actions">
-              <motion.button
+            <div
+              className="book-card-actions"
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
+            >
+              <TableRowActions>
+                <motion.button
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.98 }}
                 className="table-btn icon"
@@ -218,9 +248,19 @@ export function CommentsPage() {
                 <Trash2 size={14} />
                 Excluir
               </motion.button>
+              </TableRowActions>
             </div>
           </article>
         )}
+      />
+
+      <CommentDetailModal
+        comment={selectedComment}
+        open={selectedComment !== null}
+        saving={saving}
+        onClose={() => setSelectedComment(null)}
+        onToggleStatus={handleToggleStatus}
+        onDelete={(comment) => setConfirmDeleteId(comment.id)}
       />
 
       <ConfirmDialog
@@ -232,6 +272,7 @@ export function CommentsPage() {
         onConfirm={handleConfirmDelete}
         onCancel={() => setConfirmDeleteId(null)}
       />
-    </motion.section>
+      </motion.div>
+    </PageShell>
   );
 }

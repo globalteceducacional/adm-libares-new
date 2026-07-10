@@ -1,59 +1,53 @@
-import { LogOut, Menu, Moon, Sun } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { Button, SearchInput } from "../../../shared/ui";
-import { clearToken } from "../../../lib/auth";
-import { useThemeStore } from "../../../stores/themeStore";
+import { Bell, Menu } from "lucide-react";
+import { Button } from "../../../shared/ui";
+import { useAuth } from "../../auth/AuthContext";
+import { SchoolContextSwitcher } from "../../tenant/SchoolContextSwitcher";
 import { useLayoutStore } from "../../../stores/layoutStore";
 import { Breadcrumbs, type BreadcrumbItem } from "../../../shared/ui/PageHeader";
 
 type TopbarProps = {
-  title: string;
   breadcrumbs: BreadcrumbItem[];
 };
 
-export function Topbar({ title, breadcrumbs }: TopbarProps) {
-  const navigate = useNavigate();
-  const mode = useThemeStore((s) => s.mode);
-  const toggleTheme = useThemeStore((s) => s.toggle);
+export function Topbar({ breadcrumbs }: TopbarProps) {
   const setMobileSidebarOpen = useLayoutStore((s) => s.setMobileSidebarOpen);
-
-  function handleLogout() {
-    clearToken();
-    navigate("/login", { replace: true });
-  }
+  const { user } = useAuth();
+  const displayName = user?.name || user?.username || "Administrador";
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/80 bg-surface/85 backdrop-blur-md">
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6">
-        <div className="flex min-w-0 items-center gap-3">
+    <header className="sticky top-0 z-40 border-b border-border/80 bg-surface/95 shadow-sm backdrop-blur-md">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-3.5">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           <Button
             variant="icon"
             size="icon"
-            className="lg:hidden"
+            className="border-violet-200 text-primary hover:bg-violet-50 lg:hidden dark:border-violet-900/40 dark:hover:bg-violet-950/40"
             onClick={() => setMobileSidebarOpen(true)}
-            aria-label="Abrir menu"
+            aria-label="Abrir menu lateral"
           >
             <Menu size={18} />
           </Button>
           <div className="min-w-0">
-            <Breadcrumbs items={breadcrumbs} className="mb-1 hidden sm:flex" />
-            <h1 className="truncate text-lg font-bold text-foreground md:text-xl">{title}</h1>
+            <p className="truncate font-display text-sm font-semibold text-foreground md:text-base">
+              {displayName}
+            </p>
+            <div className="overflow-x-auto">
+              <Breadcrumbs items={breadcrumbs} className="whitespace-nowrap text-xs sm:text-sm sm:whitespace-normal" />
+            </div>
           </div>
         </div>
 
-        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
-          <SearchInput
-            className="w-full min-w-[220px] sm:w-[280px]"
-            placeholder="Buscar no painel..."
-            aria-label="Buscar no painel"
-          />
-          <Button variant="icon" size="icon" onClick={toggleTheme} aria-label="Alternar tema">
-            {mode === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+        <div className="flex shrink-0 items-center gap-2">
+          <SchoolContextSwitcher />
+          <Button variant="icon" size="icon" aria-label="Notificacoes (em breve)" title="Notificacoes">
+            <Bell size={18} />
           </Button>
-          <Button variant="secondary" onClick={handleLogout}>
-            <LogOut size={16} />
-            Sair
-          </Button>
+          <div
+            className="hidden h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-xs font-bold text-white shadow-md shadow-violet-600/25 sm:grid"
+            aria-hidden
+          >
+            {displayName.charAt(0).toUpperCase()}
+          </div>
         </div>
       </div>
     </header>

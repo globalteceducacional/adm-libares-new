@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { ClipboardList } from "lucide-react";
 import { useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { getQueryErrorMessage, useAuditQuery } from "../../features/shared/api/queries";
+import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import type {
   AuditActorActivityRow,
   AuditConsistencyRow,
@@ -10,7 +11,7 @@ import type {
   AuditSoftDeleteRow
 } from "../../types/audit";
 import { DataTable, type DataTableColumn } from "../components/table/DataTable";
-import { Skeleton, TableSkeleton } from "../../shared/ui";
+import { Alert, PageShell, Skeleton, TableSkeleton } from "../../shared/ui";
 
 function auditReasonMessage(reason: string | undefined | null): string {
   switch (reason) {
@@ -26,6 +27,7 @@ function auditReasonMessage(reason: string | undefined | null): string {
 }
 
 export function AuditPage() {
+  const location = useLocation();
   const auditQuery = useAuditQuery();
   const data = auditQuery.data ?? null;
   const loading = auditQuery.isLoading;
@@ -105,50 +107,42 @@ export function AuditPage() {
     []
   );
 
+  const auditShell = {
+    title: "Auditoria",
+    description: "Exclusoes logicas recentes, atividade por ator e consistencia dos dados.",
+    breadcrumbs: buildBreadcrumbs(location.pathname)
+  };
+
   if (loading) {
     return (
-      <motion.section
-        className="books-page-stack"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.24 }}
-        aria-busy="true"
-        aria-label="Carregando auditoria"
-      >
-        <article className="card page-card elevated">
-          <div className="card-header">
-            <h2>
-              <ClipboardList size={20} style={{ verticalAlign: "text-bottom", marginRight: 8 }} />
-              Auditoria
-            </h2>
-          </div>
-          <Skeleton className="h-4 w-64" />
-        </article>
-        <article className="card page-card elevated">
-          <TableSkeleton rows={4} />
-        </article>
-        <article className="card page-card elevated">
-          <TableSkeleton rows={6} />
-        </article>
-      </motion.section>
+      <PageShell {...auditShell}>
+        <motion.div
+          className="books-page-stack"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.24 }}
+          aria-busy="true"
+          aria-label="Carregando auditoria"
+        >
+          <article className="card page-card elevated">
+            <Skeleton className="h-4 w-64" />
+          </article>
+          <article className="card page-card elevated">
+            <TableSkeleton rows={4} />
+          </article>
+          <article className="card page-card elevated">
+            <TableSkeleton rows={6} />
+          </article>
+        </motion.div>
+      </PageShell>
     );
   }
 
   if (error) {
     return (
-      <motion.section
-        className="books-page-stack"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.24 }}
-      >
-        <article className="card page-card elevated">
-          <div className="card-header">
-            <h2>Auditoria</h2>
-          </div>
-          <p className="error-text">{error}</p>
-        </article>
-      </motion.section>
+      <PageShell {...auditShell}>
+        <Alert tone="danger">{error}</Alert>
+      </PageShell>
     );
   }
 
@@ -158,45 +152,23 @@ export function AuditPage() {
 
   if (!data.ok) {
     return (
-      <motion.section
+      <PageShell {...auditShell}>
+        <Alert tone="warning">
+          Base adm_libare_core, modo core e views de auditoria sao necessarios para esta pagina.
+        </Alert>
+        <p className="error-text">{auditReasonMessage(data.reason)}</p>
+      </PageShell>
+    );
+  }
+
+  return (
+    <PageShell {...auditShell}>
+      <motion.div
         className="books-page-stack"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.24 }}
       >
-        <article className="card page-card elevated">
-          <div className="card-header">
-            <h2>
-              <ClipboardList size={20} style={{ verticalAlign: "text-bottom", marginRight: 8 }} />
-              Auditoria indisponivel
-            </h2>
-          </div>
-          <p className="muted-text">
-            Base adm_libare_core, modo core e script 012 sao necessarios para esta pagina.
-          </p>
-          <p className="error-text">{auditReasonMessage(data.reason)}</p>
-        </article>
-      </motion.section>
-    );
-  }
-
-  return (
-    <motion.section
-      className="books-page-stack"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.24 }}
-    >
-      <article className="card page-card elevated">
-        <div className="card-header">
-          <h2>
-            <ClipboardList size={20} style={{ verticalAlign: "text-bottom", marginRight: 8 }} />
-            Auditoria
-          </h2>
-        </div>
-        <p className="muted-text">Views vw_audit_* — exclusoes logicas recentes e atividade por ator (updated_by).</p>
-      </article>
-
       <article className="card page-card elevated">
         <div className="card-header">
           <h2>Resumo por modulo</h2>
@@ -246,7 +218,8 @@ export function AuditPage() {
           />
         </article>
       </div>
-    </motion.section>
+      </motion.div>
+    </PageShell>
   );
 }
 

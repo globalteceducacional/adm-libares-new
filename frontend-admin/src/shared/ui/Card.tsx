@@ -40,12 +40,12 @@ export function CardHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className={cn("mb-4 flex flex-wrap items-start justify-between gap-3", className)}>
+    <div className={cn("mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between", className)}>
       <div className="min-w-0 space-y-1">
         <h2 className="text-base font-semibold text-foreground md:text-lg">{title}</h2>
         {description ? <p className="text-sm text-muted">{description}</p> : null}
       </div>
-      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+      {actions ? <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">{actions}</div> : null}
     </div>
   );
 }

@@ -10,6 +10,8 @@ Param(
 
 $ErrorActionPreference = "Stop"
 
+. (Join-Path $PSScriptRoot "Get-DevProjectRoot.ps1")
+
 function Write-Step($message) {
     Write-Host ""
     Write-Host "==> $message" -ForegroundColor Cyan
@@ -109,7 +111,7 @@ function Test-DbSeed($dbHost, $dbPort, $dbUser, $dbName) {
 
     try {
         $safeDbName = $dbName.Replace("'", "''")
-        $query = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '$safeDbName' AND table_name IN ('tbl_users','tbl_books','tbl_comments','tbl_admin');"
+        $query = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '$safeDbName' AND table_name IN ('tbl_users','tbl_books','tbl_comments','app_admin_users');"
         $output = & mysql -h $dbHost -P $dbPort -u $dbUser -N -e $query 2>$null
         if ($LASTEXITCODE -ne 0) {
             return @{
@@ -222,10 +224,14 @@ if ($hasDocker) {
     Write-Host "[ALERTA] Docker nao encontrado. docker compose nao podera ser usado." -ForegroundColor Yellow
 }
 
-$root = Resolve-Path "$PSScriptRoot/../.."
-$frontendPath = Join-Path $root "frontend-admin"
-$backendPath = Join-Path $root "backend"
-$dumpPath = Join-Path $root "u778451386_ebook.sql"
+$paths = Get-DevProjectRoot -ScriptRoot $PSScriptRoot
+$frontendPath = Join-Path $paths.Root "frontend-admin"
+$backendPath = Join-Path $paths.GradleRoot "backend"
+$dumpPath = Join-Path $paths.Root "u778451386_ebook.sql"
+
+if ($paths.UsesJunction) {
+    Write-Host "[INFO] Gradle via junction: $($paths.GradleRoot)" -ForegroundColor DarkGray
+}
 
 Assert-Directory $frontendPath "Diretorio do frontend"
 Assert-Directory $backendPath "Diretorio do backend"
@@ -292,7 +298,7 @@ if ($SkipBuild) {
         Write-Host "[OK] .env criado a partir de .env.example" -ForegroundColor Green
     }
 
-    Push-Location $frontendPath
+    Push-Location -LiteralPath $frontendPath
     try {
         Invoke-RequiredCommand { npm install } "Falha ao executar npm install no frontend"
         Invoke-RequiredCommand { npm run build } "Falha ao executar npm run build no frontend"
@@ -308,10 +314,11 @@ if ($SkipTests) {
     Write-Host "[ALERTA] Testes do backend ignorados por parametro (-SkipTests)." -ForegroundColor Yellow
     $status["Backend"] = "Ignorado"
 } else {
-    Push-Location $backendPath
+    Push-Location -LiteralPath $backendPath
     try {
+        $env:JAVA_TOOL_OPTIONS = "-Dfile.encoding=UTF-8"
         if (Test-Path ".\gradlew.bat") {
-            Invoke-RequiredCommand { .\gradlew.bat test } "Falha nos testes do backend via gradlew"
+            Invoke-RequiredCommand { .\gradlew.bat test --no-daemon } "Falha nos testes do backend via gradlew"
             Write-Host "[OK] Testes backend executados com gradle wrapper" -ForegroundColor Green
             $status["Backend"] = "OK"
         } elseif ($hasGradle) {
@@ -330,7 +337,7 @@ if ($SkipTests) {
 
 if ($StartFrontend) {
     Write-Step "Iniciando frontend em modo desenvolvimento"
-    Push-Location $frontendPath
+    Push-Location -LiteralPath $frontendPath
     try {
         Invoke-RequiredCommand { npm run dev } "Falha ao iniciar frontend em modo desenvolvimento"
         $status["FrontendDev"] = "OK"

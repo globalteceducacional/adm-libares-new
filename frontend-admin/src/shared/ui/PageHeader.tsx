@@ -47,12 +47,14 @@ export function PageHeader({
   return (
     <header className="mb-5 space-y-2">
       {breadcrumbs ? <Breadcrumbs items={breadcrumbs} /> : null}
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-xl font-bold tracking-tight text-foreground md:text-2xl">{title}</h1>
           {description ? <p className="mt-1 text-sm text-muted">{description}</p> : null}
         </div>
-        {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+        {actions ? (
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">{actions}</div>
+        ) : null}
       </div>
     </header>
   );

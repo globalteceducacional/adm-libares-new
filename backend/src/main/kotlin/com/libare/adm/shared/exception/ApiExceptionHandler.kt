@@ -16,6 +16,14 @@ class ApiExceptionHandler {
     fun handleUnauthorized(ex: UnauthorizedException): ResponseEntity<Map<String, String>> =
         ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(mapOf("message" to ex.message.orEmpty()))
 
+    @ExceptionHandler(BadRequestException::class)
+    fun handleBadRequest(ex: BadRequestException): ResponseEntity<Map<String, String>> =
+        ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mapOf("message" to ex.message.orEmpty()))
+
+    @ExceptionHandler(ForbiddenException::class)
+    fun handleForbidden(ex: ForbiddenException): ResponseEntity<Map<String, String>> =
+        ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapOf("message" to ex.message.orEmpty()))
+
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidation(ex: MethodArgumentNotValidException): ResponseEntity<Map<String, String>> {
         val firstError = ex.bindingResult.fieldErrors.firstOrNull()?.defaultMessage ?: "Dados invalidos"

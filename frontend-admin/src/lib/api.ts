@@ -1,4 +1,4 @@
-import { clearToken, getToken } from "./auth";
+import { clearToken, getSchoolContextId, getToken } from "./auth";
 
 const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
@@ -8,7 +8,7 @@ type RequestOptions = Omit<RequestInit, "headers"> & {
   disableUnauthorizedRedirect?: boolean;
 };
 
-export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+function buildHeaders(options: RequestOptions): Record<string, string> {
   const token = getToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -19,11 +19,20 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     headers.Authorization = `Bearer ${token}`;
   }
 
+  const schoolContextId = getSchoolContextId();
+  if (schoolContextId != null) {
+    headers["X-School-Context"] = String(schoolContextId);
+  }
+
+  return headers;
+}
+
+export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...options,
-      headers
+      headers: buildHeaders(options)
     });
   } catch {
     throw new Error(
@@ -32,8 +41,6 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
 
   if (!response.ok) {
-    // Apenas 401 representa sessao invalida/expirada. 403 e 500 sao erros do endpoint
-    // (ex.: dados indisponiveis) e NAO devem deslogar o usuario.
     if (response.status === 401 && !options.disableUnauthorizedRedirect) {
       clearToken();
       window.location.href = "/login";
@@ -65,6 +72,11 @@ export async function apiUploadForm<T>(path: string, formData: FormData): Promis
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
+  }
+
+  const schoolContextId = getSchoolContextId();
+  if (schoolContextId != null) {
+    headers["X-School-Context"] = String(schoolContextId);
   }
 
   let response: Response;

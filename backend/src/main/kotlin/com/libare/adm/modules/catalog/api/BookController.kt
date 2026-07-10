@@ -1,15 +1,20 @@
 package com.libare.adm.modules.catalog.api
 
+import com.libare.adm.modules.catalog.api.dto.BookCoverUploadResponse
+import com.libare.adm.modules.catalog.api.dto.BookFileUploadResponse
 import com.libare.adm.modules.catalog.api.dto.BookResponse
 import com.libare.adm.modules.catalog.api.dto.AuthorOptionResponse
+import com.libare.adm.modules.catalog.api.dto.CategoryOptionResponse
 import com.libare.adm.modules.catalog.api.dto.HomeSectionOptionResponse
 import com.libare.adm.modules.catalog.api.dto.UpsertBookRequest
 import com.libare.adm.modules.catalog.application.CreateBookUseCase
 import com.libare.adm.modules.catalog.application.DeleteBookUseCase
 import com.libare.adm.modules.catalog.application.ListAuthorOptionsUseCase
 import com.libare.adm.modules.catalog.application.ListBooksUseCase
+import com.libare.adm.modules.catalog.application.ListCategoryOptionsUseCase
 import com.libare.adm.modules.catalog.application.ListHomeSectionOptionsUseCase
 import com.libare.adm.modules.catalog.application.UpdateBookUseCase
+import com.libare.adm.modules.catalog.infrastructure.storage.LegacyBookAssetStorage
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -20,22 +25,26 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.multipart.MultipartFile
 
 @RestController
 @RequestMapping("/api/v1/books")
 class BookController(
     private val listBooksUseCase: ListBooksUseCase,
     private val listAuthorOptionsUseCase: ListAuthorOptionsUseCase,
+    private val listCategoryOptionsUseCase: ListCategoryOptionsUseCase,
     private val listHomeSectionOptionsUseCase: ListHomeSectionOptionsUseCase,
     private val createBookUseCase: CreateBookUseCase,
     private val updateBookUseCase: UpdateBookUseCase,
-    private val deleteBookUseCase: DeleteBookUseCase
+    private val deleteBookUseCase: DeleteBookUseCase,
+    private val legacyBookAssetStorage: LegacyBookAssetStorage
 ) {
 
     @GetMapping
-    fun list(): ResponseEntity<List<BookResponse>> {
-        val books = listBooksUseCase.execute()
+    fun list(@RequestParam(required = false) acervoId: Long?): ResponseEntity<List<BookResponse>> {
+        val books = listBooksUseCase.execute(acervoId)
         return ResponseEntity.ok(books)
     }
 
@@ -45,10 +54,33 @@ class BookController(
         return ResponseEntity.ok(options)
     }
 
+    @GetMapping("/category-options")
+    fun listCategoryOptions(): ResponseEntity<List<CategoryOptionResponse>> {
+        val options = listCategoryOptionsUseCase.execute()
+        return ResponseEntity.ok(options)
+    }
+
     @GetMapping("/home-section-options")
     fun listHomeSectionOptions(): ResponseEntity<List<HomeSectionOptionResponse>> {
         val options = listHomeSectionOptionsUseCase.execute()
         return ResponseEntity.ok(options)
+    }
+
+    @PostMapping("/upload/cover")
+    fun uploadCover(@RequestParam("file") file: MultipartFile): ResponseEntity<BookCoverUploadResponse> {
+        val filename = legacyBookAssetStorage.storeCover(file)
+        return ResponseEntity.ok(BookCoverUploadResponse(filename = filename))
+    }
+
+    @PostMapping("/upload/file")
+    fun uploadBookFile(@RequestParam("file") file: MultipartFile): ResponseEntity<BookFileUploadResponse> {
+        val stored = legacyBookAssetStorage.storeBookFile(file)
+        return ResponseEntity.ok(
+            BookFileUploadResponse(
+                filename = stored.filename,
+                fileUrl = stored.fileUrl
+            )
+        )
     }
 
     @PostMapping

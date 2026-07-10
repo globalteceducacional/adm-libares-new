@@ -48,7 +48,7 @@ export function HomeSectionsPage() {
   const books = booksQuery.data ?? [];
   const loading = sectionsQuery.isLoading;
   const listingError = sectionsQuery.error
-    ? getQueryErrorMessage(sectionsQuery.error, "Falha ao carregar secoes")
+    ? getQueryErrorMessage(sectionsQuery.error, "Falha ao carregar seções")
     : undefined;
 
   const [formError, setFormError] = useState("");
@@ -108,17 +108,17 @@ export function HomeSectionsPage() {
       if (editingId) {
         await updateHomeSection(editingId, payload);
         resetForm();
-        showSuccess("Secao atualizada com sucesso.");
+        showSuccess("Seção atualizada com sucesso.");
       } else {
         await createHomeSection(payload);
         resetForm();
-        showSuccess("Secao criada com sucesso.");
+        showSuccess("Seção criada com sucesso.");
       }
       await invalidate.homeSections();
       await invalidate.homeSectionOptions();
       await invalidate.books();
     } catch (submitError) {
-      setFormError(submitError instanceof Error ? submitError.message : "Falha ao salvar secao");
+      setFormError(submitError instanceof Error ? submitError.message : "Falha ao salvar seção");
     } finally {
       setSaving(false);
     }
@@ -147,11 +147,11 @@ export function HomeSectionsPage() {
       if (editingId === sectionId) {
         resetForm();
       }
-      showSuccess("Secao desativada com sucesso.");
+      showSuccess("Seção desativada com sucesso.");
       await invalidate.homeSections();
       await invalidate.homeSectionOptions();
     } catch (deleteError) {
-      setFormError(deleteError instanceof Error ? deleteError.message : "Falha ao desativar secao");
+      setFormError(deleteError instanceof Error ? deleteError.message : "Falha ao desativar seção");
     } finally {
       setSaving(false);
       setConfirmDeleteId(null);
@@ -226,7 +226,7 @@ export function HomeSectionsPage() {
   const listStats = useMemo(() => {
     const active = sections.filter((section) => section.status === "1").length;
     return [
-      { label: "Total de secoes", value: sections.length },
+      { label: "Total de seções", value: sections.length },
       { label: "Ativas", value: active },
       {
         label: "Exibidas",
@@ -242,8 +242,8 @@ export function HomeSectionsPage() {
       hero={
         <PageHeroStrip
           icon={LayoutList}
-          title="Secoes"
-          description="Gerencie secoes da home e vincule livros do catalogo filtrado por escola."
+          title="Seções"
+          description="Gerencie seções da home e vincule livros do catalogo filtrado por escola."
           tone="primary"
         />
       }
@@ -251,7 +251,7 @@ export function HomeSectionsPage() {
     >
       {needsSchoolContext ? (
         <Alert tone="warning">
-          Selecione uma escola no topo do painel para carregar livros e montar secoes por tenant.
+          Selecione uma escola no topo do painel para carregar livros e montar seções por tenant.
         </Alert>
       ) : null}
 
@@ -259,8 +259,8 @@ export function HomeSectionsPage() {
         <BerryFormPanel
           id="home-section-form"
           icon={LayoutList}
-          title={editingId ? "Editar secao" : "Cadastrar nova secao"}
-          description="Defina o titulo, status e os livros que aparecem nesta secao da home."
+          title={editingId ? "Editar seção" : "Cadastrar nova seção"}
+          description="Defina o titulo, status e os livros que aparecem nesta seção da home."
         >
           <form className="book-form modern" onSubmit={handleSubmit}>
             <label className="form-field">
@@ -289,7 +289,7 @@ export function HomeSectionsPage() {
             </label>
 
             <div className="form-field">
-              <span>Livros da secao</span>
+              <span>Livros da seção</span>
               {needsSchoolContext ? (
                 <small className="form-hint">Selecione uma escola para listar livros disponiveis.</small>
               ) : booksQuery.isLoading ? (
@@ -326,7 +326,7 @@ export function HomeSectionsPage() {
                 type="submit"
                 disabled={saving || needsSchoolContext || isTitleInvalid}
               >
-                {saving ? "Salvando..." : editingId ? "Atualizar secao" : "Criar secao"}
+                {saving ? "Salvando..." : editingId ? "Atualizar seção" : "Criar seção"}
               </motion.button>
               <button
                 className="secondary-btn"
@@ -356,7 +356,7 @@ export function HomeSectionsPage() {
       </PermissionGate>
 
       <AdminListingSection<HomeSectionResponse>
-        title="Listagem de secoes"
+        title="Listagem de seções"
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Buscar por titulo ou ID"
@@ -366,8 +366,8 @@ export function HomeSectionsPage() {
         data={filteredSections}
         loading={loading}
         keyExtractor={(section) => section.id}
-        emptyMessage="Nenhuma secao encontrada para os filtros aplicados."
-        countLabel={`${filteredSections.length} secao(oes) com o filtro atual`}
+        emptyMessage="Nenhuma seção encontrada para os filtros aplicados."
+        countLabel={`${filteredSections.length} seção(ões) com o filtro atual`}
         error={listingError}
         renderMobileCard={(section) => (
           <article className="book-card">
@@ -383,8 +383,8 @@ export function HomeSectionsPage() {
 
       <ConfirmDialog
         open={confirmDeleteId !== null}
-        title="Desativar secao"
-        description="A secao sera marcada como inativa. Deseja continuar?"
+        title="Desativar seção"
+        description="A seção sera marcada como inativa. Deseja continuar?"
         confirmLabel="Desativar"
         loading={saving}
         onConfirm={handleConfirmDelete}

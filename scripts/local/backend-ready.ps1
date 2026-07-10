@@ -4,6 +4,8 @@ Param(
 
 $ErrorActionPreference = "Stop"
 
+. (Join-Path $PSScriptRoot "Get-DevProjectRoot.ps1")
+
 function Write-Step($message) {
     Write-Host ""
     Write-Host "==> $message" -ForegroundColor Cyan
@@ -36,12 +38,16 @@ function Test-Url($url) {
 }
 
 try {
-    $root = Resolve-Path "$PSScriptRoot/../.."
-    $backendPath = Join-Path $root "backend"
+    $paths = Get-DevProjectRoot -ScriptRoot $PSScriptRoot
+    $backendPath = Join-Path $paths.GradleRoot "backend"
     Assert-Directory $backendPath "Diretorio do backend"
 
+    if ($paths.UsesJunction) {
+        Write-Host "[INFO] Gradle via junction: $($paths.GradleRoot)" -ForegroundColor DarkGray
+    }
+
     Write-Step "Preparando backend"
-    Push-Location $backendPath
+    Push-Location -LiteralPath $backendPath
     try {
         $hasGradle = Test-Command "gradle"
         $hasWrapper = Test-Path ".\gradlew.bat"
@@ -63,7 +69,8 @@ try {
         }
 
         Write-Step "Executando testes do backend"
-        Invoke-RequiredCommand { .\gradlew.bat test } "Falha ao executar testes do backend"
+        $env:JAVA_TOOL_OPTIONS = "-Dfile.encoding=UTF-8"
+        Invoke-RequiredCommand { .\gradlew.bat test --no-daemon } "Falha ao executar testes do backend"
         Write-Host "[OK] Testes executados com sucesso." -ForegroundColor Green
 
         if ($StartBackend) {

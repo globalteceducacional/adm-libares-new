@@ -1,10 +1,13 @@
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useState } from "react";
 import { Button } from "../../../shared/ui";
 import { cn } from "../../../shared/lib/cn";
 import { useLayoutStore } from "../../../stores/layoutStore";
-import { NAV_ITEMS } from "../config/navigation";
+import { useNavigation } from "../hooks/useNavigation";
+import { SidebarFooter } from "./SidebarFooter";
+import { SidebarNavGroup } from "./SidebarNavGroup";
+import { SidebarSearch } from "./SidebarSearch";
 
 type SidebarProps = {
   collapsed: boolean;
@@ -13,82 +16,94 @@ type SidebarProps = {
 };
 
 export function Sidebar({ collapsed, mobileOpen, onNavigate }: SidebarProps) {
+  const [searchQuery, setSearchQuery] = useState("");
   const toggleSidebarCollapsed = useLayoutStore((s) => s.toggleSidebarCollapsed);
+  const closeMobileSidebar = useLayoutStore((s) => s.closeMobileSidebar);
+  const expandedGroups = useLayoutStore((s) => s.expandedGroups);
+  const toggleGroupExpanded = useLayoutStore((s) => s.toggleGroupExpanded);
+  const { groups, getBadge } = useNavigation(searchQuery);
+  const showExpandedSidebar = !collapsed || mobileOpen;
 
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-[60] flex w-[280px] flex-col gap-5 border-r border-indigo-500/20 bg-gradient-to-b from-[#171b2e] to-[#111628] p-4 text-sidebar-foreground transition-transform duration-300 lg:static lg:translate-x-0",
-        collapsed && "lg:w-[92px]",
-        mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        "berry-sidebar fixed inset-y-0 left-0 z-[60] flex max-h-[100dvh] flex-col border-r border-sidebar-border text-sidebar-foreground transition-[width,transform] duration-300 lg:static lg:max-h-none",
+        showExpandedSidebar ? "w-[min(280px,100vw)] px-4 py-4" : "w-[80px] px-2 py-4",
+        mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0 lg:shadow-none"
       )}
       aria-label="Menu principal"
     >
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 text-xs font-bold text-white">
-            AL
-          </span>
-          {!collapsed ? (
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-white">Libare Digital</p>
-              <p className="truncate text-xs text-indigo-200/70">Admin Console</p>
-            </div>
-          ) : null}
-        </div>
+      <div
+        className={cn(
+          "berry-sidebar-brand flex items-center gap-3",
+          !showExpandedSidebar && "flex-col border-b-0 pb-0"
+        )}
+      >
+        <motion.span
+          layout
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-600 to-violet-400 text-sm font-bold text-white shadow-lg shadow-violet-900/40 ring-2 ring-white/10"
+        >
+          LD
+        </motion.span>
+        {showExpandedSidebar ? (
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-display text-base font-bold tracking-tight text-sidebar-foreground">
+              Berry Admin
+            </p>
+            <p className="truncate text-xs text-sidebar-muted">Libare Digital</p>
+          </div>
+        ) : null}
+        {mobileOpen ? (
+          <Button
+            variant="icon"
+            size="icon"
+            className="ml-auto shrink-0 border-white/10 bg-white/5 text-sidebar-foreground hover:bg-white/10 lg:hidden"
+            onClick={closeMobileSidebar}
+            aria-label="Fechar menu lateral"
+          >
+            <X size={16} />
+          </Button>
+        ) : null}
         <Button
           variant="icon"
           size="icon"
-          className="hidden border-indigo-400/20 bg-white/5 text-indigo-100 hover:bg-white/10 lg:inline-flex"
+          className={cn(
+            "hidden shrink-0 border-white/10 bg-white/5 text-sidebar-foreground hover:bg-white/10 lg:inline-flex",
+            !showExpandedSidebar && "mt-1"
+          )}
           onClick={toggleSidebarCollapsed}
-          aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
+          aria-label={collapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
           aria-expanded={!collapsed}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </Button>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1" aria-label="Navegacao principal">
-        {NAV_ITEMS.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            onClick={onNavigate}
-            title={collapsed ? item.label : undefined}
-            className={({ isActive }) =>
-              cn(
-                "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                isActive
-                  ? "bg-sidebar-active text-white shadow-sm"
-                  : "text-indigo-100/80 hover:bg-white/5 hover:text-white"
-              )
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <item.icon size={18} className={isActive ? "text-violet-300" : "text-indigo-200/80"} />
-                {!collapsed ? (
-                  <span className="truncate">{item.label}</span>
-                ) : (
-                  <span className="sr-only">{item.label}</span>
-                )}
-                {isActive ? (
-                  <motion.span
-                    layoutId="nav-active"
-                    className="ml-auto hidden h-2 w-2 rounded-full bg-violet-300 lg:block"
-                  />
-                ) : null}
-              </>
-            )}
-          </NavLink>
-        ))}
+      <SidebarSearch value={searchQuery} onChange={setSearchQuery} collapsed={!showExpandedSidebar} />
+
+      <nav
+        className="mt-3 flex flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden pr-1 scrollbar-thin"
+        aria-label="Navegacao principal"
+      >
+        {groups.length === 0 ? (
+          <p className="px-3 py-2 text-sm text-sidebar-muted">Nenhum item encontrado.</p>
+        ) : (
+          groups.map((group, index) => (
+            <div key={group.id} className={cn(index > 0 && "berry-sidebar-group")}>
+              <SidebarNavGroup
+                group={group}
+                collapsed={!showExpandedSidebar}
+                expanded={expandedGroups[group.id] ?? group.defaultExpanded ?? true}
+                onToggle={() => toggleGroupExpanded(group.id)}
+                getBadge={getBadge}
+                onNavigate={onNavigate}
+              />
+            </div>
+          ))
+        )}
       </nav>
 
-      {!collapsed ? (
-        <div className="rounded-xl border border-indigo-400/15 bg-white/5 p-3 text-xs text-indigo-100/80">
-          Painel administrativo com foco em catalogo, usuarios e moderacao.
-        </div>
-      ) : null}
+      <SidebarFooter collapsed={!showExpandedSidebar} />
     </aside>
   );
 }

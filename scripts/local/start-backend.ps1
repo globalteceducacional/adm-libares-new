@@ -10,6 +10,7 @@ Param(
 $ErrorActionPreference = "Stop"
 
 . (Join-Path $PSScriptRoot "Get-DevDbConfig.ps1")
+. (Join-Path $PSScriptRoot "Get-DevProjectRoot.ps1")
 
 function Write-Step([string]$message) {
     Write-Host ""
@@ -26,11 +27,15 @@ function Test-HttpOk([string]$url) {
 }
 
 try {
-    $root = Resolve-Path (Join-Path $PSScriptRoot "../..")
-    $backendPath = Join-Path $root "backend"
+    $paths = Get-DevProjectRoot -ScriptRoot $PSScriptRoot
+    $backendPath = Join-Path $paths.GradleRoot "backend"
 
     if (-not (Test-Path -LiteralPath (Join-Path $backendPath "gradlew.bat"))) {
         throw "gradlew.bat nao encontrado em $backendPath"
+    }
+
+    if ($paths.UsesJunction) {
+        Write-Host "[INFO] Gradle via junction: $($paths.GradleRoot)" -ForegroundColor DarkGray
     }
 
     $settings = Get-DevDbSettings
@@ -48,18 +53,20 @@ try {
     }
 
     Set-DevDbEnvironment $settings
+    $env:JAVA_TOOL_OPTIONS = "-Dfile.encoding=UTF-8"
 
     Write-Step "Backend (MySQL $($settings.User)@$($settings.Host):$($settings.Port)/$($settings.Name))"
-    Push-Location $backendPath
+    Push-Location -LiteralPath $backendPath
     try {
         if ($WaitForHealth) {
             .\gradlew.bat bootRun --no-daemon
         } else {
             $cmd = @"
-Set-Location '$backendPath'
+Set-Location -LiteralPath '$backendPath'
 `$env:DB_URL = '$($settings.Url)'
 `$env:DB_USER = '$($settings.User)'
 `$env:DB_PASSWORD = '$($settings.Password -replace "'", "''")'
+`$env:JAVA_TOOL_OPTIONS = '-Dfile.encoding=UTF-8'
 Write-Host 'Iniciando backend...' -ForegroundColor Cyan
 .\gradlew.bat bootRun --no-daemon
 "@

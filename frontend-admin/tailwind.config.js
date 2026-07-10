@@ -22,9 +22,14 @@ export default {
         danger: "var(--danger)",
         border: "var(--border)",
         sidebar: {
-          DEFAULT: "#111628",
-          foreground: "#c7d2fe",
-          active: "rgba(129, 140, 248, 0.22)"
+          DEFAULT: "var(--sidebar)",
+          foreground: "var(--sidebar-foreground)",
+          muted: "var(--sidebar-muted)",
+          border: "var(--sidebar-border)",
+          hover: "var(--sidebar-hover)",
+          active: "var(--sidebar-active)",
+          accent: "var(--sidebar-accent)",
+          input: "var(--sidebar-input)"
         }
       },
       boxShadow: {
@@ -35,7 +40,8 @@ export default {
         "2xl": "1.125rem"
       },
       fontFamily: {
-        sans: ["Inter", "Segoe UI", "system-ui", "sans-serif"]
+        sans: ["Inter", "Segoe UI", "system-ui", "sans-serif"],
+        display: ["Poppins", "Inter", "Segoe UI", "sans-serif"]
       },
       animation: {
         shimmer: "shimmer 1.4s ease-in-out infinite"

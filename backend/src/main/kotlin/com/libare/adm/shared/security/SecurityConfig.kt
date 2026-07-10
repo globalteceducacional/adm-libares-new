@@ -1,5 +1,6 @@
 package com.libare.adm.shared.security
 
+import com.libare.adm.shared.tenant.TenantContextFilter
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -23,7 +24,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
 class SecurityConfig(
-    private val jwtAuthenticationFilter: JwtAuthenticationFilter
+    private val jwtAuthenticationFilter: JwtAuthenticationFilter,
+    private val tenantContextFilter: TenantContextFilter
 ) {
 
     /**
@@ -44,7 +46,7 @@ class SecurityConfig(
                 it.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 it.requestMatchers("/legacy/assets/**").permitAll()
                 it.requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
-                it.anyRequest().hasRole("ADMIN")
+                it.anyRequest().authenticated()
             }
             .exceptionHandling {
                 // Sem credenciais validas -> 401 (sessao). Mantemos 403 apenas para acesso negado real.
@@ -55,6 +57,7 @@ class SecurityConfig(
             .httpBasic { it.disable() }
             .formLogin { it.disable() }
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
+            .addFilterAfter(tenantContextFilter, JwtAuthenticationFilter::class.java)
 
         return http.build()
     }
@@ -71,6 +74,7 @@ class SecurityConfig(
         )
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
         configuration.allowedHeaders = listOf("*")
+        configuration.exposedHeaders = listOf("X-School-Context")
         configuration.allowCredentials = true
 
         val source = UrlBasedCorsConfigurationSource()

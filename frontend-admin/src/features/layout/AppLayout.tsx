@@ -1,10 +1,9 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import { cn } from "../../shared/lib/cn";
 import { useLayoutStore } from "../../stores/layoutStore";
 import { useThemeStore } from "../../stores/themeStore";
-import { buildBreadcrumbs, findNavItem } from "./config/navigation";
+import { buildBreadcrumbs } from "./config/navigation";
 import { Sidebar } from "./components/Sidebar";
 import { Topbar } from "./components/Topbar";
 
@@ -23,8 +22,17 @@ export function AppLayout() {
     closeMobileSidebar();
   }, [location.pathname, closeMobileSidebar]);
 
-  const navItem = findNavItem(location.pathname);
-  const title = navItem?.label ?? "Painel Administrativo";
+  useEffect(() => {
+    if (!mobileSidebarOpen) {
+      return;
+    }
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileSidebarOpen]);
+
   const breadcrumbs = buildBreadcrumbs(location.pathname);
 
   return (
@@ -52,9 +60,9 @@ export function AppLayout() {
 
       <Sidebar collapsed={sidebarCollapsed} mobileOpen={mobileSidebarOpen} onNavigate={closeMobileSidebar} />
 
-      <div className={cn("flex min-w-0 flex-1 flex-col", sidebarCollapsed ? "lg:pl-0" : "")}>
-        <Topbar title={title} breadcrumbs={breadcrumbs} />
-        <main id="main-content" tabIndex={-1} className="flex-1 px-4 py-5 outline-none md:px-6 md:py-6">
+      <div className="flex min-w-0 flex-1 flex-col lg:min-h-screen">
+        <Topbar breadcrumbs={breadcrumbs} />
+        <main id="main-content" tabIndex={-1} className="flex-1 px-3 py-4 outline-none sm:px-5 md:px-8 md:py-6">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}

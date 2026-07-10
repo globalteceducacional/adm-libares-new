@@ -4,15 +4,14 @@
 
 @layer base {
   :root {
-    --bg: #f4f7ff;
+    --bg: #f8fafc;
     --surface: #ffffff;
-    --surface-2: #eef2ff;
-    --text: #161c2d;
-    /* slate-600: garante contraste AA (>=4.5:1) tambem sobre superficies tonalizadas */
-    --text-muted: #475569;
-    --primary: #5e35b1;
-    --primary-rgb: 94 53 177;
-    --primary-700: #4a2a90;
+    --surface-2: #f1f5f9;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --primary: #673ab7;
+    --primary-rgb: 103 58 183;
+    --primary-700: #512da8;
     --teal: #1fb2a5;
     --warning: #f59e0b;
     /* amber-700: usado quando o aviso aparece como TEXTO (o amber claro falha em AA) */
@@ -20,7 +19,16 @@
     --success: #22c55e;
     --danger: #ef4444;
     --border: #e2e8f0;
-    --shadow: 0 8px 24px rgba(17, 24, 39, 0.08);
+    --shadow: 0 4px 20px rgba(103, 58, 183, 0.08);
+    /* Berry: sidebar sempre escuro, independente do tema do conteudo */
+    --sidebar: #212946;
+    --sidebar-foreground: #ffffff;
+    --sidebar-muted: #8492c4;
+    --sidebar-border: rgba(255, 255, 255, 0.08);
+    --sidebar-hover: rgba(103, 58, 183, 0.14);
+    --sidebar-active: #673ab7;
+    --sidebar-accent: #b39ddb;
+    --sidebar-input: rgba(255, 255, 255, 0.06);
   }
 
   :root.dark {
@@ -32,6 +40,14 @@
     --warning-strong: #fbbf24;
     --border: #2a3550;
     --shadow: 0 16px 32px rgba(4, 6, 14, 0.45);
+    --sidebar: #1a2038;
+    --sidebar-foreground: #f8fafc;
+    --sidebar-muted: #94a3b8;
+    --sidebar-border: rgba(255, 255, 255, 0.07);
+    --sidebar-hover: rgba(129, 140, 248, 0.16);
+    --sidebar-active: #7e57c2;
+    --sidebar-accent: #b39ddb;
+    --sidebar-input: rgba(255, 255, 255, 0.05);
   }
 
   html,
@@ -42,11 +58,11 @@
 
   body {
     @apply m-0 font-sans text-foreground antialiased;
-    background: radial-gradient(circle at top right, #dfe6ff 0%, var(--bg) 30%);
+    background: linear-gradient(180deg, #fafafa 0%, var(--bg) 120px);
   }
 
   :root.dark body {
-    background: radial-gradient(circle at top right, #1a2542 0%, var(--bg) 32%);
+    background: linear-gradient(180deg, #0f1320 0%, var(--bg) 160px);
   }
 
   button:focus-visible,
