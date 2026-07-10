@@ -1,17 +1,18 @@
 services:
   db:
-    image: mysql:8.4
+    image: postgres:16
     container_name: adm-libare-db
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: adm_libare
-      MYSQL_ROOT_PASSWORD: root
+      POSTGRES_DB: adm_libare_core
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d adm_libare_core"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -26,9 +27,10 @@ services:
       db:
         condition: service_healthy
     environment:
-      DB_URL: jdbc:mysql://db:3306/adm_libare?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      DB_USER: root
-      DB_PASSWORD: root
+      DB_URL: jdbc:postgresql://db:5432/adm_libare_core
+      DB_USER: postgres
+      DB_PASSWORD: admin
+      APP_DATA_MODE: core
       JWT_SECRET: VGhpcy1pcy1hLXN0cm9uZy1kZW1vLWp3dC1zZWNyZXQta2V5LTIwMjY=
     ports:
       - "8080:8080"
@@ -47,4 +49,4 @@ services:
       - "5173:80"
 
 volumes:
-  mysql_data:
+  postgres_data:
