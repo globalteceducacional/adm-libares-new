@@ -16,7 +16,7 @@ interface AuthorLookupRepository : JpaRepository<AuthorEntity, Long> {
             SELECT
                 a.id AS id,
                 a.name AS name,
-                '' AS image
+                COALESCE(a.image_path, '') AS image
             FROM catalog_authors a
             WHERE a.deleted_at IS NULL
               AND a.is_active = TRUE

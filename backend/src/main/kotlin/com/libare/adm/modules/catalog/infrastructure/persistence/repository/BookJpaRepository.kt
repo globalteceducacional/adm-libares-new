@@ -19,9 +19,9 @@ interface BookJpaRepository : JpaRepository<BookEntity, Long> {
             SELECT
                 b.id AS id,
                 b.title AS title,
-                b.author_id AS authorId,
+                COALESCE(b.author_id, 0) AS authorId,
                 a.name AS authorName,
-                '' AS bookCoverImage,
+                COALESCE(b.cover_image, '') AS bookCoverImage,
                 CASE WHEN b.is_active THEN '1' ELSE '0' END AS status
             FROM catalog_books b
             LEFT JOIN catalog_authors a ON a.id = b.author_id AND a.deleted_at IS NULL

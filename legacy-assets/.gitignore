@@ -1,0 +1,4 @@
+# Pasta local para assets PHP (images/, uploads/).
+# No VPS: sincronizar a partir de adm-libares e montar via docker-compose.
+*
+!.gitignore

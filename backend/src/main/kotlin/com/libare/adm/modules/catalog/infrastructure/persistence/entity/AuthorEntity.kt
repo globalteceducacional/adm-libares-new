@@ -8,7 +8,6 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import jakarta.persistence.Transient
 
 @Entity
 @Table(name = "catalog_authors")
@@ -24,7 +23,7 @@ class AuthorEntity(
     @Column(name = "is_active", nullable = false)
     val status: String = "1",
 
-    /** Campo legado sem coluna no core; retorna vazio para manter o contrato da API. */
-    @field:Transient
+    /** Nome do ficheiro em adm-libares/images (legado PHP). */
+    @Column(name = "image_path", length = 255)
     val image: String = "",
 )

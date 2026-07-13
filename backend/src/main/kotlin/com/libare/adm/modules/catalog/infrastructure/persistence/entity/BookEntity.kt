@@ -10,7 +10,6 @@ import jakarta.persistence.Id
 import jakarta.persistence.PrePersist
 import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
-import jakarta.persistence.Transient
 
 @Entity
 @Table(name = "catalog_books")
@@ -22,8 +21,8 @@ class BookEntity(
     @Column(name = "title", nullable = false, length = 255)
     val title: String,
 
-    @Column(name = "author_id", nullable = false)
-    val authorId: Long,
+    @Column(name = "author_id")
+    val authorId: Long? = null,
 
     @Convert(converter = StatusBooleanConverter::class)
     @Column(name = "is_active", nullable = false)
@@ -33,8 +32,8 @@ class BookEntity(
     @Column(name = "normalized_title", nullable = false, length = 255)
     var normalizedTitle: String = "",
 
-    /** Campo legado sem coluna no core; retorna vazio para manter o contrato da API. */
-    @field:Transient
+    /** Nome do ficheiro em adm-libares/images (legado PHP). */
+    @Column(name = "cover_image", length = 255)
     val bookCoverImage: String = "",
 ) {
     @PrePersist

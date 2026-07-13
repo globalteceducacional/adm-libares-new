@@ -31,9 +31,13 @@ services:
       DB_USER: postgres
       DB_PASSWORD: admin
       APP_DATA_MODE: core
+      LEGACY_ASSETS_ROOT: /legacy-assets
       JWT_SECRET: VGhpcy1pcy1hLXN0cm9uZy1kZW1vLWp3dC1zZWNyZXQta2V5LTIwMjY=
     ports:
       - "8080:8080"
+    volumes:
+      # Pasta host com images/ e uploads/ (copiar de adm-libares)
+      - ./legacy-assets:/legacy-assets:ro
 
   frontend:
     build:
