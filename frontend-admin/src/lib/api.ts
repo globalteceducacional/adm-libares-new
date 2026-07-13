@@ -26,8 +26,9 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       headers
     });
   } catch {
+    const target = API_BASE_URL || (typeof window !== "undefined" ? window.location.origin : "(origem atual)");
     throw new Error(
-      "Nao foi possivel contactar o servidor. Verifique se o backend esta ativo em http://localhost:8080."
+      `Nao foi possivel contactar o servidor. Verifique se o backend esta ativo em ${target}.`
     );
   }
 

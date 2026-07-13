@@ -40,8 +40,8 @@ services:
       context: ./frontend-admin
       dockerfile: Dockerfile
       args:
-        # IP/host público do VPS (browser do usuário não resolve "localhost" do servidor)
-        VITE_API_BASE_URL: http://187.127.47.204:8080
+        # Vazio = mesmo origin do admin; nginx faz proxy /api -> backend:8080
+        VITE_API_BASE_URL: ""
     container_name: adm-libare-frontend
     restart: unless-stopped
     depends_on:
