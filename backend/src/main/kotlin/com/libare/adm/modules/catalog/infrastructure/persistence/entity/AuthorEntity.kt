@@ -25,6 +25,6 @@ class AuthorEntity(
     val status: String = "1",
 
     /** Campo legado sem coluna no core; retorna vazio para manter o contrato da API. */
-    @get:Transient
+    @field:Transient
     val image: String = "",
 )

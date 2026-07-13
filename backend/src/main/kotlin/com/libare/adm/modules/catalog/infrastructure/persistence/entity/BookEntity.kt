@@ -34,7 +34,7 @@ class BookEntity(
     var normalizedTitle: String = "",
 
     /** Campo legado sem coluna no core; retorna vazio para manter o contrato da API. */
-    @get:Transient
+    @field:Transient
     val bookCoverImage: String = "",
 ) {
     @PrePersist
