@@ -119,11 +119,65 @@ docker compose down -v       # para e APAGA volumes (dados)
 
 ---
 
-## 4) Produção (checklist mínimo)
+## 4) Produção — domínio admin (`admin.alenxandriaglobaltec.com`)
 
+Painel React + proxy `/api` no container frontend (`frontend-admin/nginx.conf`).
+
+### DNS
+
+Apontar `admin.alenxandriaglobaltec.com` (A/CNAME) para o IP do servidor.
+
+### TLS + reverse proxy (host)
+
+Exemplo nginx no host (443 → container frontend na 5173):
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name admin.alenxandriaglobaltec.com;
+
+    # ssl_certificate     /etc/letsencrypt/live/admin.alenxandriaglobaltec.com/fullchain.pem;
+    # ssl_certificate_key /etc/letsencrypt/live/admin.alenxandriaglobaltec.com/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:5173;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Certbot: `sudo certbot --nginx -d admin.alenxandriaglobaltec.com`
+
+### Compose (produção)
+
+```bash
+cd /opt/adm-libares-new
+git fetch origin && git checkout feat/site-module   # ou main apos merge
+git pull
+
+export LEGACY_PUBLIC_BASE_URL=https://admin.alenxandriaglobaltec.com
+export CORS_ALLOWED_ORIGIN_PATTERNS='https://admin.alenxandriaglobaltec.com,https://*.alenxandriaglobaltec.com,http://localhost:*'
+# opcional: pasta PHP com images/
+# export LEGACY_ASSETS_ROOT=/opt/adm-libares
+
+docker compose up -d --build
+curl -sI https://admin.alenxandriaglobaltec.com
+curl -s https://admin.alenxandriaglobaltec.com/api/v1/auth/login -o /dev/null -w '%{http_code}\n' -X POST -H 'Content-Type: application/json' -d '{}'
+```
+
+No build do frontend, `VITE_API_BASE_URL` vazio (default do compose) = chamadas relative `/api/...` via nginx do container.
+
+### Checklist mínimo
+
+- [ ] DNS `admin.alenxandriaglobaltec.com` → servidor
+- [ ] TLS (Let's Encrypt)
 - [ ] Trocar `JWT_SECRET`, senhas DB, não usar defaults do compose
-- [ ] `VITE_API_BASE_URL` no build do frontend = URL pública da API (não `localhost` se o browser for externo)
-- [ ] Firewall: liberar só 80/443 (nginx) em vez de 8080/5173 públicos, se possível
+- [ ] CORS inclui `https://admin.alenxandriaglobaltec.com` (já no default do backend)
+- [ ] Firewall: liberar só 80/443 (nginx host) em vez de 8080/5173 públicos, se possível
 - [ ] Backup do volume `postgres_data` ou `mysql_data`
 - [ ] Não commitar `.env` / `application-local.yml` / `dev.local.ps1`
 
