@@ -54,7 +54,7 @@ Base IT: `backend/src/test/kotlin/com/libare/adm/site/`
 | `vizualização_site` | — | — |
 
 - [x] **Step 1: Confirmar nomes** (PHP `manage_*_site.php` / inserts)
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```powershell
 git add docs/superpowers/specs/2026-07-23-site-module-design.md docs/superpowers/plans/2026-07-23-site-module.md
@@ -71,7 +71,7 @@ git commit -m "docs(site): confirm exact MySQL table and status column names"
 - Modify: `backend/src/main/kotlin/com/libare/adm/modules/schools/application/ProvisionSchoolRolesUseCase.kt`
 - Test: `backend/src/test/kotlin/com/libare/adm/site/SitePermissionsIT.kt`
 
-- [ ] **Step 1: IT falhando — permissões existem e SCHOOL_ADMIN não as recebe no provision**
+- [x] **Step 1: IT falhando — permissões existem e SCHOOL_ADMIN não as recebe no provision**
 
 ```kotlin
 package com.libare.adm.site
@@ -130,7 +130,7 @@ class SitePermissionsIT {
 }
 ```
 
-- [ ] **Step 2: Rodar IT e ver falha**
+- [x] **Step 2: Rodar IT e ver falha**
 
 ```powershell
 cd "C:\Users\User\Repository\Restruturacao ´Projeto PhP\backend"
@@ -141,7 +141,7 @@ $env:DB_PASSWORD = $script:DevDbPassword
 
 Expected: FAIL (permissões ausentes)
 
-- [ ] **Step 3: Criar `V13__site_permissions.sql`**
+- [x] **Step 3: Criar `V13__site_permissions.sql`**
 
 ```sql
 -- Permissões do módulo Site (plataforma / globais)
@@ -173,7 +173,7 @@ WHERE r.name = 'SCHOOL_ADMIN'
   );
 ```
 
-- [ ] **Step 4: Excluir `sites.*` no provisioner e no sync de roles de escola**
+- [x] **Step 4: Excluir `sites.*` no provisioner e no sync de roles de escola**
 
 Em `RoleSupportServices.kt` (`SyncRolePermissionsUseCase.companion`):
 
@@ -203,7 +203,7 @@ WHERE p.code NOT IN (
 )
 ```
 
-- [ ] **Step 5: Rodar IT — PASS**
+- [x] **Step 5: Rodar IT — PASS**
 
 ```powershell
 .\gradlew.bat test --tests com.libare.adm.site.SitePermissionsIT --no-daemon
@@ -211,7 +211,7 @@ WHERE p.code NOT IN (
 
 Expected: `BUILD SUCCESSFUL`
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add backend/src/main/resources/db/migration/V13__site_permissions.sql backend/src/main/kotlin/com/libare/adm/modules/rbac/application/RoleSupportServices.kt backend/src/main/kotlin/com/libare/adm/modules/schools/application/ProvisionSchoolRolesUseCase.kt backend/src/test/kotlin/com/libare/adm/site/SitePermissionsIT.kt
@@ -231,7 +231,7 @@ git commit -m "feat(rbac): add sites.* permissions excluded from school roles"
 - Create: `.../site/api/SiteAuthorController.kt`
 - Test: `backend/src/test/kotlin/com/libare/adm/site/SiteAuthorCrudIT.kt`
 
-- [ ] **Step 1: IT falhando**
+- [x] **Step 1: IT falhando**
 
 ```kotlin
 package com.libare.adm.site
@@ -309,13 +309,13 @@ class SiteAuthorCrudIT {
 
 Se `SHOW COLUMNS` mostrar que `Autores_site` **não** tem coluna `status`, use soft-delete físico `DELETE` ou confirme coluna real e ajuste IT/entity.
 
-- [ ] **Step 2: Rodar — FAIL (404 / No mapping)**
+- [x] **Step 2: Rodar — FAIL (404 / No mapping)**
 
 ```powershell
 .\gradlew.bat test --tests com.libare.adm.site.SiteAuthorCrudIT --no-daemon
 ```
 
-- [ ] **Step 3: Implementar policy + entity + repo + DTOs + use cases + controller**
+- [x] **Step 3: Implementar policy + entity + repo + DTOs + use cases + controller**
 
 `SitePolicy.kt`:
 
@@ -568,13 +568,13 @@ class SiteAuthorController(
 }
 ```
 
-- [ ] **Step 4: Rodar IT — PASS**
+- [x] **Step 4: Rodar IT — PASS**
 
 ```powershell
 .\gradlew.bat test --tests com.libare.adm.site.SiteAuthorCrudIT --no-daemon
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add backend/src/main/kotlin/com/libare/adm/modules/site backend/src/test/kotlin/com/libare/adm/site/SiteAuthorCrudIT.kt
@@ -590,15 +590,15 @@ git commit -m "feat(site): CRUD site-authors with sites.* policy"
 - Create: `SiteCategoryJpaRepository.kt`, DTOs, `SiteCategoryCrudUseCases.kt`, `SiteCategoryController.kt` (`/api/v1/site-categories`)
 - Test: `SiteCategoryCrudIT.kt`
 
-- [ ] **Step 1: IT falhando** — create/list/delete em `/api/v1/site-categories` (mesmo padrão de `SiteAuthorCrudIT`, campos `name`, `image`, `status` se existir; PK `cid`).
+- [x] **Step 1: IT falhando** — create/list/delete em `/api/v1/site-categories` (mesmo padrão de `SiteAuthorCrudIT`, campos `name`, `image`, `status` se existir; PK `cid`).
 
-- [ ] **Step 2: Rodar — FAIL**
+- [x] **Step 2: Rodar — FAIL**
 
 ```powershell
 .\gradlew.bat test --tests com.libare.adm.site.SiteCategoryCrudIT --no-daemon
 ```
 
-- [ ] **Step 3: Implementar** — entity:
+- [x] **Step 3: Implementar** — entity:
 
 ```kotlin
 @Entity
@@ -614,7 +614,7 @@ class SiteCategoryEntity(
 
 Use cases com `SitePolicy`; upload imagem via `storeCatalogImage`. Soft-delete: se não houver coluna status, hard-delete **apenas** se nenhum Site referenciar o `cid` no CSV `cat_id` (senão `BadRequestException`). Preferir hard-delete com guard se o PHP legado deletava de verdade.
 
-- [ ] **Step 4: PASS + commit**
+- [x] **Step 4: PASS + commit**
 
 ```powershell
 .\gradlew.bat test --tests com.libare.adm.site.SiteCategoryCrudIT --no-daemon
@@ -630,9 +630,9 @@ git commit -m "feat(site): CRUD site-categories"
 - Create: `SiteSectionEntity.kt` (`Seções_site`), repo, DTOs (`title`, `siteIds: List<Long>`, `status`), use cases, `SiteSectionController` (`/api/v1/site-sections`)
 - Test: `SiteSectionCrudIT.kt`
 
-- [ ] **Step 1: IT** — POST com `{"title":"...","siteIds":[],"status":"1"}`, GET list, DELETE soft (`status=0`).
+- [x] **Step 1: IT** — POST com `{"title":"...","siteIds":[],"status":"1"}`, GET list, DELETE soft (`status=0`).
 
-- [ ] **Step 2: FAIL → implement**
+- [x] **Step 2: FAIL → implement**
 
 `section_books` persiste CSV (`siteIds.joinToString(",")`). List response faz `split` → `List<Long>`.
 
@@ -648,7 +648,7 @@ class SiteSectionEntity(
 )
 ```
 
-- [ ] **Step 3: PASS + commit**
+- [x] **Step 3: PASS + commit**
 
 ```powershell
 git commit -m "feat(site): CRUD site-sections"
@@ -663,7 +663,7 @@ git commit -m "feat(site): CRUD site-sections"
 - Reuse: `LegacyBookAssetStorage.storeCover`, `storeBookFile`
 - Test: `SiteCrudIT.kt` (+ assert delete não toca `tbl_books`)
 
-- [ ] **Step 1: IT falhando**
+- [x] **Step 1: IT falhando**
 
 ```kotlin
 @Test
@@ -700,7 +700,7 @@ fun `create site then delete does not touch tbl_books`() {
 
 Ajustar `authorId`/`categoryIds` para IDs válidos criados no setup do teste (insert JDBC em `Autores_site` / categoria).
 
-- [ ] **Step 2: FAIL → Entity**
+- [x] **Step 2: FAIL → Entity**
 
 ```kotlin
 @Entity
@@ -731,7 +731,7 @@ Uploads no controller:
 - `POST /api/v1/sites/upload/cover`
 - `POST /api/v1/sites/upload/file`
 
-- [ ] **Step 3: PASS + commit**
+- [x] **Step 3: PASS + commit**
 
 ```powershell
 .\gradlew.bat test --tests com.libare.adm.site.SiteCrudIT --no-daemon
@@ -747,9 +747,9 @@ git commit -m "feat(site): CRUD sites with safe cascade delete"
 - Create: `SiteCommentPolicy.kt` (`sites.comments.view` / `sites.comments.moderate`)
 - Test: `SiteCommentIT.kt`
 
-- [ ] **Step 1: IT** — insert JDBC um comentário, GET lista com token, DELETE, assert row gone (ou status).
+- [x] **Step 1: IT** — insert JDBC um comentário, GET lista com token, DELETE, assert row gone (ou status).
 
-- [ ] **Step 2: Implement**
+- [x] **Step 2: Implement**
 
 ```kotlin
 @Component
@@ -762,7 +762,7 @@ class SiteCommentPolicy(private val authorizationService: AuthorizationService) 
 List: ordenar por id desc; response com `id`, `siteId`, `userName`, `commentText`, `commentOn`.  
 Delete: `DELETE FROM Comentarios_site WHERE id = ?` (PHP incompleto — hard delete OK).
 
-- [ ] **Step 3: PASS + commit**
+- [x] **Step 3: PASS + commit**
 
 ```powershell
 git commit -m "feat(site): list and delete site comments"
@@ -780,7 +780,7 @@ git commit -m "feat(site): list and delete site comments"
 - Modify: `backend/src/main/kotlin/com/libare/adm/shared/security/SecurityConfig.kt`
 - Test: `backend/src/test/kotlin/com/libare/adm/site/ApiSitesIT.kt`
 
-- [ ] **Step 1: IT falhando**
+- [x] **Step 1: IT falhando**
 
 ```kotlin
 @SpringBootTest
@@ -817,7 +817,7 @@ class ApiSitesIT {
 }
 ```
 
-- [ ] **Step 2: FAIL (401)** — liberar rota em `SecurityConfig`:
+- [x] **Step 2: FAIL (401)** — liberar rota em `SecurityConfig`:
 
 ```kotlin
 it.requestMatchers("/api_sites.php").permitAll()
@@ -825,7 +825,7 @@ it.requestMatchers("/api_sites.php").permitAll()
 
 (Aceitar GET e POST.)
 
-- [ ] **Step 3: Envelope + controller + dispatcher**
+- [x] **Step 3: Envelope + controller + dispatcher**
 
 ```kotlin
 object GalileuEnvelope {
@@ -865,13 +865,13 @@ Ordem mínima para PASS dos ITs: `home`, `cat_list`, default unknown. Em seguida
 
 Para `app_details`, SELECT `tbl_settings` WHERE id=1 — campos iguais ao PHP (manter typo `interstital`).
 
-- [ ] **Step 4: IT smoke PASS; estender com `book_id` se houver seed**
+- [x] **Step 4: IT smoke PASS; estender com `book_id` se houver seed**
 
 ```powershell
 .\gradlew.bat test --tests com.libare.adm.site.ApiSitesIT --no-daemon
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git commit -m "feat(site): mirror api_sites.php with Galileu envelope"
@@ -887,7 +887,7 @@ git commit -m "feat(site): mirror api_sites.php with Galileu envelope"
 - Create: `frontend-admin/src/types/site*.ts`, `services/siteAuthorsService.ts`, `siteCategoriesService.ts`, `siteSectionsService.ts`, `sitesService.ts`, `siteCommentsService.ts`
 - Create: `frontend-admin/src/ui/pages/SitesPage.tsx`, `SiteAuthorsPage.tsx`, `SiteCategoriesPage.tsx`, `SiteSectionsPage.tsx`, `SiteCommentsPage.tsx`
 
-- [ ] **Step 1: Nav group**
+- [x] **Step 1: Nav group**
 
 Em `NAV_GROUPS`, após `catalog`, inserir:
 
@@ -940,7 +940,7 @@ Em `NAV_GROUPS`, após `catalog`, inserir:
 
 Estender `NavBadgeKey` se badges forem usados (opcional nesta entrega).
 
-- [ ] **Step 2: Router**
+- [x] **Step 2: Router**
 
 Lazy imports + rotas:
 
@@ -952,7 +952,7 @@ Lazy imports + rotas:
 <Route path="/sites/comentarios" element={<GuardedPage path="/sites/comentarios" element={<SiteCommentsPage />} />} />
 ```
 
-- [ ] **Step 3: Services**
+- [x] **Step 3: Services**
 
 Exemplo `siteAuthorsService.ts`:
 
@@ -987,11 +987,11 @@ export function uploadSiteAuthorImage(file: File) {
 
 Repetir para categories/sections/sites/comments apontando para `/api/v1/site-categories`, `/site-sections`, `/sites`, `/site-comments`.
 
-- [ ] **Step 4: Pages**
+- [x] **Step 4: Pages**
 
 Copiar estrutura Berry de `AuthorsPage.tsx` / `BooksPage.tsx` / `CommentsPage.tsx` / `HomeSectionsPage.tsx` / `CategoriesPage.tsx`, trocando services e removendo qualquer filtro de acervo. SitesPage: form com multi-categoria, autor Site, capa, tipo arquivo URL|local.
 
-- [ ] **Step 5: Build FE**
+- [x] **Step 5: Build FE**
 
 ```powershell
 cd "C:\Users\User\Repository\Restruturacao ´Projeto PhP\frontend-admin"
@@ -1000,7 +1000,7 @@ npm run build
 
 Expected: success
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add frontend-admin
@@ -1011,7 +1011,7 @@ git commit -m "feat(admin): Site menu and CRUD pages"
 
 ### Task 9: Verificação final + docs
 
-- [ ] **Step 1: Suite Site**
+- [x] **Step 1: Suite Site**
 
 ```powershell
 cd "C:\Users\User\Repository\Restruturacao ´Projeto PhP\backend"
@@ -1020,14 +1020,14 @@ cd "C:\Users\User\Repository\Restruturacao ´Projeto PhP\backend"
 
 Expected: todos PASS
 
-- [ ] **Step 2: Smoke manual**
+- [ ] **Step 2: Smoke manual** (não executado nesta verificação — ITs cobrem CRUD/Galileu/safe-delete)
 
 1. Login painel → menu Site visível (super-admin).
 2. Criar autor/categoria/site; listar; soft-delete.
 3. `Invoke-RestMethod "http://localhost:8080/api_sites.php?method_name=home"` → JSON com chave `Galileu`.
 4. Confirmar DELETE site não reduz `COUNT(*)` em `tbl_books`.
 
-- [ ] **Step 3: Atualizar status do spec**
+- [x] **Step 3: Atualizar status do spec**
 
 Em `docs/superpowers/specs/2026-07-23-site-module-design.md`:
 
@@ -1037,7 +1037,7 @@ Em `docs/superpowers/specs/2026-07-23-site-module-design.md`:
 
 Marcar critérios de aceite do spec com `[x]` quando verificados.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```powershell
 git add docs/superpowers/specs/2026-07-23-site-module-design.md

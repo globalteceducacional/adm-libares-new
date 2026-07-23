@@ -1,7 +1,8 @@
 # Módulo Site (admin + API leitor) — design
 
 **Data:** 2026-07-23  
-**Status:** Aprovado — aguardando plano de implementação  
+**Status:** Implementado — ver plano docs/superpowers/plans/2026-07-23-site-module.md  
+
 **Escopo:** Admin React + backend Kotlin (`modules/site/`) + espelho `/api_sites.php`
 
 ## Problema
@@ -178,11 +179,11 @@ Novo grupo de menu **Site** (paralelo a “Catálogo”):
 
 ## Critérios de aceite
 
-- [ ] Painel administra Sites/Autores/Categorias/Seções/Comentários sem PHP
+- [x] Painel administra Sites/Autores/Categorias/Seções/Comentários sem PHP
 - [ ] App Site funciona apontando host para Kotlin em `/api_sites.php`
-- [ ] Permissões `sites.*` controlam menu e APIs admin
-- [ ] Delete de Site não remove dados de ebook (`tbl_books` / `tbl_comments`)
-- [ ] Telas `*_site.php` e `api_sites.php` PHP podem ser desligadas após cutover
+- [x] Permissões `sites.*` controlam menu e APIs admin
+- [x] Delete de Site não remove dados de ebook (`tbl_books` / `tbl_comments`)
+- [x] Telas `*_site.php` e `api_sites.php` PHP podem ser desligadas após cutover
 
 ## Relação com docs existentes
 
