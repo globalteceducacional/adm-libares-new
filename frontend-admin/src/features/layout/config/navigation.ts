@@ -3,6 +3,7 @@ import {
   BookOpen,
   Building2,
   ClipboardList,
+  Globe,
   LayoutDashboard,
   LayoutList,
   Library,
@@ -113,6 +114,59 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         badgeKey: "acervos",
         permission: "acervos.view",
         keywords: ["escola", "biblioteca", "colecao"]
+      }
+    ]
+  },
+  {
+    id: "site",
+    label: "Site",
+    collapsible: true,
+    defaultExpanded: false,
+    items: [
+      {
+        id: "sites",
+        to: "/sites",
+        label: "Sites",
+        icon: Globe,
+        description: "Conteudos do catalogo Site",
+        permission: "sites.view",
+        keywords: ["site", "web", "conteudo"]
+      },
+      {
+        id: "site-authors",
+        to: "/sites/autores",
+        label: "Autores",
+        icon: Pencil,
+        description: "Autores do catalogo Site",
+        permission: "sites.view",
+        keywords: ["site", "autores"]
+      },
+      {
+        id: "site-categories",
+        to: "/sites/categorias",
+        label: "Categorias",
+        icon: Tags,
+        description: "Categorias do catalogo Site",
+        permission: "sites.view",
+        keywords: ["site", "categorias"]
+      },
+      {
+        id: "site-sections",
+        to: "/sites/secoes",
+        label: "Seções",
+        icon: LayoutList,
+        description: "Seções da home do Site",
+        permission: "sites.view",
+        keywords: ["site", "secoes", "seções", "home"]
+      },
+      {
+        id: "site-comments",
+        to: "/sites/comentarios",
+        label: "Comentários",
+        icon: MessageSquareText,
+        description: "Moderacao de comentarios do Site",
+        permission: "sites.comments.view",
+        keywords: ["site", "comentarios", "moderacao"]
       }
     ]
   },

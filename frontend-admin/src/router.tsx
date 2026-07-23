@@ -39,6 +39,21 @@ const SchoolsPage = lazy(() =>
 const RolesPage = lazy(() =>
   import("./ui/pages/RolesPage").then((module) => ({ default: module.RolesPage }))
 );
+const SitesPage = lazy(() =>
+  import("./ui/pages/SitesPage").then((module) => ({ default: module.SitesPage }))
+);
+const SiteAuthorsPage = lazy(() =>
+  import("./ui/pages/SiteAuthorsPage").then((module) => ({ default: module.SiteAuthorsPage }))
+);
+const SiteCategoriesPage = lazy(() =>
+  import("./ui/pages/SiteCategoriesPage").then((module) => ({ default: module.SiteCategoriesPage }))
+);
+const SiteSectionsPage = lazy(() =>
+  import("./ui/pages/SiteSectionsPage").then((module) => ({ default: module.SiteSectionsPage }))
+);
+const SiteCommentsPage = lazy(() =>
+  import("./ui/pages/SiteCommentsPage").then((module) => ({ default: module.SiteCommentsPage }))
+);
 const LoginPage = lazy(() =>
   import("./ui/pages/LoginPage").then((module) => ({ default: module.LoginPage }))
 );
@@ -87,6 +102,23 @@ export function AppRouter() {
           <Route path="/categorias" element={<GuardedPage path="/categorias" element={<CategoriesPage />} />} />
           <Route path="/secoes" element={<GuardedPage path="/secoes" element={<HomeSectionsPage />} />} />
           <Route path="/acervos" element={<GuardedPage path="/acervos" element={<AcervosPage />} />} />
+          <Route path="/sites" element={<GuardedPage path="/sites" element={<SitesPage />} />} />
+          <Route
+            path="/sites/autores"
+            element={<GuardedPage path="/sites/autores" element={<SiteAuthorsPage />} />}
+          />
+          <Route
+            path="/sites/categorias"
+            element={<GuardedPage path="/sites/categorias" element={<SiteCategoriesPage />} />}
+          />
+          <Route
+            path="/sites/secoes"
+            element={<GuardedPage path="/sites/secoes" element={<SiteSectionsPage />} />}
+          />
+          <Route
+            path="/sites/comentarios"
+            element={<GuardedPage path="/sites/comentarios" element={<SiteCommentsPage />} />}
+          />
           <Route path="/usuarios" element={<GuardedPage path="/usuarios" element={<UsersPage />} />} />
           <Route path="/comentarios" element={<CommentsPage />} />
           <Route path="/escolas" element={<GuardedPage path="/escolas" element={<SchoolsPage />} />} />

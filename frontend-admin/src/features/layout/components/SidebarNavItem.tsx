@@ -15,7 +15,7 @@ export function SidebarNavItem({ item, collapsed, badge, onNavigate }: SidebarNa
   return (
     <NavLink
       to={item.to}
-      end={item.to === "/dashboard"}
+      end={item.to === "/dashboard" || item.to === "/sites"}
       onClick={onNavigate}
       title={collapsed ? item.label : undefined}
       aria-label={collapsed ? item.label : undefined}
