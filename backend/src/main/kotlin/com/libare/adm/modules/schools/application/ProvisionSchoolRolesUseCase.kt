@@ -37,7 +37,9 @@ class ProvisionSchoolRolesUseCase(
             SELECT ?, p.id
             FROM app_permissions p
             WHERE p.code NOT IN (
-                'schools.view', 'schools.create', 'schools.update', 'schools.delete', 'platform.impersonate'
+                'schools.view', 'schools.create', 'schools.update', 'schools.delete', 'platform.impersonate',
+                'sites.view', 'sites.create', 'sites.update', 'sites.delete',
+                'sites.comments.view', 'sites.comments.moderate'
             )
             """.trimIndent(),
             roleId
