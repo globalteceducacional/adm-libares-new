@@ -84,7 +84,7 @@ Policies no estilo `BookPolicy` → `SitePolicy` / `SiteCommentPolicy`.
 
 ## Modelo de dados (legado existente)
 
-Nomes exatos de tabela/coluna devem ser confirmados no MySQL (`SHOW TABLES LIKE '%site%'`) por causa de encoding (`Categoría_site`, `Seções_site`, `vizualização_site`). Usar backticks nas queries/JPA `@Table`.
+Confirmado via código PHP canónico (`adm-libares/*_site.php`, 2026-07-23). Encoding com acentos nos nomes de tabela é real — usar o Unicode exacto em `@Table`.
 
 ### `Sites` (PK `id`)
 
@@ -93,11 +93,11 @@ Nomes exatos de tabela/coluna devem ser confirmados no MySQL (`SHOW TABLES LIKE 
 
 ### `Autores_site` (PK `author_id`)
 
-`author_name`, `author_description`, `author_image` (+ `status` se existir no schema)
+`author_name`, `author_description`, `author_image`, **`a_status`** (`"0"`\|`"1"`)
 
 ### `Categoría_site` (PK `cid`)
 
-`category_name`, `category_image`
+`category_name`, `category_image`, **`cat_status`**
 
 ### `Seções_site` (PK `id`)
 

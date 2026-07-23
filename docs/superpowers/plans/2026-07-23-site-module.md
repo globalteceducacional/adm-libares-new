@@ -39,23 +39,26 @@ Base IT: `backend/src/test/kotlin/com/libare/adm/site/`
 
 ### Task 0: Confirmar nomes exatos das tabelas Site no MySQL
 
-**Files:** nenhum (só descoberta)
+**Files:** `docs/superpowers/specs/2026-07-23-site-module-design.md`
 
-- [ ] **Step 1: Listar tabelas**
+**Resultado (confirmado 2026-07-23 via PHP canónico — CLI `mysql` indisponível no PATH local):**
+
+| Tabela | PK | Status column |
+|--------|-----|---------------|
+| `Sites` | `id` | `status` |
+| `Autores_site` | `author_id` | **`a_status`** |
+| `Categoría_site` | `cid` | **`cat_status`** |
+| `Seções_site` | `id` | `status` |
+| `Comentarios_site` | `id` | — |
+| `rating_sites` | — | — |
+| `vizualização_site` | — | — |
+
+- [x] **Step 1: Confirmar nomes** (PHP `manage_*_site.php` / inserts)
+- [ ] **Step 2: Commit**
 
 ```powershell
-mysql -uroot -padmin -e "SHOW TABLES FROM adm_libare LIKE '%site%'; SHOW TABLES FROM adm_libare LIKE 'Sites'; SHOW COLUMNS FROM adm_libare.Sites; SHOW COLUMNS FROM adm_libare.Autores_site;"
-```
-
-Expected: nomes reais (pode haver encoding em `Categoría_site`, `Seções_site`, `vizualização_site`). Anotar e usar **exatamente** esses nomes em `@Table(name = "...")` com backticks se necessário (`name = "\`Categoría_site\`"` não é válido no JPA — usar o nome Unicode exato retornado).
-
-- [ ] **Step 2: Commit de nota (opcional)**
-
-Se os nomes divergirem do spec, atualizar uma linha em `docs/superpowers/specs/2026-07-23-site-module-design.md` na seção “Modelo de dados” e commit:
-
-```powershell
-git add docs/superpowers/specs/2026-07-23-site-module-design.md
-git commit -m "docs(site): confirm exact MySQL table names for Site module"
+git add docs/superpowers/specs/2026-07-23-site-module-design.md docs/superpowers/plans/2026-07-23-site-module.md
+git commit -m "docs(site): confirm exact MySQL table and status column names"
 ```
 
 ---
