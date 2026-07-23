@@ -2,6 +2,7 @@ package com.libare.adm.shared.security
 
 import com.libare.adm.shared.tenant.TenantContextFilter
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
@@ -25,7 +26,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 @Configuration
 class SecurityConfig(
     private val jwtAuthenticationFilter: JwtAuthenticationFilter,
-    private val tenantContextFilter: TenantContextFilter
+    private val tenantContextFilter: TenantContextFilter,
+    @Value("\${app.security.cors-allowed-origin-patterns}")
+    private val corsAllowedOriginPatterns: String
 ) {
 
     /**
@@ -46,6 +49,8 @@ class SecurityConfig(
                 it.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 it.requestMatchers("/legacy/assets/**").permitAll()
                 it.requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+                // Espelho publico do leitor Site (api_sites.php) — sem JWT.
+                it.requestMatchers("/api_sites.php").permitAll()
                 it.anyRequest().authenticated()
             }
             .exceptionHandling {
@@ -67,11 +72,19 @@ class SecurityConfig(
 
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
+        val patterns = corsAllowedOriginPatterns
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
         val configuration = CorsConfiguration()
-        configuration.allowedOriginPatterns = listOf(
-            "http://localhost:*",
-            "http://127.0.0.1:*"
-        )
+        configuration.allowedOriginPatterns = patterns.ifEmpty {
+            listOf(
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "https://admin.alenxandriaglobaltec.com",
+                "https://*.alenxandriaglobaltec.com"
+            )
+        }
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
         configuration.allowedHeaders = listOf("*")
         configuration.exposedHeaders = listOf("X-School-Context")

@@ -18,7 +18,13 @@ class SyncRolePermissionsUseCase(
             "schools.create",
             "schools.update",
             "schools.delete",
-            "platform.impersonate"
+            "platform.impersonate",
+            "sites.view",
+            "sites.create",
+            "sites.update",
+            "sites.delete",
+            "sites.comments.view",
+            "sites.comments.moderate"
         )
     }
 

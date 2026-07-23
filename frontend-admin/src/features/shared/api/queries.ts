@@ -10,6 +10,11 @@ import { getDashboardSummary } from "../../../services/dashboardService";
 import { listComments } from "../../../services/commentsService";
 import { listUsers } from "../../../services/usersService";
 import { getAuditOverview } from "../../../services/auditService";
+import { listSiteAuthors } from "../../../services/siteAuthorsService";
+import { listSiteCategories } from "../../../services/siteCategoriesService";
+import { listSiteSections } from "../../../services/siteSectionsService";
+import { listSites } from "../../../services/sitesService";
+import { listSiteComments } from "../../../services/siteCommentsService";
 
 export const queryKeys = {
   books: (acervoId?: number) => (acervoId ? (["books", acervoId] as const) : (["books"] as const)),
@@ -27,7 +32,12 @@ export const queryKeys = {
   audit: ["audit"] as const,
   schools: ["schools"] as const,
   roles: ["roles"] as const,
-  permissions: ["permissions"] as const
+  permissions: ["permissions"] as const,
+  sites: ["sites"] as const,
+  siteAuthors: ["site-authors"] as const,
+  siteCategories: ["site-categories"] as const,
+  siteSections: ["site-sections"] as const,
+  siteComments: ["site-comments"] as const
 };
 
 export function getQueryErrorMessage(error: unknown, fallback: string): string {
@@ -107,6 +117,26 @@ export function usePermissionsQuery() {
   return useQuery({ queryKey: queryKeys.permissions, queryFn: listPermissions });
 }
 
+export function useSitesQuery() {
+  return useQuery({ queryKey: queryKeys.sites, queryFn: listSites });
+}
+
+export function useSiteAuthorsQuery() {
+  return useQuery({ queryKey: queryKeys.siteAuthors, queryFn: listSiteAuthors });
+}
+
+export function useSiteCategoriesQuery() {
+  return useQuery({ queryKey: queryKeys.siteCategories, queryFn: listSiteCategories });
+}
+
+export function useSiteSectionsQuery() {
+  return useQuery({ queryKey: queryKeys.siteSections, queryFn: listSiteSections });
+}
+
+export function useSiteCommentsQuery() {
+  return useQuery({ queryKey: queryKeys.siteComments, queryFn: listSiteComments });
+}
+
 export function useInvalidateAdminQueries() {
   const queryClient = useQueryClient();
 
@@ -128,6 +158,11 @@ export function useInvalidateAdminQueries() {
     roles: () => queryClient.invalidateQueries({ queryKey: queryKeys.roles }),
     permissions: () => queryClient.invalidateQueries({ queryKey: queryKeys.permissions }),
     dashboard: (periodDays: number) =>
-      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard(periodDays) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard(periodDays) }),
+    sites: () => queryClient.invalidateQueries({ queryKey: queryKeys.sites }),
+    siteAuthors: () => queryClient.invalidateQueries({ queryKey: queryKeys.siteAuthors }),
+    siteCategories: () => queryClient.invalidateQueries({ queryKey: queryKeys.siteCategories }),
+    siteSections: () => queryClient.invalidateQueries({ queryKey: queryKeys.siteSections }),
+    siteComments: () => queryClient.invalidateQueries({ queryKey: queryKeys.siteComments })
   };
 }

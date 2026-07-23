@@ -42,3 +42,5 @@ app:
     # Chave base64 para assinatura JWT em ambientes reais.
     jwt-secret: ${JWT_SECRET:VGhpcy1pcy1hLXN0cm9uZy1kZW1vLWp3dC1zZWNyZXQta2V5LTIwMjY=}
     jwt-expiration-minutes: 60
+    # Origins CORS (separados por virgula). Override: CORS_ALLOWED_ORIGIN_PATTERNS
+    cors-allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*,https://admin.alenxandriaglobaltec.com,https://*.alenxandriaglobaltec.com}
