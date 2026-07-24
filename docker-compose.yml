@@ -38,8 +38,8 @@ services:
     # Sem ports no host: 8080/8081 ja sao da luditeca neste VPS.
     # API externa: http://<ip>:5173/api e /legacy/assets (proxy do frontend → backend:8080).
     volumes:
-      # No host: coloque/copie a pasta adm-libares (ou so images+uploads) e ajuste o caminho
-      - ${LEGACY_ASSETS_HOST_PATH:-./legacy-assets}:/legacy-assets:ro
+      # RW: upload de capas/arquivos grava em images/ e uploads/
+      - ${LEGACY_ASSETS_HOST_PATH:-./legacy-assets}:/legacy-assets
 
   frontend:
     build:
