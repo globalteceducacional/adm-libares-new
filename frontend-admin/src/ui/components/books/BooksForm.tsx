@@ -123,6 +123,35 @@ export function BooksForm({
         ) : null}
       </label>
 
+      <div className="form-field">
+        <span>Capa do livro {editingId ? "(enviar nova para substituir)" : "(obrigatoria)"}</span>
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+          onChange={handleCoverChange}
+          disabled={saving || uploadingCover}
+          aria-label="Upload da capa do livro"
+        />
+        <small className="form-hint">
+          Selecione um arquivo de imagem (JPG/PNG). O upload grava em /legacy/assets/images.
+        </small>
+        {uploadingCover ? <small className="form-hint">Enviando capa...</small> : null}
+        {form.bookCoverImage ? (
+          <div className="book-cover-preview">
+            <LegacyImage
+              legacyPath={form.bookCoverImage}
+              folder="images"
+              alt="Pre-visualizacao da capa"
+              className="book-form-cover"
+              fallbackClassName="book-form-cover-placeholder"
+              fallbackText="Capa indisponivel (arquivo nao encontrado no servidor)"
+            />
+            <small className="form-hint">{form.bookCoverImage}</small>
+          </div>
+        ) : null}
+        {isCoverInvalid ? <small className="warning-text">Envie a imagem da capa.</small> : null}
+      </div>
+
       <fieldset className="form-field acervo-fieldset">
         <legend>Categorias</legend>
         {categoryOptions.length === 0 ? (
@@ -197,35 +226,6 @@ export function BooksForm({
           <small className="warning-text">A descricao e obrigatoria.</small>
         ) : null}
       </label>
-
-      <div className="form-field">
-        <span>Capa do livro {editingId ? "(enviar nova para substituir)" : "(obrigatoria)"}</span>
-        <input
-          type="file"
-          accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
-          onChange={handleCoverChange}
-          disabled={saving || uploadingCover}
-          aria-label="Upload da capa do livro"
-        />
-        <small className="form-hint">
-          Selecione um arquivo de imagem (JPG/PNG). O upload grava em /legacy/assets/images.
-        </small>
-        {uploadingCover ? <small className="form-hint">Enviando capa...</small> : null}
-        {form.bookCoverImage ? (
-          <div className="book-cover-preview">
-            <LegacyImage
-              legacyPath={form.bookCoverImage}
-              folder="images"
-              alt="Pre-visualizacao da capa"
-              className="book-form-cover"
-              fallbackClassName="book-form-cover-placeholder"
-              fallbackText="Capa indisponivel (arquivo nao encontrado no servidor)"
-            />
-            <small className="form-hint">{form.bookCoverImage}</small>
-          </div>
-        ) : null}
-        {isCoverInvalid ? <small className="warning-text">Envie a imagem da capa.</small> : null}
-      </div>
 
       <label className="form-field">
         <span>Tipo de arquivo</span>
