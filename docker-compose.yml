@@ -30,19 +30,22 @@ services:
       DB_USER: root
       DB_PASSWORD: root
       JWT_SECRET: VGhpcy1pcy1hLXN0cm9uZy1kZW1vLWp3dC1zZWNyZXQta2V5LTIwMjY=
-      # Producao: URL publica do admin (ou da API) para links de assets
-      LEGACY_PUBLIC_BASE_URL: ${LEGACY_PUBLIC_BASE_URL:-https://admin.alenxandriaglobaltec.com}
-      CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:*,http://127.0.0.1:*,https://admin.alenxandriaglobaltec.com,https://*.alenxandriaglobaltec.com}
-      LEGACY_ASSETS_ROOT: ${LEGACY_ASSETS_ROOT:-}
+      # URL publica usada em links absolutos de upload (deve ser acessivel no browser)
+      LEGACY_PUBLIC_BASE_URL: ${LEGACY_PUBLIC_BASE_URL:-http://187.127.47.204:5173}
+      CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:*,http://127.0.0.1:*,http://187.127.47.204:*,https://admin.alenxandriaglobaltec.com,https://*.alenxandriaglobaltec.com}
+      # Pasta no container com images/ e uploads/ do PHP (montar volume abaixo)
+      LEGACY_ASSETS_ROOT: ${LEGACY_ASSETS_ROOT:-/legacy-assets}
     ports:
       - "8080:8080"
+    volumes:
+      # No host: coloque/copie a pasta adm-libares (ou so images+uploads) e ajuste o caminho
+      - ${LEGACY_ASSETS_HOST_PATH:-./legacy-assets}:/legacy-assets:ro
 
   frontend:
     build:
       context: ./frontend-admin
       dockerfile: Dockerfile
       args:
-        # Same-origin via nginx.conf (proxy /api → backend)
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
         VITE_LEGACY_REMOTE_IMAGES_BASE_URL: ${VITE_LEGACY_REMOTE_IMAGES_BASE_URL:-https://ebook.alenxandriaglobaltec.com/images}
     container_name: adm-libare-frontend
