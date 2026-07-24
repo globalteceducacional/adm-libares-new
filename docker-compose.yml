@@ -36,7 +36,8 @@ services:
       # Pasta no container com images/ e uploads/ do PHP (montar volume abaixo)
       LEGACY_ASSETS_ROOT: ${LEGACY_ASSETS_ROOT:-/legacy-assets}
     ports:
-      - "8080:8080"
+      # 8080 no host ja e usada por luditeca-vps-nginx; API publica via :5173 (proxy) ou :8081
+      - "${BACKEND_HOST_PORT:-8081}:8080"
     volumes:
       # No host: coloque/copie a pasta adm-libares (ou so images+uploads) e ajuste o caminho
       - ${LEGACY_ASSETS_HOST_PATH:-./legacy-assets}:/legacy-assets:ro
