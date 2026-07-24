@@ -171,12 +171,35 @@ curl -s https://admin.alenxandriaglobaltec.com/api/v1/auth/login -o /dev/null -w
 
 No build do frontend, `VITE_API_BASE_URL` vazio (default do compose) = chamadas relative `/api/...` via nginx do container.
 
+### Imagens / assets legados (obrigatório no VPS)
+
+Sem a pasta `images/` montada, capas retornam 401/404 em `/legacy/assets/**`.
+
+```bash
+cd /opt/adm-libares-new
+mkdir -p legacy-assets/images/thumbs legacy-assets/uploads
+
+# Copie do servidor PHP (adm-libares) — ajuste a origem:
+# rsync -avz user@php-host:/var/www/adm-libares/images/ ./legacy-assets/images/
+# rsync -avz user@php-host:/var/www/adm-libares/uploads/ ./legacy-assets/uploads/
+
+export LEGACY_ASSETS_HOST_PATH=./legacy-assets
+export LEGACY_ASSETS_ROOT=/legacy-assets
+export LEGACY_PUBLIC_BASE_URL=http://187.127.47.204:5173   # ou https://admin.alenxandriaglobaltec.com
+
+docker compose up -d --build
+curl -I "http://127.0.0.1:8080/legacy/assets/images/alguma-capa.jpg"
+```
+
+O `docker-compose.yml` monta `${LEGACY_ASSETS_HOST_PATH:-./legacy-assets}` → `/legacy-assets` no backend.
+
 ### Checklist mínimo
 
 - [ ] DNS `admin.alenxandriaglobaltec.com` → servidor
 - [ ] TLS (Let's Encrypt)
+- [ ] Pasta `legacy-assets/images` (e `uploads`) montada; `LEGACY_ASSETS_ROOT` definido
 - [ ] Trocar `JWT_SECRET`, senhas DB, não usar defaults do compose
-- [ ] CORS inclui `https://admin.alenxandriaglobaltec.com` (já no default do backend)
+- [ ] CORS inclui origem do painel (IP `:5173` ou domínio HTTPS)
 - [ ] Firewall: liberar só 80/443 (nginx host) em vez de 8080/5173 públicos, se possível
 - [ ] Backup do volume `postgres_data` ou `mysql_data`
 - [ ] Não commitar `.env` / `application-local.yml` / `dev.local.ps1`

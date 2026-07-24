@@ -192,6 +192,7 @@ export function BooksPage() {
   }
 
   function handleEdit(book: BookResponse) {
+    setSelectedBook(null);
     setEditingId(book.id);
     setUploadError("");
     setFormError("");

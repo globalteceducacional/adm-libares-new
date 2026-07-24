@@ -80,7 +80,7 @@ export function BookFormModal({
           ? `Atualize os dados do livro #${editingId}.`
           : "Preencha os campos obrigatorios para publicar um novo livro no catalogo."
       }
-      size="lg"
+      size="xl"
       className="max-w-3xl"
       closeOnOverlayClick={!isBusy}
     >
