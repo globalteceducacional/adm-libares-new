@@ -18,6 +18,9 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+    # VPS/legado: permite reaplicar V4 apos falha parcial e alinhar checksums editados
+    out-of-order: true
+    repair-on-migrate: true
 
 server:
   port: 8080
