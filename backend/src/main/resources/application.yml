@@ -44,3 +44,15 @@ app:
     jwt-expiration-minutes: 60
     # Origins CORS (separados por virgula). Override: CORS_ALLOWED_ORIGIN_PATTERNS
     cors-allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*,https://admin.alenxandriaglobaltec.com,https://*.alenxandriaglobaltec.com}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+    urls:
+      - name: Admin
+        url: /v3/api-docs/admin
+
