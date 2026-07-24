@@ -35,9 +35,8 @@ services:
       CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:*,http://127.0.0.1:*,http://187.127.47.204:*,https://admin.alenxandriaglobaltec.com,https://*.alenxandriaglobaltec.com}
       # Pasta no container com images/ e uploads/ do PHP (montar volume abaixo)
       LEGACY_ASSETS_ROOT: ${LEGACY_ASSETS_ROOT:-/legacy-assets}
-    ports:
-      # 8080 no host ja e usada por luditeca-vps-nginx; API publica via :5173 (proxy) ou :8081
-      - "${BACKEND_HOST_PORT:-8081}:8080"
+    # Sem ports no host: 8080/8081 ja sao da luditeca neste VPS.
+    # API externa: http://<ip>:5173/api e /legacy/assets (proxy do frontend → backend:8080).
     volumes:
       # No host: coloque/copie a pasta adm-libares (ou so images+uploads) e ajuste o caminho
       - ${LEGACY_ASSETS_HOST_PATH:-./legacy-assets}:/legacy-assets:ro
