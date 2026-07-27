@@ -18,16 +18,17 @@ docker compose exec -T db mysql -uroot -proot -e \
   "DELETE FROM adm_libare.flyway_schema_history WHERE success = 0;
    SELECT version, description, success FROM adm_libare.flyway_schema_history ORDER BY installed_rank;"
 
-echo "==> Tabelas no schema (precisa do dump PHP para livros/capas)..."
-docker compose exec -T db mysql -uroot -proot -e \
-  "SHOW TABLES FROM adm_libare;"
+echo "==> Tabelas no schema..."
+docker compose exec -T db mysql -uroot -proot -N -e \
+  "SELECT COUNT(*) AS total_tables FROM information_schema.tables WHERE table_schema='adm_libare';
+   SELECT table_name FROM information_schema.tables WHERE table_schema='adm_libare' AND table_name IN ('tbl_books','app_admin_users','Sites') ORDER BY table_name;"
 
 echo "==> Rebuild backend (sem cache)..."
 docker compose build --no-cache backend
 docker compose up -d --force-recreate backend
 
-echo "==> Aguardando boot..."
-for i in $(seq 1 30); do
+echo "==> Aguardando boot (ate 90s)..."
+for i in $(seq 1 45); do
   if curl -sf http://127.0.0.1:5173/actuator/health | grep -q '"status":"UP"'; then
     echo "==> OK: backend UP"
     curl -s http://127.0.0.1:5173/actuator/health
@@ -38,6 +39,7 @@ for i in $(seq 1 30); do
   sleep 2
 done
 
-echo "==> Ainda sem UP. Últimos logs:"
+echo "==> Ainda sem UP. Erro resumido:"
+docker compose logs --tail=80 backend | grep -E "Caused by:|failed migration|Schema-validation|ERROR|Exception:" | tail -30
 docker compose logs --tail=40 backend
 exit 1
