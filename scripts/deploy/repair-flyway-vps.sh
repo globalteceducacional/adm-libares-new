@@ -18,6 +18,10 @@ docker compose exec -T db mysql -uroot -proot -e \
   "DELETE FROM adm_libare.flyway_schema_history WHERE success = 0;
    SELECT version, description, success FROM adm_libare.flyway_schema_history ORDER BY installed_rank;"
 
+echo "==> Tabelas no schema (precisa do dump PHP para livros/capas)..."
+docker compose exec -T db mysql -uroot -proot -e \
+  "SHOW TABLES FROM adm_libare;"
+
 echo "==> Rebuild backend (sem cache)..."
 docker compose build --no-cache backend
 docker compose up -d --force-recreate backend

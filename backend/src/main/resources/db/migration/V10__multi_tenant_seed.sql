@@ -1,8 +1,8 @@
--- Multi-tenant: seeds RBAC, migração acervos -> escolas, admins legados.
--- Idempotente onde possível (INSERT IGNORE / NOT EXISTS).
+-- Multi-tenant: seeds RBAC, migracao acervos -> escolas, admins legados.
+-- Idempotente. Sem dump PHP, pula trechos que dependem de acervos/tbl_*.
 
 -- ---------------------------------------------------------------------------
--- Permissões
+-- Permissoes
 -- ---------------------------------------------------------------------------
 INSERT IGNORE INTO app_permissions (code, module, description) VALUES
     ('schools.view', 'schools', 'Visualizar escolas'),
@@ -36,25 +36,48 @@ INSERT IGNORE INTO app_permissions (code, module, description) VALUES
     ('platform.impersonate', 'platform', 'Atuar no contexto de uma escola');
 
 -- ---------------------------------------------------------------------------
--- Escolas a partir dos acervos existentes (1 escola inicial por acervo legado)
+-- Escolas a partir dos acervos (no-op se acervos nao existir)
 -- ---------------------------------------------------------------------------
-INSERT INTO app_schools (name, slug, status)
-SELECT a.nome, CONCAT('escola-', a.id), IF(a.status = 1, '1', '0')
-FROM acervos a
-WHERE NOT EXISTS (
-    SELECT 1 FROM app_schools s WHERE s.slug = CONCAT('escola-', a.id)
+SET @has_acervos := (
+    SELECT COUNT(*) FROM information_schema.tables
+    WHERE table_schema = DATABASE() AND table_name = 'acervos'
 );
 
-UPDATE acervos a
-INNER JOIN app_schools s ON s.slug = CONCAT('escola-', a.id)
-SET a.school_id = s.id
-WHERE a.school_id IS NULL;
+SET @sql_schools := IF(
+    @has_acervos = 0,
+    'SELECT 1',
+    'INSERT INTO app_schools (name, slug, status)
+     SELECT a.nome, CONCAT(''escola-'', a.id), IF(a.status = 1, ''1'', ''0'')
+     FROM acervos a
+     WHERE NOT EXISTS (
+         SELECT 1 FROM app_schools s WHERE s.slug = CONCAT(''escola-'', a.id)
+     )'
+);
+PREPARE s FROM @sql_schools; EXECUTE s; DEALLOCATE PREPARE s;
 
-UPDATE tbl_users u
-INNER JOIN acervos a ON a.id = u.acervo_id
-SET u.school_id = a.school_id
-WHERE u.acervo_id IS NOT NULL
-  AND u.school_id IS NULL;
+SET @sql_upd_acervos := IF(
+    @has_acervos = 0,
+    'SELECT 1',
+    'UPDATE acervos a
+     INNER JOIN app_schools s ON s.slug = CONCAT(''escola-'', a.id)
+     SET a.school_id = s.id
+     WHERE a.school_id IS NULL'
+);
+PREPARE s FROM @sql_upd_acervos; EXECUTE s; DEALLOCATE PREPARE s;
+
+SET @has_users := (
+    SELECT COUNT(*) FROM information_schema.tables
+    WHERE table_schema = DATABASE() AND table_name = 'tbl_users'
+);
+SET @sql_upd_users := IF(
+    @has_acervos = 0 OR @has_users = 0,
+    'SELECT 1',
+    'UPDATE tbl_users u
+     INNER JOIN acervos a ON a.id = u.acervo_id
+     SET u.school_id = a.school_id
+     WHERE u.acervo_id IS NOT NULL AND u.school_id IS NULL'
+);
+PREPARE s FROM @sql_upd_users; EXECUTE s; DEALLOCATE PREPARE s;
 
 -- ---------------------------------------------------------------------------
 -- Role global SUPER_ADMIN
@@ -73,7 +96,7 @@ WHERE r.name = 'SUPER_ADMIN'
   AND r.school_id IS NULL;
 
 -- ---------------------------------------------------------------------------
--- Role SCHOOL_ADMIN por escola (pacote amplo, sem schools.* nem platform.*)
+-- Role SCHOOL_ADMIN por escola
 -- ---------------------------------------------------------------------------
 INSERT INTO app_roles (school_id, name, is_system, status)
 SELECT s.id, 'SCHOOL_ADMIN', 1, '1'
@@ -93,20 +116,24 @@ WHERE r.name = 'SCHOOL_ADMIN'
   AND r.school_id IS NOT NULL;
 
 -- ---------------------------------------------------------------------------
--- Migrar tbl_admin -> app_admin_users (super admins globais na v1)
+-- Migrar tbl_admin -> app_admin_users (no-op se tbl_admin ausente)
 -- ---------------------------------------------------------------------------
-INSERT INTO app_admin_users (school_id, username, password_hash, name, status, is_super_admin)
-SELECT
-    NULL,
-    a.username,
-    a.password,
-    COALESCE(NULLIF(TRIM(a.email), ''), a.username),
-    '1',
-    1
-FROM tbl_admin a
-WHERE NOT EXISTS (
-    SELECT 1 FROM app_admin_users u WHERE u.username = a.username
+SET @has_admin := (
+    SELECT COUNT(*) FROM information_schema.tables
+    WHERE table_schema = DATABASE() AND table_name = 'tbl_admin'
 );
+SET @sql_admin := IF(
+    @has_admin = 0,
+    'SELECT 1',
+    'INSERT INTO app_admin_users (school_id, username, password_hash, name, status, is_super_admin)
+     SELECT NULL, a.username, a.password,
+            COALESCE(NULLIF(TRIM(a.email), ''''), a.username), ''1'', 1
+     FROM tbl_admin a
+     WHERE NOT EXISTS (
+         SELECT 1 FROM app_admin_users u WHERE u.username = a.username
+     )'
+);
+PREPARE s FROM @sql_admin; EXECUTE s; DEALLOCATE PREPARE s;
 
 INSERT IGNORE INTO app_admin_user_roles (admin_user_id, role_id)
 SELECT u.id, r.id
@@ -115,7 +142,7 @@ INNER JOIN app_roles r ON r.name = 'SUPER_ADMIN' AND r.school_id IS NULL
 WHERE u.is_super_admin = 1;
 
 -- ---------------------------------------------------------------------------
--- FKs após backfill
+-- FKs apos backfill (so se a tabela existir)
 -- ---------------------------------------------------------------------------
 SET @fk_acervos := (
     SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
@@ -123,12 +150,12 @@ SET @fk_acervos := (
       AND TABLE_NAME = 'acervos'
       AND CONSTRAINT_NAME = 'fk_acervos_school'
 );
-SET @sql_acervos := IF(
-    @fk_acervos = 0,
+SET @sql_acervos_fk := IF(
+    @has_acervos > 0 AND @fk_acervos = 0,
     'ALTER TABLE acervos ADD CONSTRAINT fk_acervos_school FOREIGN KEY (school_id) REFERENCES app_schools (id)',
     'SELECT 1'
 );
-PREPARE stmt_acervos FROM @sql_acervos;
+PREPARE stmt_acervos FROM @sql_acervos_fk;
 EXECUTE stmt_acervos;
 DEALLOCATE PREPARE stmt_acervos;
 
@@ -138,11 +165,11 @@ SET @fk_users := (
       AND TABLE_NAME = 'tbl_users'
       AND CONSTRAINT_NAME = 'fk_users_school'
 );
-SET @sql_users := IF(
-    @fk_users = 0,
+SET @sql_users_fk := IF(
+    @has_users > 0 AND @fk_users = 0,
     'ALTER TABLE tbl_users ADD CONSTRAINT fk_users_school FOREIGN KEY (school_id) REFERENCES app_schools (id)',
     'SELECT 1'
 );
-PREPARE stmt_users FROM @sql_users;
+PREPARE stmt_users FROM @sql_users_fk;
 EXECUTE stmt_users;
 DEALLOCATE PREPARE stmt_users;
