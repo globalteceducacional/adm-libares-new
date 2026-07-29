@@ -9,11 +9,16 @@ cd "$ROOT"
 
 BASE="http://127.0.0.1:5173"
 
-echo "===== TABELAS DO MODULO SITE ====="
-docker compose exec -T db mysql -uroot -proot -e \
-  "SELECT table_name FROM information_schema.tables
+echo "===== NOMES REAIS DAS TABELAS (com HEX para ver acentos) ====="
+docker compose exec -T db mysql -uroot -proot --default-character-set=utf8mb4 -e \
+  "SELECT table_name, HEX(table_name) AS hex_name FROM information_schema.tables
     WHERE table_schema='adm_libare'
-      AND (table_name LIKE '%site%' OR table_name='Sites');"
+      AND (table_name LIKE '%site%' OR table_name LIKE '%Site%');"
+
+echo
+echo "===== ESTRUTURA DE Autores_site ====="
+docker compose exec -T db mysql -uroot -proot --default-character-set=utf8mb4 -e \
+  "SHOW CREATE TABLE adm_libare.\`Autores_site\`;" 2>&1 | tail -5
 
 echo
 echo "===== LOGIN ====="
@@ -29,18 +34,15 @@ fi
 echo "token obtido"
 
 echo
-echo "===== CHAMANDO ENDPOINTS ====="
+echo "===== CHAMANDO ENDPOINTS (com corpo da resposta) ====="
 for ep in /api/v1/site-authors /api/v1/sites; do
-  code="$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $TOKEN" "$BASE$ep")"
-  echo "$ep -> $code"
+  echo "--- $ep"
+  curl -s -w '\nHTTP %{http_code}\n' -H "Authorization: Bearer $TOKEN" "$BASE$ep" | cut -c1-600
 done
 
 echo
-echo "===== CAUSA NO LOG ====="
-docker compose logs --tail=120 backend 2>&1 \
-  | grep -E "SQLSyntaxError|doesn't exist|Unknown column|SQLException|JdbcSQLException|Caused by:|ERROR" \
-  | cut -c1-220 \
-  | tail -20
+echo "===== LOG BRUTO DO BACKEND (ultimos 60s) ====="
+docker compose logs --since=60s --no-color backend 2>&1 | cut -c1-240 | tail -60
 
 echo
 echo "===== FIM ====="
