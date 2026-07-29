@@ -41,8 +41,14 @@ for ep in /api/v1/site-authors /api/v1/sites; do
 done
 
 echo
-echo "===== LOG BRUTO DO BACKEND (ultimos 60s) ====="
-docker compose logs --since=60s --no-color backend 2>&1 | cut -c1-240 | tail -60
+echo "===== ERRO NO BACKEND (frames 'at ...' removidos) ====="
+# Sem os frames da pilha sobra a mensagem da excecao e a cadeia de "Caused by",
+# que e exatamente o que identifica a causa raiz.
+docker compose logs --since=90s --no-color backend 2>&1 \
+  | grep -vE '\|[[:space:]]+at ' \
+  | grep -vE '\|[[:space:]]+\.\.\. [0-9]+ (more|common frames omitted)' \
+  | cut -c1-400 \
+  | tail -40
 
 echo
 echo "===== FIM ====="
