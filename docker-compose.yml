@@ -35,6 +35,10 @@ services:
       CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:*,http://127.0.0.1:*,http://187.127.47.204:*,https://admin.alenxandriaglobaltec.com,https://*.alenxandriaglobaltec.com}
       # Pasta no container com images/ e uploads/ do PHP (montar volume abaixo)
       LEGACY_ASSETS_ROOT: ${LEGACY_ASSETS_ROOT:-/legacy-assets}
+      # Linux trata nomes de tabela como case-sensitive e o schema legado usa
+      # CamelCase/acentos (Autores_site, Categoria_site). A validacao do Hibernate
+      # normaliza para minusculas e acusa "missing table", por isso fica desligada.
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${JPA_DDL_AUTO:-none}
     # Sem ports no host: 8080/8081 ja sao da luditeca neste VPS.
     # API externa: http://<ip>:5173/api e /legacy/assets (proxy do frontend → backend:8080).
     volumes:
