@@ -13,6 +13,15 @@ git checkout main
 git reset --hard origin/main
 echo "==> Commit: $(git log -1 --oneline)"
 
+echo "==> Migrations falhas ANTES do reparo (evidencia da causa):"
+docker compose exec -T db mysql -uroot -proot -e \
+  "SELECT version, description FROM adm_libare.flyway_schema_history WHERE success = 0;"
+
+echo "==> Erro de migration registrado no log:"
+docker compose logs --no-color backend 2>&1 \
+  | grep -E "Migration V[0-9]+|SQL State|Error Code|Message   " \
+  | tail -15
+
 echo "==> Removendo migrations falhas (success=0)..."
 docker compose exec -T db mysql -uroot -proot -e \
   "DELETE FROM adm_libare.flyway_schema_history WHERE success = 0;
