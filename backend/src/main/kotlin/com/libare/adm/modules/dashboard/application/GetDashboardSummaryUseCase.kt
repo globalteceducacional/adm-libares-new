@@ -374,7 +374,7 @@ class GetDashboardSummaryUseCase(
             SELECT
                 'Comentarios' AS module,
                 CONCAT('Comentario no livro #', c.book_id) AS action,
-                COALESCE(NULLIF(TRIM(c.user_name), ''), CONCAT('Usuario #', c.user_id)) AS user,
+                COALESCE(NULLIF(TRIM(c.user_name), ''), CONCAT('Usuario #', c.user_id)) AS activityUser,
                 DATE_FORMAT(c.dt_rate, '%d/%m %H:%i') AS activityTime
             FROM tbl_comments c
             WHERE c.status = '1'
@@ -386,7 +386,7 @@ class GetDashboardSummaryUseCase(
             DashboardRecentActivityDto(
                 module = rs.getString("module") ?: "",
                 action = rs.getString("action") ?: "",
-                user = rs.getString("user") ?: "",
+                user = rs.getString("activityUser") ?: "",
                 time = rs.getString("activityTime") ?: "",
             )
         }

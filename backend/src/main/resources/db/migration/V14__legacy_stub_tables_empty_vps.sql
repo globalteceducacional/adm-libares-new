@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS tbl_users (
     acervo_id INT NULL,
     school_id BIGINT NULL,
     status VARCHAR(1) NOT NULL DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT NULL,
     PRIMARY KEY (id),
     UNIQUE KEY uk_tbl_users_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -63,6 +64,7 @@ CREATE TABLE IF NOT EXISTS tbl_comments (
     comment_text TEXT NOT NULL,
     status VARCHAR(1) NOT NULL DEFAULT '1',
     comment_on VARCHAR(255) NULL,
+    dt_rate TIMESTAMP NULL DEFAULT NULL,
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
