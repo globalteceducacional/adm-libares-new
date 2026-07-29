@@ -11,6 +11,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+      # Mantém o nome de @Table/@Column literal (ex.: Autores_site).
+      # Sem isso o Spring converte para minusculas e quebra no MySQL Linux (case-sensitive).
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
     open-in-view: false
     properties:
       hibernate:

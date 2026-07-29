@@ -8,9 +8,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 
 @Entity
-// Nome entre backticks: sem as crases o naming strategy do Spring Boot converte para
-// minusculas e a consulta falha em MySQL Linux, onde nomes de tabela sao case-sensitive.
-@Table(name = "`Seções_site`")
+@Table(name = "Seções_site")
 class SiteSectionEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
