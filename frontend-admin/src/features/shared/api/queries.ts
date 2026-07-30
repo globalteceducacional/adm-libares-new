@@ -55,32 +55,48 @@ export function useAuthorsQuery() {
   return useQuery({ queryKey: queryKeys.authors, queryFn: listAuthors });
 }
 
-export function useAuthorOptionsQuery() {
-  return useQuery({ queryKey: queryKeys.authorOptions, queryFn: listAuthorOptions });
+export function useAuthorOptionsQuery(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.authorOptions,
+    queryFn: listAuthorOptions,
+    enabled: options?.enabled ?? true
+  });
 }
 
 export function useCategoriesQuery() {
   return useQuery({ queryKey: queryKeys.categories, queryFn: listCategories });
 }
 
-export function useCategoryOptionsQuery() {
-  return useQuery({ queryKey: queryKeys.categoryOptions, queryFn: listCategoryOptions });
+export function useCategoryOptionsQuery(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.categoryOptions,
+    queryFn: listCategoryOptions,
+    enabled: options?.enabled ?? true
+  });
 }
 
 export function useHomeSectionsQuery() {
   return useQuery({ queryKey: queryKeys.homeSections, queryFn: listHomeSections });
 }
 
-export function useHomeSectionOptionsQuery() {
-  return useQuery({ queryKey: queryKeys.homeSectionOptions, queryFn: listHomeSectionOptions });
+export function useHomeSectionOptionsQuery(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.homeSectionOptions,
+    queryFn: listHomeSectionOptions,
+    enabled: options?.enabled ?? true
+  });
 }
 
 export function useAcervosQuery() {
   return useQuery({ queryKey: queryKeys.acervos, queryFn: listAcervos });
 }
 
-export function useAcervoOptionsQuery() {
-  return useQuery({ queryKey: queryKeys.acervoOptions, queryFn: listAcervoOptions });
+export function useAcervoOptionsQuery(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.acervoOptions,
+    queryFn: listAcervoOptions,
+    enabled: options?.enabled ?? true
+  });
 }
 
 export function useDashboardQuery(periodDays: 7 | 30 | 90) {

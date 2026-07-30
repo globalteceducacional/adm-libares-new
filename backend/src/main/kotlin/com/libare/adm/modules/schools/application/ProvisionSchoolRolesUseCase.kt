@@ -10,6 +10,11 @@ class ProvisionSchoolRolesUseCase(
 ) {
     @Transactional
     fun execute(schoolId: Long) {
+        provisionSchoolAdmin(schoolId)
+        provisionProfessor(schoolId)
+    }
+
+    private fun provisionSchoolAdmin(schoolId: Long) {
         val existingRoleId = jdbcTemplate.query(
             """
             SELECT id FROM app_roles
@@ -41,6 +46,39 @@ class ProvisionSchoolRolesUseCase(
                 'sites.view', 'sites.create', 'sites.update', 'sites.delete',
                 'sites.comments.view', 'sites.comments.moderate'
             )
+            """.trimIndent(),
+            roleId
+        )
+    }
+
+    private fun provisionProfessor(schoolId: Long) {
+        val existingRoleId = jdbcTemplate.query(
+            """
+            SELECT id FROM app_roles
+            WHERE school_id = ? AND name = 'PROFESSOR'
+            LIMIT 1
+            """.trimIndent(),
+            { rs, _ -> rs.getLong("id") },
+            schoolId
+        ).firstOrNull()
+
+        val roleId = existingRoleId ?: run {
+            jdbcTemplate.update(
+                """
+                INSERT INTO app_roles (school_id, name, is_system, status)
+                VALUES (?, 'PROFESSOR', 1, '1')
+                """.trimIndent(),
+                schoolId
+            )
+            jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Long::class.java)!!
+        }
+
+        jdbcTemplate.update(
+            """
+            INSERT IGNORE INTO app_role_permissions (role_id, permission_id)
+            SELECT ?, p.id
+            FROM app_permissions p
+            WHERE p.code IN ('books.view', 'books.toggle_status')
             """.trimIndent(),
             roleId
         )

@@ -31,7 +31,10 @@ export function LoginPage() {
         throw new Error("Token JWT invalido. Verifique a resposta do servidor.");
       }
       await refresh();
-      navigate("/dashboard", { replace: true });
+      const canDashboard =
+        response.isSuperAdmin === true ||
+        (Array.isArray(response.permissions) && response.permissions.includes("reports.view"));
+      navigate(canDashboard ? "/dashboard" : "/livros", { replace: true });
     } catch (submitError) {
       const message =
         submitError instanceof Error ? submitError.message : "Falha ao autenticar";

@@ -96,7 +96,7 @@ export function AppRouter() {
             </ProtectedRoute>
           }
         >
-          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/dashboard" element={<GuardedPage path="/dashboard" element={<DashboardPage />} />} />
           <Route path="/livros" element={<GuardedPage path="/livros" element={<BooksPage />} />} />
           <Route path="/autores" element={<GuardedPage path="/autores" element={<AuthorsPage />} />} />
           <Route path="/categorias" element={<GuardedPage path="/categorias" element={<CategoriesPage />} />} />
@@ -120,12 +120,12 @@ export function AppRouter() {
             element={<GuardedPage path="/sites/comentarios" element={<SiteCommentsPage />} />}
           />
           <Route path="/usuarios" element={<GuardedPage path="/usuarios" element={<UsersPage />} />} />
-          <Route path="/comentarios" element={<CommentsPage />} />
+          <Route path="/comentarios" element={<GuardedPage path="/comentarios" element={<CommentsPage />} />} />
           <Route path="/escolas" element={<GuardedPage path="/escolas" element={<SchoolsPage />} />} />
           <Route path="/perfis" element={<GuardedPage path="/perfis" element={<RolesPage />} />} />
-          <Route path="/auditoria" element={<AuditPage />} />
+          <Route path="/auditoria" element={<GuardedPage path="/auditoria" element={<AuditPage />} />} />
         </Route>
-        <Route path="*" element={<Navigate to={isAuthenticated() ? "/dashboard" : "/login"} replace />} />
+        <Route path="*" element={<Navigate to={isAuthenticated() ? "/livros" : "/login"} replace />} />
       </Routes>
     </Suspense>
   );

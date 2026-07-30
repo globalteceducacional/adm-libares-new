@@ -47,6 +47,13 @@ export function updateBook(bookId: number, payload: UpsertBookRequest): Promise<
   });
 }
 
+export function toggleBookStatus(bookId: number, status: "0" | "1"): Promise<BookResponse> {
+  return apiRequest<BookResponse>(`/api/v1/books/${bookId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status })
+  });
+}
+
 export function deleteBook(bookId: number): Promise<void> {
   return apiRequest<void>(`/api/v1/books/${bookId}`, {
     method: "DELETE"

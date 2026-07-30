@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { BookOpen, Pencil, Plus, Trash2 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { createBook, deleteBook, updateBook, uploadBookCover, uploadBookFile } from "../../services/booksService";
+import { createBook, deleteBook, toggleBookStatus, updateBook, uploadBookCover, uploadBookFile } from "../../services/booksService";
 import {
   getQueryErrorMessage,
   useAuthorOptionsQuery,
@@ -38,15 +38,18 @@ export function BooksPage() {
   const [acervoFilter, setAcervoFilter] = useState<string>("all");
   const selectedAcervoId = acervoFilter === "all" ? undefined : Number(acervoFilter);
   const booksQuery = useBooksQuery(selectedAcervoId);
-  const authorsQuery = useAuthorOptionsQuery();
-  const acervosQuery = useAcervoOptionsQuery();
-  const categoriesQuery = useCategoryOptionsQuery();
-  const homeSectionsQuery = useHomeSectionOptionsQuery();
   const invalidate = useInvalidateAdminQueries();
   const { showToast } = useToast();
   const canCreateBook = usePermission("books.create");
   const canUpdateBook = usePermission("books.update");
+  const canToggleBookStatus = usePermission("books.toggle_status");
   const canDeleteBook = usePermission("books.delete");
+  const professorMode = canToggleBookStatus && !canUpdateBook && !canCreateBook;
+  const canManageCatalog = canCreateBook || canUpdateBook;
+  const authorsQuery = useAuthorOptionsQuery({ enabled: canManageCatalog });
+  const acervosQuery = useAcervoOptionsQuery({ enabled: canManageCatalog });
+  const categoriesQuery = useCategoryOptionsQuery({ enabled: canManageCatalog });
+  const homeSectionsQuery = useHomeSectionOptionsQuery({ enabled: canManageCatalog });
   const books = booksQuery.data ?? [];
   const authorOptions = authorsQuery.data ?? [];
   const acervoOptions = acervosQuery.data ?? [];
@@ -186,6 +189,25 @@ export function BooksPage() {
       const message =
         submitError instanceof Error ? submitError.message : "Falha ao salvar livro";
       setFormError(message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleToggleStatus(book: BookResponse) {
+    const nextStatus: "0" | "1" = book.status === "1" ? "0" : "1";
+    setSaving(true);
+    clearSuccess();
+    try {
+      await toggleBookStatus(book.id, nextStatus);
+      const label = nextStatus === "1" ? "ativado" : "desativado";
+      showToast(`Livro ${label} com sucesso.`, "success");
+      showSuccess(`Livro ${label} com sucesso.`);
+      await invalidate.books();
+    } catch (toggleError) {
+      const message =
+        toggleError instanceof Error ? toggleError.message : "Falha ao alterar status";
+      showToast(message, "error");
     } finally {
       setSaving(false);
     }
@@ -362,6 +384,23 @@ export function BooksPage() {
                 Editar
               </motion.button>
             ) : null}
+            {canToggleBookStatus ? (
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.98 }}
+                className="table-btn icon"
+                type="button"
+                onClick={() => handleToggleStatus(book)}
+                disabled={saving}
+                aria-label={
+                  book.status === "1"
+                    ? `Desativar o livro ${decodeHtmlEntities(book.title)}`
+                    : `Ativar o livro ${decodeHtmlEntities(book.title)}`
+                }
+              >
+                {book.status === "1" ? "Desativar" : "Ativar"}
+              </motion.button>
+            ) : null}
             {canDeleteBook ? (
               <motion.button
                 whileHover={{ scale: 1.04 }}
@@ -380,7 +419,7 @@ export function BooksPage() {
         )
       }
     ],
-    [saving, canUpdateBook, canDeleteBook]
+    [saving, canUpdateBook, canDeleteBook, canToggleBookStatus]
   );
 
   return (
@@ -390,7 +429,11 @@ export function BooksPage() {
         <PageHeroStrip
           icon={BookOpen}
           title="Livros"
-          description="Cadastre, edite e gerencie o catalogo de livros da plataforma."
+          description={
+            professorMode
+              ? "Visualize e ative/desative os livros da sua escola."
+              : "Cadastre, edite e gerencie o catalogo de livros da plataforma."
+          }
           tone="primary"
           actions={
             <PermissionGate permission="books.create">
@@ -413,6 +456,7 @@ export function BooksPage() {
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
         secondaryFilter={
+          canManageCatalog ? (
           <BerrySelect
             label="Acervo"
             value={acervoFilter}
@@ -426,6 +470,7 @@ export function BooksPage() {
               </option>
             ))}
           </BerrySelect>
+          ) : undefined
         }
         columns={columns}
         data={filteredBooks}
@@ -477,6 +522,18 @@ export function BooksPage() {
                   >
                     <Pencil size={14} />
                     Editar
+                  </motion.button>
+                ) : null}
+                {canToggleBookStatus ? (
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="table-btn icon"
+                    type="button"
+                    onClick={() => handleToggleStatus(book)}
+                    disabled={saving}
+                  >
+                    {book.status === "1" ? "Desativar" : "Ativar"}
                   </motion.button>
                 ) : null}
                 {canDeleteBook ? (

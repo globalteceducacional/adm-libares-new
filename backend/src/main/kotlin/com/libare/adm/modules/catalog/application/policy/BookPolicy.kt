@@ -21,6 +21,10 @@ class BookPolicy(
         authorizationService.check("books.update")
     }
 
+    fun requireToggleStatus() {
+        authorizationService.check("books.toggle_status")
+    }
+
     fun requireDelete() {
         authorizationService.check("books.delete")
     }

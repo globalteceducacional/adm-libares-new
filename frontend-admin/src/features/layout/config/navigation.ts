@@ -55,6 +55,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         label: "Dashboard",
         icon: LayoutDashboard,
         description: "Metricas e indicadores",
+        permission: "reports.view",
         keywords: ["inicio", "home", "painel"]
       }
     ]
@@ -82,7 +83,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         icon: Pencil,
         description: "Autores do catalogo",
         badgeKey: "authors",
-        permission: "books.view",
+        permission: "books.update",
         keywords: ["escritores", "catalogo"]
       },
       {
@@ -92,7 +93,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         icon: Tags,
         description: "Categorias globais do catalogo",
         badgeKey: "categories",
-        permission: "books.view",
+        permission: "books.update",
         keywords: ["categoria", "catalogo"]
       },
       {
@@ -102,7 +103,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         icon: LayoutList,
         description: "Seções da home e livros vinculados",
         badgeKey: "homeSections",
-        permission: "books.view",
+        permission: "books.update",
         keywords: ["home", "destaque", "vitrine", "secoes", "seções"]
       },
       {
@@ -193,6 +194,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         icon: MessageSquareText,
         description: "Moderacao de comentarios",
         badgeKey: "comments",
+        permission: "users.view",
         keywords: ["moderacao", "reviews"]
       }
     ]
@@ -227,6 +229,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         label: "Auditoria",
         icon: ClipboardList,
         description: "Logs e consistencia de dados",
+        permission: "reports.view",
         keywords: ["logs", "historico", "rastreio"]
       }
     ]
