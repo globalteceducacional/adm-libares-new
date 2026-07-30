@@ -48,5 +48,8 @@ my.ini.adm-libare.bak
 # ===== Brainstorm / companion local =====
 .superpowers/
 
+# ===== Git worktrees locais =====
+.worktrees/
+
 # ===== PHP legado (repositorio git proprio, fora do escopo deste repo) =====
 adm-libares/
