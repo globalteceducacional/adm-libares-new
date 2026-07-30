@@ -45,5 +45,8 @@ Desktop.ini
 *.bak
 my.ini.adm-libare.bak
 
+# ===== Brainstorm / companion local =====
+.superpowers/
+
 # ===== PHP legado (repositorio git proprio, fora do escopo deste repo) =====
 adm-libares/
