@@ -48,8 +48,9 @@ mysql_db -N -e "SELECT table_name FROM information_schema.tables WHERE table_sch
 echo "==> Importando dump..."
 mysql_db adm_libare < "$DUMP"
 
-echo "==> school_id em acervos + contagens..."
+echo "==> school_id em acervos/users + status em comments..."
 mysql_db adm_libare <<'SQL'
+-- acervos.school_id
 SET @col := (
   SELECT COUNT(*) FROM information_schema.columns
   WHERE table_schema = 'adm_libare' AND table_name = 'acervos' AND column_name = 'school_id'
@@ -62,6 +63,34 @@ PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 UPDATE acervos
 SET school_id = (SELECT id FROM app_schools ORDER BY id LIMIT 1)
 WHERE school_id IS NULL;
+
+-- tbl_users.school_id (listagem /api/v1/users filtra por tenant)
+SET @col := (
+  SELECT COUNT(*) FROM information_schema.columns
+  WHERE table_schema = 'adm_libare' AND table_name = 'tbl_users' AND column_name = 'school_id'
+);
+SET @sql := IF(@col = 0,
+  'ALTER TABLE tbl_users ADD COLUMN school_id BIGINT NULL, ADD KEY idx_tbl_users_school (school_id)',
+  'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+UPDATE tbl_users u
+LEFT JOIN acervos a ON a.id = u.acervo_id
+SET u.school_id = COALESCE(
+  a.school_id,
+  (SELECT id FROM app_schools ORDER BY id LIMIT 1)
+)
+WHERE u.school_id IS NULL;
+
+-- tbl_comments.status (dashboard)
+SET @col := (
+  SELECT COUNT(*) FROM information_schema.columns
+  WHERE table_schema = 'adm_libare' AND table_name = 'tbl_comments' AND column_name = 'status'
+);
+SET @sql := IF(@col = 0,
+  'ALTER TABLE tbl_comments ADD COLUMN status VARCHAR(1) NOT NULL DEFAULT ''1''',
+  'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 SELECT 'books' t, COUNT(*) c FROM tbl_books
 UNION SELECT 'authors', COUNT(*) FROM tbl_author
