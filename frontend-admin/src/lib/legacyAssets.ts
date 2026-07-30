@@ -114,13 +114,14 @@ export function resolveLegacyAssetUrls(
   }
 
   const urls: string[] = [];
-  pushUnique(urls, buildAssetUrl(LEGACY_ASSETS_BASE_URL, raw, folder));
+  // Remoto primeiro: na VPS o volume local pode estar vazio; ebook ainda serve as capas.
   pushUnique(urls, buildRemoteImageUrl(raw));
+  pushUnique(urls, buildAssetUrl(LEGACY_ASSETS_BASE_URL, raw, folder));
 
   const decoded = normalizeLegacyPath(raw);
   if (decoded !== raw) {
-    pushUnique(urls, buildAssetUrl(LEGACY_ASSETS_BASE_URL, decoded, folder));
     pushUnique(urls, buildRemoteImageUrl(decoded));
+    pushUnique(urls, buildAssetUrl(LEGACY_ASSETS_BASE_URL, decoded, folder));
   }
 
   return urls;

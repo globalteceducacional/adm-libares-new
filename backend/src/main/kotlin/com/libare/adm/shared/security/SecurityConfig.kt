@@ -47,7 +47,7 @@ class SecurityConfig(
             .authorizeHttpRequests {
                 it.requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 it.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                it.requestMatchers("/legacy/assets/**").permitAll()
+                it.requestMatchers("/legacy/assets/**", "/legacy/**").permitAll()
                 it.requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                 // Espelho publico do leitor Site (api_sites.php) — sem JWT.
                 it.requestMatchers("/api_sites.php").permitAll()

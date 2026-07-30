@@ -14,6 +14,13 @@ class JwtAuthenticationFilter(
     private val jwtService: JwtService
 ) : OncePerRequestFilter() {
 
+    override fun shouldNotFilter(request: HttpServletRequest): Boolean {
+        val path = request.requestURI ?: return false
+        return path.startsWith("/legacy/assets") ||
+            path.startsWith("/actuator/health") ||
+            path.startsWith("/actuator/info")
+    }
+
     override fun shouldNotFilterErrorDispatch(): Boolean = false
 
     override fun doFilterInternal(
