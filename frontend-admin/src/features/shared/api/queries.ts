@@ -9,6 +9,7 @@ import { listSchools } from "../../../services/schoolsService";
 import { getDashboardSummary } from "../../../services/dashboardService";
 import { listComments } from "../../../services/commentsService";
 import { listUsers } from "../../../services/usersService";
+import { listTeamMembers } from "../../../services/teamService";
 import { getAuditOverview } from "../../../services/auditService";
 import { listSiteAuthors } from "../../../services/siteAuthorsService";
 import { listSiteCategories } from "../../../services/siteCategoriesService";
@@ -29,6 +30,7 @@ export const queryKeys = {
   dashboard: (periodDays: number) => ["dashboard", periodDays] as const,
   comments: ["comments"] as const,
   users: ["users"] as const,
+  team: ["team"] as const,
   audit: ["audit"] as const,
   schools: ["schools"] as const,
   roles: ["roles"] as const,
@@ -117,6 +119,10 @@ export function useUsersQuery(acervoId?: number) {
   });
 }
 
+export function useTeamMembersQuery() {
+  return useQuery({ queryKey: queryKeys.team, queryFn: listTeamMembers });
+}
+
 export function useAuditQuery() {
   return useQuery({ queryKey: queryKeys.audit, queryFn: getAuditOverview });
 }
@@ -169,6 +175,7 @@ export function useInvalidateAdminQueries() {
     acervoOptions: () => queryClient.invalidateQueries({ queryKey: queryKeys.acervoOptions }),
     comments: () => queryClient.invalidateQueries({ queryKey: queryKeys.comments }),
     users: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
+    team: () => queryClient.invalidateQueries({ queryKey: queryKeys.team }),
     audit: () => queryClient.invalidateQueries({ queryKey: queryKeys.audit }),
     schools: () => queryClient.invalidateQueries({ queryKey: queryKeys.schools }),
     roles: () => queryClient.invalidateQueries({ queryKey: queryKeys.roles }),
