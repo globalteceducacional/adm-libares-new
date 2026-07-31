@@ -30,6 +30,8 @@ spring:
 
 server:
   port: 8080
+  # Nginx termina TLS e encaminha HTTP — respeita X-Forwarded-Proto/Host.
+  forward-headers-strategy: framework
 
 management:
   endpoints:

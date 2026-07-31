@@ -94,7 +94,14 @@ class SecurityConfig(
             )
         }
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-        configuration.allowedHeaders = listOf("*")
+        configuration.allowedHeaders = listOf(
+            "Authorization",
+            "Content-Type",
+            "Accept",
+            "Origin",
+            "X-Requested-With",
+            "X-School-Context"
+        )
         configuration.exposedHeaders = listOf("X-School-Context")
         configuration.allowCredentials = true
 
