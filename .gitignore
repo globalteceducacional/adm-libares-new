@@ -51,5 +51,8 @@ my.ini.adm-libare.bak
 # ===== Git worktrees locais =====
 .worktrees/
 
+# ===== Gradle local (worktree) =====
+.gradle-home/
+
 # ===== PHP legado (repositorio git proprio, fora do escopo deste repo) =====
 adm-libares/
