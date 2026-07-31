@@ -15,6 +15,8 @@ import com.libare.adm.shared.openapi.OpenApiHeaders
 import com.libare.adm.shared.openapi.OpenApiTags
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.enums.ParameterIn
+import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
@@ -43,7 +45,15 @@ class AcervoController(
 ) {
     @Operation(
         summary = "Listar acervos",
-        description = "Retorna acervos da escola do contexto. Requer permissao acervos.view. Use o header ${OpenApiHeaders.SCHOOL_CONTEXT} quando necessario: ${OpenApiHeaders.SCHOOL_CONTEXT_DESC}"
+        description = "Retorna acervos da escola do contexto. Requer permissao acervos.view. " +
+            "Exige Authorize (Bearer JWT). Use o header ${OpenApiHeaders.SCHOOL_CONTEXT} quando necessario."
+    )
+    @Parameter(
+        name = OpenApiHeaders.SCHOOL_CONTEXT,
+        `in` = ParameterIn.HEADER,
+        description = OpenApiHeaders.SCHOOL_CONTEXT_DESC,
+        required = false,
+        schema = Schema(type = "integer", format = "int64", example = "1")
     )
     @ApiResponse(responseCode = "200", description = "Lista de acervos da escola ativa")
     @GetMapping
@@ -52,7 +62,14 @@ class AcervoController(
 
     @Operation(
         summary = "Opcoes de acervos",
-        description = "Lista acervos ativos para selecao em formularios. Filtrado pela escola do contexto (${OpenApiHeaders.SCHOOL_CONTEXT})."
+        description = "Lista acervos ativos para selecao em formularios. Filtrado pela escola do contexto."
+    )
+    @Parameter(
+        name = OpenApiHeaders.SCHOOL_CONTEXT,
+        `in` = ParameterIn.HEADER,
+        description = OpenApiHeaders.SCHOOL_CONTEXT_DESC,
+        required = false,
+        schema = Schema(type = "integer", format = "int64", example = "1")
     )
     @ApiResponse(responseCode = "200", description = "Opcoes de acervos")
     @GetMapping("/options")
