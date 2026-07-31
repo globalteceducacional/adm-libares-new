@@ -49,6 +49,14 @@ class SecurityConfig(
                 it.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 it.requestMatchers("/legacy/assets/**", "/legacy/**").permitAll()
                 it.requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+                // UI OpenAPI: HTML/JS e schema sem JWT (chamadas /api/** continuam autenticadas).
+                it.requestMatchers(
+                    "/swagger-ui.html",
+                    "/swagger-ui/**",
+                    "/v3/api-docs",
+                    "/v3/api-docs/**",
+                    "/v3/api-docs.yaml"
+                ).permitAll()
                 // Espelho publico do leitor Site (api_sites.php) — sem JWT.
                 it.requestMatchers("/api_sites.php").permitAll()
                 it.anyRequest().authenticated()

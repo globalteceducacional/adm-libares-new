@@ -22,9 +22,9 @@ class OpenApiConfig {
                     .description(
                         """
                         Documentação Admin (`/api/v1/**`).
-                        1) POST /api/v1/auth/login → accessToken
-                        2) No Swagger UI: Authorize → Bearer <token>
-                        UI e /v3/api-docs exigem JWT admin (use extensão de header no browser se a página retornar 401).
+                        1) Abra /swagger-ui.html (UI pública).
+                        2) POST /api/v1/auth/login → accessToken
+                        3) Authorize → Bearer <token> para chamar os endpoints.
                         """.trimIndent()
                     )
             )

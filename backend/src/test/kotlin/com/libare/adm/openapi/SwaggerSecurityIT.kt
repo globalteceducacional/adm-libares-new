@@ -16,14 +16,23 @@ class SwaggerSecurityIT {
     private lateinit var mockMvc: MockMvc
 
     @Test
-    fun `api-docs sem token retorna 401`() {
+    fun `api-docs sem token retorna 200`() {
         mockMvc.get("/v3/api-docs")
-            .andExpect { status { isUnauthorized() } }
+            .andExpect {
+                status { isOk() }
+                content { contentTypeCompatibleWith(MediaType.APPLICATION_JSON) }
+            }
     }
 
     @Test
-    fun `swagger-ui sem token retorna 401`() {
+    fun `swagger-ui sem token retorna 200`() {
         mockMvc.get("/swagger-ui/index.html")
+            .andExpect { status { isOk() } }
+    }
+
+    @Test
+    fun `endpoint admin sem token continua 401`() {
+        mockMvc.get("/api/v1/books")
             .andExpect { status { isUnauthorized() } }
     }
 
