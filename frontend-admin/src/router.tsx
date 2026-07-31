@@ -36,6 +36,9 @@ const AuditPage = lazy(() =>
 const SchoolsPage = lazy(() =>
   import("./ui/pages/SchoolsPage").then((module) => ({ default: module.SchoolsPage }))
 );
+const TeamPage = lazy(() =>
+  import("./ui/pages/TeamPage").then((module) => ({ default: module.TeamPage }))
+);
 const RolesPage = lazy(() =>
   import("./ui/pages/RolesPage").then((module) => ({ default: module.RolesPage }))
 );
@@ -122,6 +125,7 @@ export function AppRouter() {
           <Route path="/usuarios" element={<GuardedPage path="/usuarios" element={<UsersPage />} />} />
           <Route path="/comentarios" element={<GuardedPage path="/comentarios" element={<CommentsPage />} />} />
           <Route path="/escolas" element={<GuardedPage path="/escolas" element={<SchoolsPage />} />} />
+          <Route path="/equipe" element={<GuardedPage path="/equipe" element={<TeamPage />} />} />
           <Route path="/perfis" element={<GuardedPage path="/perfis" element={<RolesPage />} />} />
           <Route path="/auditoria" element={<GuardedPage path="/auditoria" element={<AuditPage />} />} />
         </Route>

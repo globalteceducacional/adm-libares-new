@@ -11,6 +11,7 @@ import {
   Pencil,
   Shield,
   Tags,
+  UserCog,
   Users
 } from "lucide-react";
 
@@ -213,6 +214,15 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         description: "Tenants e escolas da plataforma",
         permission: "schools.view",
         keywords: ["tenant", "instituicao"]
+      },
+      {
+        id: "team",
+        to: "/equipe",
+        label: "Equipe",
+        icon: UserCog,
+        description: "Admins e professores do painel",
+        permission: "team.view",
+        keywords: ["professor", "admin", "staff", "equipe"]
       },
       {
         id: "roles",
