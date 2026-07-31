@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
+import io.swagger.v3.oas.models.servers.Server
 import org.springdoc.core.models.GroupedOpenApi
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -15,6 +16,15 @@ class OpenApiConfig {
     @Bean
     fun openAPI(): OpenAPI =
         OpenAPI()
+            // Relativo ao host atual — evita http vs https (Failed to fetch / mixed content)
+            // quando o Swagger e a API ficam atras do nginx no mesmo dominio.
+            .servers(
+                listOf(
+                    Server()
+                        .url("/")
+                        .description("Mesmo host da UI (HTTPS via nginx)")
+                )
+            )
             .info(
                 Info()
                     .title("ADM Libare API")
