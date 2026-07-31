@@ -1,13 +1,8 @@
 import { motion } from "framer-motion";
-import { Building2, Pencil, Trash2, UserPlus } from "lucide-react";
+import { Building2, Pencil, Trash2 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import {
-  createSchool,
-  createSchoolAdmin,
-  deleteSchool,
-  updateSchool
-} from "../../services/schoolsService";
+import { createSchool, deleteSchool, updateSchool } from "../../services/schoolsService";
 import {
   getQueryErrorMessage,
   useInvalidateAdminQueries,
@@ -22,7 +17,7 @@ import { BerrySelect } from "../components/layout/BerrySelect";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
 import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
-import type { CreateSchoolAdminRequest, SchoolResponse, UpsertSchoolRequest } from "../../types/schools";
+import type { SchoolResponse, UpsertSchoolRequest } from "../../types/schools";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
 import { useTimedMessage } from "../../hooks/useTimedMessage";
 import { Alert, Button, ConfirmDialog, Field, Input, StatusBadge } from "../../shared/ui";
@@ -34,12 +29,6 @@ const EMPTY_SCHOOL_FORM: UpsertSchoolRequest = {
   name: "",
   slug: "",
   status: "1"
-};
-
-const EMPTY_ADMIN_FORM: CreateSchoolAdminRequest = {
-  username: "",
-  password: "",
-  name: ""
 };
 
 export function SchoolsPage() {
@@ -54,14 +43,11 @@ export function SchoolsPage() {
     : undefined;
 
   const [formError, setFormError] = useState("");
-  const [adminError, setAdminError] = useState("");
-  const [adminSuccess, setAdminSuccess] = useState("");
   const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState<UpsertSchoolRequest>(EMPTY_SCHOOL_FORM);
-  const [adminForm, setAdminForm] = useState<CreateSchoolAdminRequest>(EMPTY_ADMIN_FORM);
 
   const canCreate = usePermission("schools.create");
   const canUpdate = usePermission("schools.update");
@@ -72,9 +58,6 @@ export function SchoolsPage() {
   function resetForm() {
     setForm(EMPTY_SCHOOL_FORM);
     setEditingId(null);
-    setAdminForm(EMPTY_ADMIN_FORM);
-    setAdminError("");
-    setAdminSuccess("");
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -107,31 +90,6 @@ export function SchoolsPage() {
     }
   }
 
-  async function handleCreateAdmin(event: FormEvent) {
-    event.preventDefault();
-    if (!editingId) {
-      return;
-    }
-
-    setAdminError("");
-    setAdminSuccess("");
-    setSaving(true);
-
-    try {
-      const created = await createSchoolAdmin(editingId, {
-        username: adminForm.username.trim(),
-        password: adminForm.password,
-        name: adminForm.name.trim()
-      });
-      setAdminForm(EMPTY_ADMIN_FORM);
-      setAdminSuccess(`Admin ${created.username} criado com perfil SCHOOL_ADMIN.`);
-    } catch (submitError) {
-      setAdminError(submitError instanceof Error ? submitError.message : "Falha ao criar admin");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   function handleEdit(school: SchoolResponse) {
     setEditingId(school.id);
     setForm({
@@ -139,9 +97,6 @@ export function SchoolsPage() {
       slug: school.slug,
       status: school.status
     });
-    setAdminForm(EMPTY_ADMIN_FORM);
-    setAdminError("");
-    setAdminSuccess("");
     document.getElementById("school-form-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -251,7 +206,7 @@ export function SchoolsPage() {
         <PageHeroStrip
           icon={Building2}
           title="Escolas"
-          description="Gerencie tenants da plataforma e crie administradores por escola."
+          description="Gerencie tenants da plataforma."
           tone="warning"
         />
       }
@@ -309,60 +264,6 @@ export function SchoolsPage() {
                 <Alert tone="danger" className="mt-3">
                   {formError}
                 </Alert>
-              ) : null}
-
-              {editingId && canUpdate ? (
-                <div className="berry-form-subpanel mt-4 rounded-xl border border-border bg-surface-2/50 p-4">
-                  <div className="mb-3 flex items-center gap-2">
-                    <UserPlus size={16} className="text-primary" />
-                    <h3 className="font-display text-sm font-semibold">Criar admin da escola</h3>
-                  </div>
-                  <form className="grid gap-3 md:grid-cols-3" onSubmit={handleCreateAdmin} noValidate>
-                    <Field label="Usuario" required>
-                      <Input
-                        value={adminForm.username}
-                        onChange={(event) =>
-                          setAdminForm((current) => ({ ...current, username: event.target.value }))
-                        }
-                        required
-                      />
-                    </Field>
-                    <Field label="Senha" required>
-                      <Input
-                        type="password"
-                        value={adminForm.password}
-                        onChange={(event) =>
-                          setAdminForm((current) => ({ ...current, password: event.target.value }))
-                        }
-                        required
-                      />
-                    </Field>
-                    <Field label="Nome" required>
-                      <Input
-                        value={adminForm.name}
-                        onChange={(event) =>
-                          setAdminForm((current) => ({ ...current, name: event.target.value }))
-                        }
-                        required
-                      />
-                    </Field>
-                    <div className="md:col-span-3">
-                      <Button type="submit" disabled={saving}>
-                        Criar admin (SCHOOL_ADMIN)
-                      </Button>
-                    </div>
-                  </form>
-                  {adminSuccess ? (
-                    <Alert tone="success" className="mt-3">
-                      {adminSuccess}
-                    </Alert>
-                  ) : null}
-                  {adminError ? (
-                    <Alert tone="danger" className="mt-3">
-                      {adminError}
-                    </Alert>
-                  ) : null}
-                </div>
               ) : null}
           </BerryFormPanel>
         </PermissionGate>

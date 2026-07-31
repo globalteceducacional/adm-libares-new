@@ -181,12 +181,12 @@ export const NAV_GROUPS: NavGroupConfig[] = [
       {
         id: "users",
         to: "/usuarios",
-        label: "Usuarios",
+        label: "Usuarios do app",
         icon: Users,
-        description: "Contas e perfis",
+        description: "Leitores do app (acervo)",
         badgeKey: "users",
         permission: "users.view",
-        keywords: ["contas", "membros"]
+        keywords: ["contas", "membros", "leitores", "app"]
       },
       {
         id: "comments",

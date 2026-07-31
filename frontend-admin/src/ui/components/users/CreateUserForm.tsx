@@ -18,6 +18,7 @@ type CreateUserFormProps = {
   saving: boolean;
   needsSchoolContext: boolean;
   isFormInvalid: boolean;
+  schoolLabel: string | null;
   acervoOptions: AcervoOptionResponse[];
   onSubmit: (event: FormEvent) => Promise<void>;
   onReset: () => void;
@@ -29,6 +30,7 @@ export function CreateUserForm({
   saving,
   needsSchoolContext,
   isFormInvalid,
+  schoolLabel,
   acervoOptions,
   onSubmit,
   onReset,
@@ -38,6 +40,15 @@ export function CreateUserForm({
 
   return (
     <form className="book-form modern" onSubmit={onSubmit} noValidate>
+      <label className="form-field">
+        <span>Escola</span>
+        <input
+          type="text"
+          value={schoolLabel ?? "Selecione uma escola no painel"}
+          readOnly
+          disabled
+        />
+      </label>
       <label className="form-field">
         <span>Nome</span>
         <input
@@ -122,7 +133,7 @@ export function CreateUserForm({
           type="submit"
           disabled={disabled || isFormInvalid}
         >
-          {saving ? "Salvando..." : "Criar usuario"}
+          {saving ? "Salvando..." : "Criar leitor"}
         </motion.button>
         <button className="secondary-btn" type="button" onClick={onReset} disabled={saving}>
           Limpar formulario

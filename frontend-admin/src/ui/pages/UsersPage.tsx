@@ -7,6 +7,7 @@ import {
   getQueryErrorMessage,
   useAcervoOptionsQuery,
   useInvalidateAdminQueries,
+  useSchoolsQuery,
   useUsersQuery
 } from "../../features/shared/api/queries";
 import { buildBreadcrumbs } from "../../features/layout/config/navigation";
@@ -51,6 +52,7 @@ export function UsersPage() {
   const selectedAcervoId = acervoFilter === "all" ? undefined : Number(acervoFilter);
   const usersQuery = useUsersQuery(selectedAcervoId);
   const acervosQuery = useAcervoOptionsQuery();
+  const schoolsQuery = useSchoolsQuery();
   const invalidate = useInvalidateAdminQueries();
   const users = usersQuery.data ?? [];
   const acervoOptions = acervosQuery.data ?? [];
@@ -59,7 +61,9 @@ export function UsersPage() {
     ? getQueryErrorMessage(usersQuery.error, "Falha ao carregar usuarios")
     : acervosQuery.error
       ? getQueryErrorMessage(acervosQuery.error, "Falha ao carregar acervos")
-      : undefined;
+      : schoolsQuery.error
+        ? getQueryErrorMessage(schoolsQuery.error, "Falha ao carregar escolas")
+        : undefined;
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState("");
   const [formError, setFormError] = useState("");
@@ -73,6 +77,14 @@ export function UsersPage() {
   const canDeleteUser = usePermission("users.delete");
   const needsSchoolContext = requiresSchoolContext && !schoolContextId;
   const error = actionError || queryError;
+
+  const schoolLabel = useMemo(() => {
+    if (!schoolContextId) {
+      return null;
+    }
+    const school = schoolsQuery.data?.find((item) => item.id === schoolContextId);
+    return school ? decodeHtmlEntities(school.name) : `Escola #${schoolContextId}`;
+  }, [schoolContextId, schoolsQuery.data]);
 
   const isCreateFormInvalid =
     createForm.name.trim().length === 0 ||
@@ -295,8 +307,8 @@ export function UsersPage() {
       hero={
         <PageHeroStrip
           icon={Users}
-          title="Usuarios"
-          description="Gerencie contas, status de acesso e perfis dos usuarios da plataforma."
+          title="Usuarios do app"
+          description="Gerencie leitores do aplicativo, status de acesso e vinculo com acervos."
           tone="info"
         />
       }
@@ -312,14 +324,15 @@ export function UsersPage() {
         <BerryFormPanel
           id="user-create-form-section"
           icon={UserPlus}
-          title="Criar usuario"
-          description="Cadastre um novo usuario com email, senha e acervo vinculado."
+          title="Criar leitor"
+          description="Cadastre um leitor do aplicativo com email, senha e acervo vinculado."
         >
           <CreateUserForm
             form={createForm}
             saving={saving}
             needsSchoolContext={needsSchoolContext}
             isFormInvalid={isCreateFormInvalid}
+            schoolLabel={schoolLabel}
             acervoOptions={acervoOptions}
             onSubmit={handleCreateUser}
             onReset={() => {
@@ -343,7 +356,7 @@ export function UsersPage() {
       </PermissionGate>
 
       <AdminListingSection<UserResponse>
-        title="Lista de usuarios"
+        title="Lista de leitores"
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Buscar por nome, email ou ID"
