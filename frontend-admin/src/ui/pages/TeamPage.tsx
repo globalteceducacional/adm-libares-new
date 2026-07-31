@@ -1,5 +1,5 @@
 import { UserCog, UserPlus } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { createTeamMember } from "../../services/teamService";
 import {
@@ -82,6 +82,23 @@ export function TeamPage() {
   const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const canCreate = usePermission("team.create");
   const needsSchoolContext = requiresSchoolContext && !schoolContextId;
+
+  // Preenche escola quando o contexto chega depois da montagem (SCHOOL_ADMIN).
+  useEffect(() => {
+    if (isSuperAdmin || defaultSchoolId == null) {
+      return;
+    }
+    setCreateForm((current) => {
+      const nextId = String(defaultSchoolId);
+      if (schoolContextId != null) {
+        return current.schoolId === nextId ? current : { ...current, schoolId: nextId };
+      }
+      if (current.schoolId) {
+        return current;
+      }
+      return { ...current, schoolId: nextId };
+    });
+  }, [isSuperAdmin, defaultSchoolId, schoolContextId]);
 
   const isCreateFormInvalid =
     createForm.username.trim().length === 0 ||
