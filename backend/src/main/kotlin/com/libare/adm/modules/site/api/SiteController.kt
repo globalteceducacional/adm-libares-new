@@ -10,7 +10,17 @@ import com.libare.adm.modules.site.application.DeleteSiteUseCase
 import com.libare.adm.modules.site.application.ListSitesUseCase
 import com.libare.adm.modules.site.application.UpdateSiteUseCase
 import com.libare.adm.shared.exception.ForbiddenException
+import com.libare.adm.shared.openapi.AdminSecured
+import com.libare.adm.shared.openapi.AdminWriteResponses
+import com.libare.adm.shared.openapi.OpenApiTags
 import com.libare.adm.shared.security.AuthorizationService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -25,6 +35,10 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 
+@Tag(
+    name = OpenApiTags.SITES,
+    description = "Conteudos do modulo Site (livros/publicacoes Galileu) gerenciados pelo painel."
+)
 @RestController
 @RequestMapping("/api/v1/sites")
 class SiteController(
@@ -35,36 +49,119 @@ class SiteController(
     private val legacyBookAssetStorage: LegacyBookAssetStorage,
     private val authorizationService: AuthorizationService
 ) {
+    @Operation(
+        summary = "Listar conteudos do site",
+        description = "Lista todos os conteudos (livros/publicacoes) cadastrados no modulo Site."
+    )
+    @AdminSecured
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "Lista de conteudos",
+            content = [Content(schema = Schema(implementation = SiteResponse::class))]
+        )
+    )
     @GetMapping
     fun list(): ResponseEntity<List<SiteResponse>> =
         ResponseEntity.ok(listSitesUseCase.execute())
 
+    @Operation(
+        summary = "Criar conteudo do site",
+        description = "Cadastra um novo conteudo com categorias, autor, titulo e arquivo."
+    )
+    @AdminSecured
+    @AdminWriteResponses
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "201",
+            description = "Conteudo criado",
+            content = [Content(schema = Schema(implementation = SiteResponse::class))]
+        )
+    )
     @PostMapping
     fun create(@Valid @RequestBody request: UpsertSiteRequest): ResponseEntity<SiteResponse> =
         ResponseEntity.status(HttpStatus.CREATED).body(createSiteUseCase.execute(request))
 
+    @Operation(
+        summary = "Atualizar conteudo do site",
+        description = "Altera dados de um conteudo existente (categorias, autor, titulo, arquivo, status)."
+    )
+    @AdminSecured
+    @AdminWriteResponses
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "Conteudo atualizado",
+            content = [Content(schema = Schema(implementation = SiteResponse::class))]
+        )
+    )
     @PutMapping("/{siteId}")
     fun update(
+        @Parameter(description = "ID do conteudo (site)")
         @PathVariable siteId: Long,
         @Valid @RequestBody request: UpsertSiteRequest
     ): ResponseEntity<SiteResponse> =
         ResponseEntity.ok(updateSiteUseCase.execute(siteId, request))
 
+    @Operation(
+        summary = "Excluir conteudo do site",
+        description = "Remove permanentemente um conteudo do modulo Site."
+    )
+    @AdminSecured
+    @AdminWriteResponses
+    @ApiResponses(
+        ApiResponse(responseCode = "204", description = "Conteudo excluido")
+    )
     @DeleteMapping("/{siteId}")
-    fun delete(@PathVariable siteId: Long): ResponseEntity<Void> {
+    fun delete(
+        @Parameter(description = "ID do conteudo (site)")
+        @PathVariable siteId: Long
+    ): ResponseEntity<Void> {
         deleteSiteUseCase.execute(siteId)
         return ResponseEntity.noContent().build()
     }
 
+    @Operation(
+        summary = "Upload de capa",
+        description = "Envia imagem de capa para storage legado. Requer permissao sites.create ou sites.update."
+    )
+    @AdminSecured
+    @AdminWriteResponses
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "Capa armazenada",
+            content = [Content(schema = Schema(implementation = SiteCoverUploadResponse::class))]
+        )
+    )
     @PostMapping("/upload/cover")
-    fun uploadCover(@RequestParam("file") file: MultipartFile): ResponseEntity<SiteCoverUploadResponse> {
+    fun uploadCover(
+        @Parameter(description = "Arquivo de imagem da capa")
+        @RequestParam("file") file: MultipartFile
+    ): ResponseEntity<SiteCoverUploadResponse> {
         requireUploadPermission()
         val filename = legacyBookAssetStorage.storeCover(file)
         return ResponseEntity.ok(SiteCoverUploadResponse(filename = filename))
     }
 
+    @Operation(
+        summary = "Upload de arquivo do conteudo",
+        description = "Envia PDF ou arquivo do conteudo para storage legado. Requer permissao sites.create ou sites.update."
+    )
+    @AdminSecured
+    @AdminWriteResponses
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "Arquivo armazenado",
+            content = [Content(schema = Schema(implementation = SiteFileUploadResponse::class))]
+        )
+    )
     @PostMapping("/upload/file")
-    fun uploadFile(@RequestParam("file") file: MultipartFile): ResponseEntity<SiteFileUploadResponse> {
+    fun uploadFile(
+        @Parameter(description = "Arquivo do conteudo (PDF, etc.)")
+        @RequestParam("file") file: MultipartFile
+    ): ResponseEntity<SiteFileUploadResponse> {
         requireUploadPermission()
         val stored = legacyBookAssetStorage.storeBookFile(file)
         return ResponseEntity.ok(

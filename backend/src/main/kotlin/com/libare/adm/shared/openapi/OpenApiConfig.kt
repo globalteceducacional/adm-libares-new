@@ -21,10 +21,12 @@ class OpenApiConfig {
                     .version("1.0")
                     .description(
                         """
-                        Documentação Admin (`/api/v1/**`).
-                        1) Abra /swagger-ui.html (UI pública).
+                        Documentacao Admin (`/api/v1/**`), agrupada por tags (controllers).
+                        1) Abra /swagger-ui.html
                         2) POST /api/v1/auth/login → accessToken
-                        3) Authorize → Bearer <token> para chamar os endpoints.
+                        3) Authorize → Bearer <token>
+                        Header opcional/obrigatorio conforme tenant: X-School-Context (ID da escola).
+                        Cada operacao tem summary, description e respostas HTTP documentadas.
                         """.trimIndent()
                     )
             )
