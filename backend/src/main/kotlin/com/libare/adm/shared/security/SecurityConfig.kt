@@ -57,8 +57,17 @@ class SecurityConfig(
                     "/v3/api-docs/**",
                     "/v3/api-docs.yaml"
                 ).permitAll()
-                // Espelho publico do leitor Site (api_sites.php) — sem JWT.
-                it.requestMatchers("/api_sites.php").permitAll()
+                // Espelho publico do leitor (PHP) — sem JWT admin.
+                it.requestMatchers(
+                    "/api.php",
+                    "/api_sites.php",
+                    "/user_login_api.php",
+                    "/user_register_api.php",
+                    "/user_register_galileu.php",
+                    "/user_forgot_pass_api.php",
+                    "/user_profile_api.php",
+                    "/user_profile_update_api.php"
+                ).permitAll()
                 it.anyRequest().authenticated()
             }
             .exceptionHandling {
