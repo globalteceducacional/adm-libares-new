@@ -3,7 +3,7 @@
 **Data:** 2026-08-03  
 **Origem do pedido:** app Flutter `alexandria`  
 **Destinatário deste doc:** time Alexandria + time painel `adm-libares-new`  
-**Status:** Resposta alinhada — Opção A em andamento (**Tasks 1–5 concluídas**; falta social/leitura + app_details)
+**Status:** Resposta alinhada — Opção A em andamento (**Tasks 1–6 concluídas**; falta `app_details` + cutover)
 
 ---
 
@@ -40,7 +40,7 @@ O diagnóstico do time Alexandria está **correto**: o login do app falha por **
 | Item | Situação (2026-08-03) |
 |------|------------------------|
 | Spec / plano | Prontos |
-| `modules/reader/` | Tasks 1–5 ✅ — auth + catálogo; **falta** social/leitura (fav, comments…) |
+| `modules/reader/` | Tasks 1–6 ✅ — ebook `/api.php` quase completo; **falta** `app_details` |
 | Login / catálogo / sites no Spring | Ainda em andamento (ondas 2–5 do plano) |
 | Branch de trabalho | `feat/reader-api-php-mirror` (worktree `adm-wt-reader-api`) |
 

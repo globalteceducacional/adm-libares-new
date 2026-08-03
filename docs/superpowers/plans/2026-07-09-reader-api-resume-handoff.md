@@ -2,7 +2,7 @@
 
 **Data da pausa:** 2026-07-08  
 **Retomar em:** 2026-07-09  
-**Status:** Spec ✅ | Plano ✅ | Implementação **Tasks 1–5 ✅** (2026-08-03) — Task 6 (social/leitura) é a próxima
+**Status:** Spec ✅ | Plano ✅ | Implementação **Tasks 1–6 ✅** (2026-08-03) — Task 7 (app_details + sites) é a próxima
 
 ---
 
@@ -37,7 +37,7 @@ Substituir as APIs PHP do app leitor (Flutter) por endpoints equivalentes no bac
 | Worktree | `C:\Users\User\Repository\adm-wt-reader-api` |
 | Branch | `feat/reader-api-php-mirror` |
 | Base commit | `c4c0a5e` (catalog CRUD + create user já mergeado na história) |
-| Código reader | Tasks 1–5: auth + catálogo `/api.php` (home, lists, book_id, sections) |
+| Código reader | Tasks 1–6: auth + catálogo + social/leitura em `/api.php` |
 
 ### NÃO misturar com
 
@@ -154,18 +154,16 @@ Marcar conforme avançar. Detalhe completo (código, testes, commits) está no p
 - [x] IT: `home` (objeto com 3 listas), `cat_list`
 - [x] Commit: `feat(reader): mirror api.php catalog and home_section methods`
 
-### Task 6 — Social + leitura (Onda 4) — **PRÓXIMA**
+### Task 6 — Social + leitura (Onda 4) — **CONCLUÍDA** (2026-08-03)
 
-- [ ] Comments, ratings, favourite, wishlist
-- [ ] `book_page_state_*`, `continue_reading`, `con_reding_book` (typo mantido)
-- [ ] `removeuser`, `delete_userdata`
-- [ ] Tabelas: `tbl_comments`, `tbl_rating`, `tbl_favourite`, `tbl_wishlist`, `tbl_reading`, `tbl_book_page_notes`
-- [ ] IT toggle_favourite round-trip
-- [ ] Commit: `feat(reader): mirror comments ratings favourites wishlist and reading state`
+- [x] Comments, ratings, favourite, wishlist
+- [x] `book_page_state_*`, `continue_reading`, `con_reding_book` (typo mantido)
+- [x] `removeuser`, `delete_userdata`
+- [x] Tabelas: `tbl_comments`, `tbl_rating`, `tbl_favourite`, `tbl_wishlist`, `tbl_reading`, `tbl_book_page_notes`
+- [x] IT toggle_favourite round-trip
+- [x] Commit: `feat(reader): mirror comments ratings favourites wishlist and reading state`
 
----
-
-### Task 7 — app_details + Site (Onda 5)
+### Task 7 — app_details + Site (Onda 5) — **PRÓXIMA**
 
 - [ ] `app_details` → `tbl_settings` id=1 (campos AdMob, OneSignal, privacy, etc.)
 - [ ] `/api_sites.php` — descobrir nomes exactos das tabelas Site no MySQL
