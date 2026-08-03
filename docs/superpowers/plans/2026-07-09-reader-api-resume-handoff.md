@@ -2,7 +2,7 @@
 
 **Data da pausa:** 2026-07-08  
 **Retomar em:** 2026-07-09  
-**Status:** Spec ✅ | Plano ✅ | Implementação **Tasks 1–3 ✅** (2026-08-03) — Task 4 (`api.php` dispatcher) é a próxima
+**Status:** Spec ✅ | Plano ✅ | Implementação **Tasks 1–4 ✅** (2026-08-03) — Task 5 (catálogo ebook) é a próxima
 
 ---
 
@@ -37,7 +37,7 @@ Substituir as APIs PHP do app leitor (Flutter) por endpoints equivalentes no bac
 | Worktree | `C:\Users\User\Repository\adm-wt-reader-api` |
 | Branch | `feat/reader-api-php-mirror` |
 | Base commit | `c4c0a5e` (catalog CRUD + create user já mergeado na história) |
-| Código reader | Tasks 1–3: auth leitor completa (login/register/perfil/forgot) |
+| Código reader | Tasks 1–4: auth + shell `/api.php` (catálogo ainda stub) |
 
 ### NÃO misturar com
 
@@ -138,20 +138,15 @@ Marcar conforme avançar. Detalhe completo (código, testes, commits) está no p
 - [x] IT: register + login; perfil; update; forgot
 - [x] Commit: `feat(reader): mirror register, profile and forgot-password APIs`
 
-### Task 4 — Dispatcher `/api.php` (shell) — **PRÓXIMA**
+### Task 4 — Dispatcher `/api.php` (shell) — **CONCLUÍDA** (2026-08-03)
 
-- [ ] `ApiPhpController` + `ApiPhpDispatcher`
-- [ ] Set `KNOWN` com todos os `method_name`
-- [ ] Fallback PHP: `msg` + `success: '1'` para method desconhecido
-- [ ] IT unknown method
-- [ ] Commit: `feat(reader): add api.php dispatcher shell`
+- [x] `ApiPhpController` + `ApiPhpDispatcher`
+- [x] Set `KNOWN` com todos os `method_name`
+- [x] Fallback PHP: `msg` + `success: '1'` para method desconhecido
+- [x] IT unknown method
+- [x] Commit: `feat(reader): add api.php dispatcher shell`
 
-**`method_name` ebook (lista canónica de `api.php`):**  
-`home`, `latest`, `allbook`, `search_text`, `cat_list`, `cat_id`, `author_list`, `author_id`, `book_id`, `home_section`, `home_section_id`, `add_comment`, `get_all_comments`, `removecomment`, `submit_rating`, `rating_check`, `toggle_favourite`, `favourite_list`, `toggle_wishlist`, `wishlist_list`, `book_page_state_list`, `book_page_state_save`, `continue_reading`, `con_reding_book`, `removeuser`, `delete_userdata`, `app_details`
-
----
-
-### Task 5 — Catálogo ebook (Onda 3)
+### Task 5 — Catálogo ebook (Onda 3) — **PRÓXIMA**
 
 - [ ] `ReaderAcervoFilter` (user_id → acervo_id; filtro `livros_acervos`)
 - [ ] Port SQL do PHP: home, cat_list, cat_id, author_*, latest, allbook, search_text, book_id, home_section*
