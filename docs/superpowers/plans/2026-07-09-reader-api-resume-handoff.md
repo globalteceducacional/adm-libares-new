@@ -2,7 +2,7 @@
 
 **Data da pausa:** 2026-07-08  
 **Retomar em:** 2026-07-09  
-**Status:** Spec ✅ | Plano ✅ | Implementação **Task 1–2 ✅** (2026-08-03) — Task 3 (register/perfil/forgot) é a próxima
+**Status:** Spec ✅ | Plano ✅ | Implementação **Tasks 1–3 ✅** (2026-08-03) — Task 4 (`api.php` dispatcher) é a próxima
 
 ---
 
@@ -37,7 +37,7 @@ Substituir as APIs PHP do app leitor (Flutter) por endpoints equivalentes no bac
 | Worktree | `C:\Users\User\Repository\adm-wt-reader-api` |
 | Branch | `feat/reader-api-php-mirror` |
 | Base commit | `c4c0a5e` (catalog CRUD + create user já mergeado na história) |
-| Código reader | Tasks 1–2: infra + `/user_login_api.php` (upgrade-on-login) |
+| Código reader | Tasks 1–3: auth leitor completa (login/register/perfil/forgot) |
 
 ### NÃO misturar com
 
@@ -128,19 +128,17 @@ Marcar conforme avançar. Detalhe completo (código, testes, commits) está no p
 - [x] IT: plaintext → upgrade BCrypt; BCrypt ok; senha errada
 - [x] Commit: `feat(reader): mirror user_login_api with password upgrade`
 
-### Task 3 — Register, perfil, forgot, galileu (Onda 2) — **PRÓXIMA**
+### Task 3 — Register, perfil, forgot, galileu (Onda 2) — **CONCLUÍDA** (2026-08-03)
 
-- [ ] Controllers + use cases register / profile / forgot / galileu
-- [ ] `/user_register_api.php` — hash na criação Normal
-- [ ] `/user_register_galileu.php` — delega ao mesmo register
-- [ ] `/user_profile_api.php`, `/user_profile_update_api.php`
-- [ ] `/user_forgot_pass_api.php` — sem senha em claro no e-mail
-- [ ] IT: register + login; perfil
-- [ ] Commit: `feat(reader): mirror register, profile and forgot-password APIs`
+- [x] Controllers + use cases register / profile / forgot / galileu
+- [x] `/user_register_api.php` — hash na criação Normal
+- [x] `/user_register_galileu.php` — delega ao mesmo register
+- [x] `/user_profile_api.php`, `/user_profile_update_api.php`
+- [x] `/user_forgot_pass_api.php` — sem senha em claro no e-mail/JSON
+- [x] IT: register + login; perfil; update; forgot
+- [x] Commit: `feat(reader): mirror register, profile and forgot-password APIs`
 
----
-
-### Task 4 — Dispatcher `/api.php` (shell)
+### Task 4 — Dispatcher `/api.php` (shell) — **PRÓXIMA**
 
 - [ ] `ApiPhpController` + `ApiPhpDispatcher`
 - [ ] Set `KNOWN` com todos os `method_name`
