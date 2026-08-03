@@ -1,20 +1,39 @@
 package com.libare.adm.modules.reader.api
 
+import com.libare.adm.modules.reader.application.ReaderBookDetailUseCase
+import com.libare.adm.modules.reader.application.ReaderCatalogListUseCases
+import com.libare.adm.modules.reader.application.ReaderHomeSectionUseCases
+import com.libare.adm.modules.reader.application.ReaderHomeUseCase
 import org.springframework.stereotype.Component
 
 /**
  * Dispatcher de /api.php — roteia method_name.
- * Métodos de catálogo/social entram nas Tasks 5–7; até lá devolvem fallback legado.
+ * Métodos de social/leitura entram na Task 6; até lá devolvem fallback legado.
  */
 @Component
-class ApiPhpDispatcher {
+class ApiPhpDispatcher(
+    private val home: ReaderHomeUseCase,
+    private val catalog: ReaderCatalogListUseCases,
+    private val bookDetail: ReaderBookDetailUseCase,
+    private val sections: ReaderHomeSectionUseCases
+) {
     fun dispatch(method: String, params: Map<String, String>): Map<String, Any> {
         val normalized = method.trim()
         if (normalized.isBlank() || normalized !in KNOWN) {
             return legacyFallback()
         }
         return when (normalized) {
-            // Task 5–7: implementar handlers reais
+            "home" -> home.home(params)
+            "cat_list" -> catalog.catList(params)
+            "cat_id" -> catalog.catId(params)
+            "author_list" -> catalog.authorList(params)
+            "author_id" -> catalog.authorId(params)
+            "latest" -> catalog.latest(params)
+            "allbook" -> catalog.allBook(params)
+            "search_text" -> catalog.searchText(params)
+            "book_id" -> bookDetail.bookId(params)
+            "home_section" -> sections.homeSection(params)
+            "home_section_id" -> sections.homeSectionId(params)
             else -> legacyFallback()
         }
     }
