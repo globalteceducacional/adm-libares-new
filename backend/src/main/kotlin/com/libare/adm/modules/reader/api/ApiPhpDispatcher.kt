@@ -4,18 +4,19 @@ import com.libare.adm.modules.reader.application.ReaderBookDetailUseCase
 import com.libare.adm.modules.reader.application.ReaderCatalogListUseCases
 import com.libare.adm.modules.reader.application.ReaderHomeSectionUseCases
 import com.libare.adm.modules.reader.application.ReaderHomeUseCase
+import com.libare.adm.modules.reader.application.ReaderReadingUseCases
+import com.libare.adm.modules.reader.application.ReaderSocialUseCases
 import org.springframework.stereotype.Component
 
-/**
- * Dispatcher de /api.php — roteia method_name.
- * Métodos de social/leitura entram na Task 6; até lá devolvem fallback legado.
- */
+/** Dispatcher de /api.php — roteia method_name. */
 @Component
 class ApiPhpDispatcher(
     private val home: ReaderHomeUseCase,
     private val catalog: ReaderCatalogListUseCases,
     private val bookDetail: ReaderBookDetailUseCase,
-    private val sections: ReaderHomeSectionUseCases
+    private val sections: ReaderHomeSectionUseCases,
+    private val social: ReaderSocialUseCases,
+    private val reading: ReaderReadingUseCases
 ) {
     fun dispatch(method: String, params: Map<String, String>): Map<String, Any> {
         val normalized = method.trim()
@@ -34,6 +35,21 @@ class ApiPhpDispatcher(
             "book_id" -> bookDetail.bookId(params)
             "home_section" -> sections.homeSection(params)
             "home_section_id" -> sections.homeSectionId(params)
+            "removecomment" -> social.removeComment(params)
+            "add_comment" -> social.addComment(params)
+            "get_all_comments" -> social.getAllComments(params)
+            "rating_check" -> social.ratingCheck(params)
+            "submit_rating" -> social.submitRating(params)
+            "toggle_favourite" -> social.toggleFavourite(params)
+            "favourite_list" -> social.favouriteList(params)
+            "toggle_wishlist" -> social.toggleWishlist(params)
+            "wishlist_list" -> social.wishlistList(params)
+            "book_page_state_list" -> reading.bookPageStateList(params)
+            "book_page_state_save" -> reading.bookPageStateSave(params)
+            "continue_reading" -> reading.continueReading(params)
+            "con_reding_book" -> reading.continueReadingBook(params)
+            "removeuser" -> reading.removeUser(params)
+            "delete_userdata" -> reading.deleteUserData(params)
             else -> legacyFallback()
         }
     }
