@@ -83,6 +83,8 @@ interface UserJpaRepository : JpaRepository<UserEntity, Long> {
 
     fun findByEmailIgnoreCase(email: String): UserEntity?
 
+    fun findByAuthIdAndUserTypeIgnoreCase(authId: String, userType: String): UserEntity?
+
     @Query(
         """
         SELECT u FROM UserEntity u
