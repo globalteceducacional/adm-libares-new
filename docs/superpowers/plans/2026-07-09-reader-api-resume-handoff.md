@@ -2,7 +2,7 @@
 
 **Data da pausa:** 2026-07-08  
 **Retomar em:** 2026-07-09  
-**Status:** Spec ✅ | Plano ✅ | Implementação **0%** (Task 1 não iniciada — subagente interrompido)
+**Status:** Spec ✅ | Plano ✅ | Implementação **Task 1 ✅** (2026-08-03) — Task 2 é a próxima
 
 ---
 
@@ -37,7 +37,7 @@ Substituir as APIs PHP do app leitor (Flutter) por endpoints equivalentes no bac
 | Worktree | `C:\Users\User\Repository\adm-wt-reader-api` |
 | Branch | `feat/reader-api-php-mirror` |
 | Base commit | `c4c0a5e` (catalog CRUD + create user já mergeado na história) |
-| Código reader | **Ainda não existe** — `modules/reader/` vazio |
+| Código reader | Task 1 em `modules/reader/` (envelope, senha, security) |
 
 ### NÃO misturar com
 
@@ -103,12 +103,12 @@ MySQL tbl_* / Sites / ...
 
 Marcar conforme avançar. Detalhe completo (código, testes, commits) está no plano.
 
-### Task 1 — Infra (Onda 1) — **PRÓXIMA**
+### Task 1 — Infra (Onda 1) — **CONCLUÍDA** (2026-08-03)
 
-- [ ] `ReaderPasswordService` + teste unitário (TDD)
-- [ ] `EbookAppEnvelope`, `LegacyAssetUrlBuilder`, `ReaderLang`
-- [ ] `SecurityConfig`: `permitAll` nas 8 rotas leitor
-- [ ] Commit: `feat(reader): envelope, asset URLs, password upgrade and public routes`
+- [x] `ReaderPasswordService` + teste unitário (TDD)
+- [x] `EbookAppEnvelope`, `LegacyAssetUrlBuilder`, `ReaderLang`
+- [x] `SecurityConfig`: `permitAll` nas 8 rotas leitor
+- [x] Commit: `feat(reader): envelope, asset URLs, password upgrade and public routes`
 
 **Arquivos:**
 - `backend/.../modules/reader/api/EbookAppEnvelope.kt`
@@ -120,7 +120,7 @@ Marcar conforme avançar. Detalhe completo (código, testes, commits) está no p
 
 ---
 
-### Task 2 — Login (Onda 2)
+### Task 2 — Login (Onda 2) — **PRÓXIMA**
 
 - [ ] `UserJpaRepository` finders (Normal + Google/Facebook)
 - [ ] `ReaderActiveLogService` (`tbl_active_log`)

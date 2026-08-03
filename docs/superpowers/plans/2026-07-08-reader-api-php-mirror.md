@@ -55,7 +55,7 @@
 - Create: `backend/src/main/kotlin/com/libare/adm/modules/reader/application/ReaderLang.kt`
 - Test: `backend/src/test/kotlin/com/libare/adm/reader/ReaderPasswordServiceTest.kt`
 
-- [ ] **Step 1: Teste unitário de senha (falha primeiro — classe inexistente)**
+- [x] **Step 1: Teste unitário de senha (falha primeiro — classe inexistente)**
 
 ```kotlin
 package com.libare.adm.reader
@@ -93,7 +93,7 @@ class ReaderPasswordServiceTest {
 }
 ```
 
-- [ ] **Step 2: Rodar teste — espera falha de compilação/classe ausente**
+- [x] **Step 2: Rodar teste — espera falha de compilação/classe ausente**
 
 ```powershell
 cd C:\Users\User\Repository\adm-projeto\backend
@@ -104,7 +104,7 @@ $env:DB_PASSWORD = $script:DevDbPassword
 
 Expected: FAIL (classe/pacote não encontrado)
 
-- [ ] **Step 3: Implementar `ReaderPasswordService`**
+- [x] **Step 3: Implementar `ReaderPasswordService`**
 
 ```kotlin
 package com.libare.adm.modules.reader.application
@@ -142,7 +142,7 @@ class ReaderPasswordService(
 }
 ```
 
-- [ ] **Step 4: `EbookAppEnvelope` + `LegacyAssetUrlBuilder` + `ReaderLang`**
+- [x] **Step 4: `EbookAppEnvelope` + `LegacyAssetUrlBuilder` + `ReaderLang`**
 
 `EbookAppEnvelope.kt`:
 
@@ -209,7 +209,7 @@ object ReaderLang {
 }
 ```
 
-- [ ] **Step 5: Abrir rotas do leitor no `SecurityConfig`**
+- [x] **Step 5: Abrir rotas do leitor no `SecurityConfig`**
 
 Dentro de `authorizeHttpRequests`, **antes** de `anyRequest().authenticated()`:
 
@@ -226,7 +226,7 @@ it.requestMatchers(
 ).permitAll()
 ```
 
-- [ ] **Step 6: Rodar unit test — PASS**
+- [x] **Step 6: Rodar unit test — PASS**
 
 ```powershell
 .\gradlew.bat test --tests com.libare.adm.reader.ReaderPasswordServiceTest --no-daemon
@@ -234,7 +234,7 @@ it.requestMatchers(
 
 Expected: `BUILD SUCCESSFUL`, testes PASS
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add backend/src/main/kotlin/com/libare/adm/shared/security/SecurityConfig.kt `
