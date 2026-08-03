@@ -78,4 +78,21 @@ interface UserJpaRepository : JpaRepository<UserEntity, Long> {
         @Param("acervoId") acervoId: Long,
         @Param("tenantSchoolId") tenantSchoolId: Long?
     ): List<UserListProjection>
+
+    fun findByEmailIgnoreCaseAndUserTypeIgnoreCase(email: String, userType: String): UserEntity?
+
+    fun findByEmailIgnoreCase(email: String): UserEntity?
+
+    @Query(
+        """
+        SELECT u FROM UserEntity u
+        WHERE (LOWER(u.email) = LOWER(:email) OR u.authId = :authId)
+          AND LOWER(u.userType) = LOWER(:userType)
+        """
+    )
+    fun findSocialCandidate(
+        @Param("email") email: String,
+        @Param("authId") authId: String,
+        @Param("userType") userType: String
+    ): UserEntity?
 }
