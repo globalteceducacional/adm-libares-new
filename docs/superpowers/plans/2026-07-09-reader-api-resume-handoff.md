@@ -2,7 +2,7 @@
 
 **Data da pausa:** 2026-07-08  
 **Retomar em:** 2026-07-09  
-**Status:** Spec ✅ | Plano ✅ | Implementação **Tasks 1–4 ✅** (2026-08-03) — Task 5 (catálogo ebook) é a próxima
+**Status:** Spec ✅ | Plano ✅ | Implementação **Tasks 1–5 ✅** (2026-08-03) — Task 6 (social/leitura) é a próxima
 
 ---
 
@@ -37,7 +37,7 @@ Substituir as APIs PHP do app leitor (Flutter) por endpoints equivalentes no bac
 | Worktree | `C:\Users\User\Repository\adm-wt-reader-api` |
 | Branch | `feat/reader-api-php-mirror` |
 | Base commit | `c4c0a5e` (catalog CRUD + create user já mergeado na história) |
-| Código reader | Tasks 1–4: auth + shell `/api.php` (catálogo ainda stub) |
+| Código reader | Tasks 1–5: auth + catálogo `/api.php` (home, lists, book_id, sections) |
 
 ### NÃO misturar com
 
@@ -146,17 +146,15 @@ Marcar conforme avançar. Detalhe completo (código, testes, commits) está no p
 - [x] IT unknown method
 - [x] Commit: `feat(reader): add api.php dispatcher shell`
 
-### Task 5 — Catálogo ebook (Onda 3) — **PRÓXIMA**
+### Task 5 — Catálogo ebook (Onda 3) — **CONCLUÍDA** (2026-08-03)
 
-- [ ] `ReaderAcervoFilter` (user_id → acervo_id; filtro `livros_acervos`)
-- [ ] Port SQL do PHP: home, cat_list, cat_id, author_*, latest, allbook, search_text, book_id, home_section*
-- [ ] URLs de imagem via `LegacyAssetUrlBuilder`
-- [ ] IT: `home` (objeto com 3 listas), `cat_list`
-- [ ] Commit: `feat(reader): mirror api.php catalog and home_section methods`
+- [x] `ReaderAcervoFilter` (user_id → acervo_id; filtro `livros_acervos`)
+- [x] Port SQL do PHP: home, cat_list, cat_id, author_*, latest, allbook, search_text, book_id, home_section*
+- [x] URLs de imagem via `LegacyAssetUrlBuilder`
+- [x] IT: `home` (objeto com 3 listas), `cat_list`
+- [x] Commit: `feat(reader): mirror api.php catalog and home_section methods`
 
----
-
-### Task 6 — Social + leitura (Onda 4)
+### Task 6 — Social + leitura (Onda 4) — **PRÓXIMA**
 
 - [ ] Comments, ratings, favourite, wishlist
 - [ ] `book_page_state_*`, `continue_reading`, `con_reding_book` (typo mantido)
