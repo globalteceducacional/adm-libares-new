@@ -2,7 +2,7 @@
 
 **Data da pausa:** 2026-07-08  
 **Retomar em:** 2026-07-09  
-**Status:** Spec ✅ | Plano ✅ | Implementação **Task 1 ✅** (2026-08-03) — Task 2 é a próxima
+**Status:** Spec ✅ | Plano ✅ | Implementação **Task 1–2 ✅** (2026-08-03) — Task 3 (register/perfil/forgot) é a próxima
 
 ---
 
@@ -37,7 +37,7 @@ Substituir as APIs PHP do app leitor (Flutter) por endpoints equivalentes no bac
 | Worktree | `C:\Users\User\Repository\adm-wt-reader-api` |
 | Branch | `feat/reader-api-php-mirror` |
 | Base commit | `c4c0a5e` (catalog CRUD + create user já mergeado na história) |
-| Código reader | Task 1 em `modules/reader/` (envelope, senha, security) |
+| Código reader | Tasks 1–2: infra + `/user_login_api.php` (upgrade-on-login) |
 
 ### NÃO misturar com
 
@@ -120,18 +120,17 @@ Marcar conforme avançar. Detalhe completo (código, testes, commits) está no p
 
 ---
 
-### Task 2 — Login (Onda 2) — **PRÓXIMA**
+### Task 2 — Login (Onda 2) — **CONCLUÍDA** (2026-08-03)
 
-- [ ] `UserJpaRepository` finders (Normal + Google/Facebook)
-- [ ] `ReaderActiveLogService` (`tbl_active_log`)
-- [ ] `ReaderLoginUseCase` + `UserLoginController` em `/user_login_api.php`
-- [ ] IT: plaintext → upgrade BCrypt; BCrypt ok; senha errada
-- [ ] Commit: `feat(reader): mirror user_login_api with password upgrade`
+- [x] `UserJpaRepository` finders (Normal + Google/Facebook)
+- [x] `ReaderActiveLogService` (`tbl_active_log`)
+- [x] `ReaderLoginUseCase` + `UserLoginController` em `/user_login_api.php`
+- [x] IT: plaintext → upgrade BCrypt; BCrypt ok; senha errada
+- [x] Commit: `feat(reader): mirror user_login_api with password upgrade`
 
----
+### Task 3 — Register, perfil, forgot, galileu (Onda 2) — **PRÓXIMA**
 
-### Task 3 — Register, perfil, forgot, galileu (Onda 2)
-
+- [ ] Controllers + use cases register / profile / forgot / galileu
 - [ ] `/user_register_api.php` — hash na criação Normal
 - [ ] `/user_register_galileu.php` — delega ao mesmo register
 - [ ] `/user_profile_api.php`, `/user_profile_update_api.php`
