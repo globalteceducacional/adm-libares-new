@@ -19,8 +19,9 @@ Professores precisam entrar no painel admin, ver **apenas** os livros da escola 
 | Cenário “1 acervo” | Escola de teste com **um** acervo; se a escola tiver N acervos no futuro, o professor vê livros de todos |
 | Menu UI | Apenas **Livros** |
 | Ações | Listar + toggle Ativo/Inativo (`status` `1`/`0`) |
-| Bloqueado | create, update completo, delete, upload, autores, categorias, seções, Site, usuários, escolas, etc. |
+| Bloqueado | create, update completo, delete, upload, autores, categorias, seções ebook, usuários, escolas, etc. |
 | Permissões | `books.view` + `books.toggle_status` (nova). **Sem** `books.create` / `books.update` / `books.delete` |
+| Extensão Site | Também `sites.view` + `sites.toggle_status` — ver `2026-08-03-sites-modal-professor-toggle-design.md` |
 | API toggle | `PATCH /api/v1/books/{id}/status` body `{ "status": "0" \| "1" }` — exige `books.toggle_status` + livro acessível na escola |
 | Seed teste | Escola + 1 acervo + vínculos de livros + usuário `teste.professor` |
 
@@ -66,7 +67,7 @@ teste.professor ──► app_admin_users
 
 ### Frontend
 
-1. Nav: professor só vê item Livros (`books.view` e sem outras permissões de menu)  
+1. Nav: professor vê **Livros** (`books.view`) e, apos 2026-08-03, **Sites** (`sites.view`) — sem autores/categorias/secoes Site  
 2. `BooksPage` modo professor:  
    - sem botão Criar  
    - sem Editar/Excluir  
@@ -87,12 +88,13 @@ teste.professor ──► app_admin_users
 - CRUD de livros pelo professor  
 - Vínculo professor↔acervo  
 - App leitor / Flutter  
-- Módulo Site  
 - Gestão de alunos pelo professor  
+
+> **Atualização 2026-08-03:** módulo Site para professor (listar + toggle) **não** está mais fora de escopo — ver `2026-08-03-sites-modal-professor-toggle-design.md`.
 
 ## Critérios de aceite
 
-1. Login `teste.professor` entra e o menu mostra só Livros  
+1. Login `teste.professor` entra e o menu mostra **Livros** (+ **Sites** apos entrega 2026-08-03)  
 2. Lista contém apenas livros da escola teste (não os 93 do acervo global sem vínculo)  
 3. Toggle Ativo/Inativo funciona e persiste em `tbl_books.status`  
 4. `POST/PUT/DELETE /api/v1/books` retorna 403 para o professor  

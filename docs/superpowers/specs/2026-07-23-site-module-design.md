@@ -72,10 +72,11 @@ Flyway seed (+ atribuição a perfis platform / super-admin). Perfis de escola *
 
 | Código | Uso |
 |--------|-----|
-| `sites.view` | Listar/detalhar Sites, Autores, Categorias, Seções |
+| `sites.view` | Listar/detalhar Sites (e itens admin conforme nav) |
 | `sites.create` | Criar |
-| `sites.update` | Editar + toggle status/featured |
+| `sites.update` | Editar + toggle status/featured (CRUD completo) |
 | `sites.delete` | Excluir (cascata correta nas tabelas Site) |
+| `sites.toggle_status` | Ativar/desativar Site sem CRUD (role PROFESSOR) |
 | `sites.comments.view` | Listar comentários Site |
 | `sites.comments.moderate` | Remover comentários |
 
@@ -155,13 +156,15 @@ Novo grupo de menu **Site** (paralelo a “Catálogo”):
 | Item | Rota | Permissão |
 |------|------|-----------|
 | Sites | `/sites` | `sites.view` |
-| Autores | `/sites/autores` | `sites.view` |
-| Categorias | `/sites/categorias` | `sites.view` |
-| Seções | `/sites/secoes` | `sites.view` |
+| Autores | `/sites/autores` | `sites.update` (CRUD; professor sem esta perm nao ve o item) |
+| Categorias | `/sites/categorias` | `sites.update` |
+| Seções | `/sites/secoes` | `sites.update` |
 | Comentários | `/sites/comentarios` | `sites.comments.view` |
 
-- Reutilizar padrões Berry das páginas de Livros/Autores/Categorias/Seções/Comentários.
-- Sem seletor de acervo/escola.
+- Create/edit de **Sites** em **modal** (`SiteFormModal`), padrao Livros — ver `2026-08-03-sites-modal-professor-toggle-design.md`.
+- Role **PROFESSOR**: `sites.view` + `sites.toggle_status`; UI so listagem + Ativar/Desativar.
+- API: `PATCH /api/v1/sites/{id}/status`.
+- Sem seletor de acervo/escola (Site continua global).
 - Comentários: listagem + delete (completar o que o PHP deixou incompleto).
 - Services tipados apontando para `/api/v1/sites*`.
 
