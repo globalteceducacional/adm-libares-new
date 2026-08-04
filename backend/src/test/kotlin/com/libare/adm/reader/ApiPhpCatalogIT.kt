@@ -79,4 +79,15 @@ class ApiPhpCatalogIT {
             .andReturn().response.contentAsString
         assertTrue(mapper.readTree(body).path("EBOOK_APP").isArray)
     }
+
+    @Test
+    fun `app_details contains app_name`() {
+        val body = mockMvc.get("/api.php") {
+            param("method_name", "app_details")
+        }.andExpect { status { isOk() } }
+            .andReturn().response.contentAsString
+        val arr = mapper.readTree(body).path("EBOOK_APP")
+        assertTrue(arr.isArray && arr.size() > 0)
+        assertTrue(arr[0].has("app_name"))
+    }
 }

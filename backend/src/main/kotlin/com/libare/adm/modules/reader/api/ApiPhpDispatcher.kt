@@ -1,5 +1,6 @@
 package com.libare.adm.modules.reader.api
 
+import com.libare.adm.modules.reader.application.ReaderAppDetailsUseCase
 import com.libare.adm.modules.reader.application.ReaderBookDetailUseCase
 import com.libare.adm.modules.reader.application.ReaderCatalogListUseCases
 import com.libare.adm.modules.reader.application.ReaderHomeSectionUseCases
@@ -16,7 +17,8 @@ class ApiPhpDispatcher(
     private val bookDetail: ReaderBookDetailUseCase,
     private val sections: ReaderHomeSectionUseCases,
     private val social: ReaderSocialUseCases,
-    private val reading: ReaderReadingUseCases
+    private val reading: ReaderReadingUseCases,
+    private val appDetails: ReaderAppDetailsUseCase
 ) {
     fun dispatch(method: String, params: Map<String, String>): Map<String, Any> {
         val normalized = method.trim()
@@ -50,6 +52,7 @@ class ApiPhpDispatcher(
             "con_reding_book" -> reading.continueReadingBook(params)
             "removeuser" -> reading.removeUser(params)
             "delete_userdata" -> reading.deleteUserData(params)
+            "app_details" -> appDetails.appDetails()
             else -> legacyFallback()
         }
     }
