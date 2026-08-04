@@ -3,7 +3,7 @@
 **Data:** 2026-08-03  
 **Origem do pedido:** app Flutter `alexandria`  
 **Destinatário deste doc:** time Alexandria + time painel `adm-libares-new`  
-**Status:** Resposta alinhada — Opção A **Tasks 1–7 concluídas** (API leitor espelho PHP pronta no Kotlin; falta deploy/smoke Flutter)
+**Status:** Opção A implementada (Tasks 1–7 + regressão automatizada). Cutover produção/Flutter: ver `docs/superpowers/plans/2026-08-04-reader-api-cutover-checklist.md`
 
 ---
 

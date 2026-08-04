@@ -2,7 +2,7 @@
 
 **Data da pausa:** 2026-07-08  
 **Retomar em:** 2026-07-09  
-**Status:** Spec ✅ | Plano ✅ | Implementação **Tasks 1–7 ✅** (2026-08-04) — Task 8 (regressão/smoke cutover) é a próxima
+**Status:** Spec ✅ | Plano ✅ | Implementação **Tasks 1–8 (automação) ✅** (2026-08-04) — falta smoke Flutter + cutover produção
 
 ---
 
@@ -37,7 +37,7 @@ Substituir as APIs PHP do app leitor (Flutter) por endpoints equivalentes no bac
 | Worktree | `C:\Users\User\Repository\adm-wt-reader-api` |
 | Branch | `feat/reader-api-php-mirror` |
 | Base commit | `c4c0a5e` (catalog CRUD + create user já mergeado na história) |
-| Código reader | Tasks 1–7: API leitor ebook + Site espelho PHP pronta |
+| Código reader | Tasks 1–8: API completa; checklist cutover em `2026-08-04-reader-api-cutover-checklist.md` |
 
 ### NÃO misturar com
 
@@ -170,13 +170,14 @@ Marcar conforme avançar. Detalhe completo (código, testes, commits) está no p
 - [x] IT: `app_details` tem `app_name`; smoke `api_sites` home/cat_list
 - [x] Commit: `feat(reader): mirror app_details and api_sites.php`
 
-### Task 8 — Regressão + smoke cutover (Onda 6) — **PRÓXIMA**
+### Task 8 — Regressão + smoke cutover (Onda 6) — **PARCIAL** (2026-08-04)
 
-- [ ] `.\gradlew.bat test --tests com.libare.adm.reader.*`
-- [ ] User criado no admin (BCrypt) loga via `/user_login_api.php`
-- [ ] cURL smoke: home, cat_list, login
+- [x] `.\gradlew.bat test --tests com.libare.adm.reader.*` (+ CreateUserIT)
+- [ ] User criado no admin (BCrypt) loga via `/user_login_api.php` — validar no smoke manual pós-deploy
+- [ ] cURL smoke: home, cat_list, login — ver checklist
 - [ ] Flutter: apontar base URL para Kotlin; validar ebook (+ Site se usado)
 - [ ] Checklist produção: DNS/proxy → Kotlin; desligar PHP ebook/site; manter `LEGACY_ASSETS_ROOT`
+- [x] Checklist escrito: `docs/superpowers/plans/2026-08-04-reader-api-cutover-checklist.md`
 
 ---
 
