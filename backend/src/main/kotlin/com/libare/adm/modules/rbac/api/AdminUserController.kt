@@ -4,9 +4,11 @@ import com.libare.adm.modules.rbac.api.dto.AdminSchoolAssignmentResponse
 import com.libare.adm.modules.rbac.api.dto.AssignAdminSchoolsRequest
 import com.libare.adm.modules.rbac.api.dto.CreateTeamMemberRequest
 import com.libare.adm.modules.rbac.api.dto.TeamMemberResponse
+import com.libare.adm.modules.rbac.api.dto.ToggleTeamMemberStatusRequest
 import com.libare.adm.modules.rbac.application.AssignAdminSchoolsUseCase
 import com.libare.adm.modules.rbac.application.CreateTeamMemberUseCase
 import com.libare.adm.modules.rbac.application.ListTeamMembersUseCase
+import com.libare.adm.modules.rbac.application.ToggleTeamMemberStatusUseCase
 import com.libare.adm.shared.openapi.AdminSecured
 import com.libare.adm.shared.openapi.AdminWriteResponses
 import com.libare.adm.shared.openapi.OpenApiHeaders
@@ -24,6 +26,7 @@ import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -41,7 +44,8 @@ import org.springframework.web.bind.annotation.RestController
 class AdminUserController(
     private val assignAdminSchoolsUseCase: AssignAdminSchoolsUseCase,
     private val listTeamMembersUseCase: ListTeamMembersUseCase,
-    private val createTeamMemberUseCase: CreateTeamMemberUseCase
+    private val createTeamMemberUseCase: CreateTeamMemberUseCase,
+    private val toggleTeamMemberStatusUseCase: ToggleTeamMemberStatusUseCase
 ) {
     @Operation(
         summary = "Listar equipe",
@@ -87,6 +91,29 @@ class AdminUserController(
     @PostMapping
     fun create(@Valid @RequestBody request: CreateTeamMemberRequest): ResponseEntity<TeamMemberResponse> =
         ResponseEntity.status(HttpStatus.CREATED).body(createTeamMemberUseCase.execute(request))
+
+    @Operation(
+        summary = "Ativar ou desativar membro da equipe",
+        description = "Altera o status (0/1) de um admin/professor. Requer team.toggle_status. " +
+            "Nao permite alterar o proprio usuario nem Super Admin."
+    )
+    @AdminSecured
+    @AdminWriteResponses
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Status atualizado",
+                content = [Content(schema = Schema(implementation = TeamMemberResponse::class))]
+            )
+        ]
+    )
+    @PatchMapping("/{adminUserId}/status")
+    fun toggleStatus(
+        @Parameter(description = "ID do admin do painel") @PathVariable adminUserId: Long,
+        @Valid @RequestBody request: ToggleTeamMemberStatusRequest
+    ): ResponseEntity<TeamMemberResponse> =
+        ResponseEntity.ok(toggleTeamMemberStatusUseCase.execute(adminUserId, request.status))
 
     @Operation(
         summary = "Atribuir escolas ao admin",

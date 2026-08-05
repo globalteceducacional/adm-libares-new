@@ -11,3 +11,13 @@ export function createTeamMember(payload: CreateTeamMemberRequest): Promise<Team
     body: JSON.stringify(payload)
   });
 }
+
+export function toggleTeamMemberStatus(
+  adminUserId: number,
+  status: "0" | "1"
+): Promise<TeamMemberResponse> {
+  return apiRequest<TeamMemberResponse>(`/api/v1/admin-users/${adminUserId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status })
+  });
+}

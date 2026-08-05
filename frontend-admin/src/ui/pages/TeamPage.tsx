@@ -1,7 +1,8 @@
+import { motion } from "framer-motion";
 import { UserCog, UserPlus } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { createTeamMember } from "../../services/teamService";
+import { createTeamMember, toggleTeamMemberStatus } from "../../services/teamService";
 import {
   getQueryErrorMessage,
   useInvalidateAdminQueries,
@@ -28,6 +29,7 @@ import type { TeamMemberResponse } from "../../types/team";
 import { Alert, StatusBadge, useToast } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
+import { TableRowActions } from "../components/table/TableRowActions";
 
 function formatRoleLabel(roleCode: string): string {
   if (roleCode === "SCHOOL_ADMIN") {
@@ -42,7 +44,7 @@ function formatRoleLabel(roleCode: string): string {
 export function TeamPage() {
   const location = useLocation();
   const { showToast } = useToast();
-  const { isSuperAdmin, requiresSchoolContext, schoolContextId } = useAuth();
+  const { user, isSuperAdmin, requiresSchoolContext, schoolContextId } = useAuth();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const teamQuery = useTeamMembersQuery();
   const schoolsQuery = useSchoolsQuery();
@@ -56,6 +58,7 @@ export function TeamPage() {
     : schoolsQuery.error
       ? getQueryErrorMessage(schoolsQuery.error, "Falha ao carregar escolas")
       : undefined;
+  const currentUserId = user?.id ?? null;
 
   const schoolOptions = useMemo(() => {
     if (isSuperAdmin) {
@@ -82,6 +85,7 @@ export function TeamPage() {
   // Erros de campo so apos tentativa de salvar.
   const [showValidation, setShowValidation] = useState(false);
   const canCreate = usePermission("team.create");
+  const canToggle = usePermission("team.toggle_status");
   const needsSchoolContext = requiresSchoolContext && !schoolContextId;
 
   // Preenche escola quando o contexto chega depois da montagem (SCHOOL_ADMIN).
@@ -142,6 +146,26 @@ export function TeamPage() {
     }
   }
 
+  async function handleToggleStatus(member: TeamMemberResponse) {
+    if (!canToggle || currentUserId === member.id) {
+      return;
+    }
+    const nextStatus: "0" | "1" = member.status === "1" ? "0" : "1";
+    setSaving(true);
+    try {
+      await toggleTeamMemberStatus(member.id, nextStatus);
+      const label = nextStatus === "1" ? "ativado" : "desativado";
+      showToast(`Membro ${label} com sucesso.`, "success");
+      await invalidate.team();
+    } catch (toggleError) {
+      const message =
+        toggleError instanceof Error ? toggleError.message : "Falha ao alterar status";
+      showToast(message, "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const columns = useMemo<DataTableColumn<TeamMemberResponse>[]>(
     () => [
       { key: "id", label: "ID", render: (member) => member.id },
@@ -162,9 +186,41 @@ export function TeamPage() {
         key: "status",
         label: "Status",
         render: (member) => <StatusBadge active={member.status === "1"} />
-      }
+      },
+      ...(canToggle
+        ? [
+            {
+              key: "actions",
+              label: "Acoes",
+              stopRowClick: true,
+              render: (member: TeamMemberResponse) => {
+                const isSelf = currentUserId === member.id;
+                return (
+                  <TableRowActions>
+                    <motion.button
+                      whileHover={{ scale: 1.04 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="table-btn icon"
+                      type="button"
+                      onClick={() => handleToggleStatus(member)}
+                      disabled={saving || isSelf}
+                      title={isSelf ? "Nao e permitido alterar o proprio usuario" : undefined}
+                      aria-label={
+                        member.status === "1"
+                          ? `Desativar ${decodeHtmlEntities(member.name)}`
+                          : `Ativar ${decodeHtmlEntities(member.name)}`
+                      }
+                    >
+                      {member.status === "1" ? "Desativar" : "Ativar"}
+                    </motion.button>
+                  </TableRowActions>
+                );
+              }
+            } satisfies DataTableColumn<TeamMemberResponse>
+          ]
+        : [])
     ],
-    []
+    [canToggle, currentUserId, saving]
   );
 
   const filteredMembers = useMemo(() => {
@@ -264,20 +320,38 @@ export function TeamPage() {
         emptyMessage={emptyMessage}
         countLabel={`${filteredMembers.length} membro(s) com o filtro atual`}
         error={queryError}
-        renderMobileCard={(member) => (
-          <article className="book-card">
-            <div className="book-card-body">
-              <p className="book-card-id">#{member.id}</p>
-              <h3>{decodeHtmlEntities(member.name)}</h3>
-              <p className="book-card-author">{member.username}</p>
-              <p className="book-card-author">
-                {member.schoolName ? decodeHtmlEntities(member.schoolName) : `Escola #${member.schoolId}`}
-              </p>
-              <p className="book-card-author">{formatRoleLabel(member.roleCode)}</p>
-              <StatusBadge active={member.status === "1"} />
-            </div>
-          </article>
-        )}
+        renderMobileCard={(member) => {
+          const isSelf = currentUserId === member.id;
+          return (
+            <article className="book-card">
+              <div className="book-card-body">
+                <p className="book-card-id">#{member.id}</p>
+                <h3>{decodeHtmlEntities(member.name)}</h3>
+                <p className="book-card-author">{member.username}</p>
+                <p className="book-card-author">
+                  {member.schoolName
+                    ? decodeHtmlEntities(member.schoolName)
+                    : `Escola #${member.schoolId}`}
+                </p>
+                <p className="book-card-author">{formatRoleLabel(member.roleCode)}</p>
+                <StatusBadge active={member.status === "1"} />
+                {canToggle ? (
+                  <div className="book-card-actions">
+                    <button
+                      className="table-btn icon"
+                      type="button"
+                      onClick={() => handleToggleStatus(member)}
+                      disabled={saving || isSelf}
+                      title={isSelf ? "Nao e permitido alterar o proprio usuario" : undefined}
+                    >
+                      {member.status === "1" ? "Desativar" : "Ativar"}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </article>
+          );
+        }}
       />
     </ListingPageShell>
   );
