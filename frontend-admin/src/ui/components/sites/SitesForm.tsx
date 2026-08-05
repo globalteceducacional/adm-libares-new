@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Star } from "lucide-react";
 import { useId, useMemo, type ChangeEvent, type FormEvent } from "react";
 import type { UpsertSiteRequest } from "../../../types/sites";
 import type { SiteAuthorResponse } from "../../../types/siteAuthors";
@@ -281,7 +282,11 @@ export function SitesForm({
         </small>
       ) : null}
 
-      <label className="form-field form-field--full acervo-checkbox-item">
+      <label
+        className={`form-field form-field--full featured-toggle${
+          form.featured === "1" ? " is-checked" : ""
+        }`}
+      >
         <input
           type="checkbox"
           checked={form.featured === "1"}
@@ -292,7 +297,16 @@ export function SitesForm({
             })
           }
         />
-        <span>Destaque na home (featured)</span>
+        <Star
+          size={18}
+          className="featured-toggle__icon"
+          aria-hidden
+          fill={form.featured === "1" ? "currentColor" : "none"}
+        />
+        <span className="featured-toggle__copy">
+          <strong>Destacar na home do app</strong>
+          <small>Aparece no bloco de destaques da tela inicial do leitor.</small>
+        </span>
       </label>
 
       <label className="form-field" htmlFor={statusId}>

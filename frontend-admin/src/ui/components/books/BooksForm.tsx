@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Star } from "lucide-react";
 import { useId, useMemo, type ChangeEvent, type FormEvent } from "react";
 import type { AcervoOptionResponse } from "../../../types/acervos";
 import type {
@@ -372,13 +373,24 @@ export function BooksForm({
         />
       </fieldset>
 
-      <label className="form-field form-field--full acervo-checkbox-item">
+      <label
+        className={`form-field form-field--full featured-toggle${form.featured ? " is-checked" : ""}`}
+      >
         <input
           type="checkbox"
           checked={form.featured}
           onChange={(event) => onChange({ ...form, featured: event.target.checked })}
         />
-        <span>Destaque na home (featured)</span>
+        <Star
+          size={18}
+          className="featured-toggle__icon"
+          aria-hidden
+          fill={form.featured ? "currentColor" : "none"}
+        />
+        <span className="featured-toggle__copy">
+          <strong>Destacar na home do app</strong>
+          <small>Aparece no bloco de destaques da tela inicial do leitor.</small>
+        </span>
       </label>
 
       <label className="form-field" htmlFor={statusId}>
