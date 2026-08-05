@@ -1,4 +1,5 @@
 import type { ChangeEvent, FormEvent } from "react";
+import { useId } from "react";
 import { motion } from "framer-motion";
 import type { UpsertSiteAuthorRequest } from "../../../types/siteAuthors";
 import { LegacyImage } from "../LegacyImage";
@@ -29,25 +30,38 @@ export function SiteAuthorsForm({
   onImageChange
 }: SiteAuthorsFormProps) {
   const isBusy = saving || uploadingImage;
+  const nameId = useId();
+  const nameErrorId = `${nameId}-error`;
+  const descriptionId = useId();
+  const statusId = useId();
+  const imageId = useId();
 
   return (
-    <form className="book-form modern" onSubmit={onSubmit}>
+    <form className="book-form modern" onSubmit={onSubmit} noValidate>
       <fieldset className="form-field acervo-fieldset">
         <legend>Identificacao</legend>
-        <label className="form-field">
+        <label className="form-field" htmlFor={nameId}>
           <span>Nome</span>
           <input
+            id={nameId}
             type="text"
             value={form.name}
             maxLength={255}
             onChange={(event) => onChange({ ...form, name: event.target.value })}
             required
+            aria-invalid={isNameInvalid || undefined}
+            aria-describedby={isNameInvalid ? nameErrorId : undefined}
           />
-          {isNameInvalid ? <small className="warning-text">Informe um nome valido.</small> : null}
+          {isNameInvalid ? (
+            <small id={nameErrorId} role="alert" className="warning-text">
+              Informe um nome valido.
+            </small>
+          ) : null}
         </label>
-        <label className="form-field">
+        <label className="form-field" htmlFor={descriptionId}>
           <span>Descricao</span>
           <textarea
+            id={descriptionId}
             rows={4}
             value={form.description ?? ""}
             onChange={(event) => onChange({ ...form, description: event.target.value })}
@@ -58,8 +72,16 @@ export function SiteAuthorsForm({
       <fieldset className="form-field acervo-fieldset">
         <legend>Midia</legend>
         <div className="form-field">
-          <span>Foto do autor</span>
-          <input type="file" accept="image/*" onChange={onImageChange} disabled={isBusy} />
+          <label htmlFor={imageId}>
+            <span>Foto do autor</span>
+          </label>
+          <input
+            id={imageId}
+            type="file"
+            accept="image/*"
+            onChange={onImageChange}
+            disabled={isBusy}
+          />
           {uploadingImage ? <small className="form-hint">Enviando imagem...</small> : null}
           {form.image ? (
             <div className="book-cover-preview">
@@ -79,9 +101,10 @@ export function SiteAuthorsForm({
 
       <fieldset className="form-field acervo-fieldset">
         <legend>Status</legend>
-        <label className="form-field">
+        <label className="form-field" htmlFor={statusId}>
           <span>Status</span>
           <select
+            id={statusId}
             value={form.status}
             onChange={(event) => onChange({ ...form, status: event.target.value })}
           >

@@ -6,7 +6,7 @@ export type InputProps = InputHTMLAttributes<HTMLInputElement> & {
 };
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, invalid, ...props }, ref) => (
+  ({ className, invalid, "aria-invalid": ariaInvalid, ...props }, ref) => (
     <input
       ref={ref}
       className={cn(
@@ -17,6 +17,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         className
       )}
       {...props}
+      aria-invalid={ariaInvalid ?? (invalid ? true : undefined)}
     />
   )
 );

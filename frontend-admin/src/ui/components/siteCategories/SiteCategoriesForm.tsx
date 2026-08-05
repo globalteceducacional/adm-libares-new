@@ -1,4 +1,5 @@
 import type { ChangeEvent, FormEvent } from "react";
+import { useId } from "react";
 import { motion } from "framer-motion";
 import type { UpsertSiteCategoryRequest } from "../../../types/siteCategories";
 import { LegacyImage } from "../LegacyImage";
@@ -29,29 +30,48 @@ export function SiteCategoriesForm({
   onImageChange
 }: SiteCategoriesFormProps) {
   const isBusy = saving || uploadingImage;
+  const nameId = useId();
+  const nameErrorId = `${nameId}-error`;
+  const statusId = useId();
+  const imageId = useId();
 
   return (
-    <form className="book-form modern" onSubmit={onSubmit}>
+    <form className="book-form modern" onSubmit={onSubmit} noValidate>
       <fieldset className="form-field acervo-fieldset">
         <legend>Identificacao</legend>
-        <label className="form-field">
+        <label className="form-field" htmlFor={nameId}>
           <span>Nome</span>
           <input
+            id={nameId}
             type="text"
             value={form.name}
             maxLength={255}
             onChange={(event) => onChange({ ...form, name: event.target.value })}
             required
+            aria-invalid={isNameInvalid || undefined}
+            aria-describedby={isNameInvalid ? nameErrorId : undefined}
           />
-          {isNameInvalid ? <small className="warning-text">Informe um nome valido.</small> : null}
+          {isNameInvalid ? (
+            <small id={nameErrorId} role="alert" className="warning-text">
+              Informe um nome valido.
+            </small>
+          ) : null}
         </label>
       </fieldset>
 
       <fieldset className="form-field acervo-fieldset">
         <legend>Midia</legend>
         <div className="form-field">
-          <span>Imagem da categoria</span>
-          <input type="file" accept="image/*" onChange={onImageChange} disabled={isBusy} />
+          <label htmlFor={imageId}>
+            <span>Imagem da categoria</span>
+          </label>
+          <input
+            id={imageId}
+            type="file"
+            accept="image/*"
+            onChange={onImageChange}
+            disabled={isBusy}
+          />
           {uploadingImage ? <small className="form-hint">Enviando imagem...</small> : null}
           {form.image ? (
             <div className="book-cover-preview">
@@ -71,9 +91,10 @@ export function SiteCategoriesForm({
 
       <fieldset className="form-field acervo-fieldset">
         <legend>Status</legend>
-        <label className="form-field">
+        <label className="form-field" htmlFor={statusId}>
           <span>Status</span>
           <select
+            id={statusId}
             value={form.status}
             onChange={(event) => onChange({ ...form, status: event.target.value })}
           >

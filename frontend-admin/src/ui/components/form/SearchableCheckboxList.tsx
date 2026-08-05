@@ -19,6 +19,10 @@ type SearchableCheckboxListProps<TId extends string | number = number> = {
   emptySearchMessage?: string;
   /** Id do input para acessibilidade (aria-controls / htmlFor). */
   searchId?: string;
+  /** Marca o grupo de opcoes como invalido para leitores de tela. */
+  invalid?: boolean;
+  "aria-describedby"?: string;
+  "aria-labelledby"?: string;
 };
 
 function normalize(value: string): string {
@@ -42,7 +46,10 @@ export function SearchableCheckboxList<TId extends string | number = number>({
   disabled = false,
   emptyMessage = "Nenhuma opcao disponivel.",
   emptySearchMessage = "Nenhum resultado para a busca.",
-  searchId
+  searchId,
+  invalid = false,
+  "aria-describedby": ariaDescribedBy,
+  "aria-labelledby": ariaLabelledBy
 }: SearchableCheckboxListProps<TId>) {
   const [query, setQuery] = useState("");
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
@@ -89,7 +96,13 @@ export function SearchableCheckboxList<TId extends string | number = number>({
       {visibleItems.length === 0 ? (
         <small className="form-hint searchable-checkbox-list__empty">{emptySearchMessage}</small>
       ) : (
-        <div className={listClassName} role="group">
+        <div
+          className={listClassName}
+          role="group"
+          aria-invalid={invalid || undefined}
+          aria-describedby={ariaDescribedBy}
+          aria-labelledby={ariaLabelledBy}
+        >
           {visibleItems.map((item) => {
             const checked = selectedSet.has(item.id);
             return (

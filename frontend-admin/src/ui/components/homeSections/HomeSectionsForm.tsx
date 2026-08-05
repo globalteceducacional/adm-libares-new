@@ -1,5 +1,5 @@
 import type { FormEvent } from "react";
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { motion } from "framer-motion";
 import type { UpsertHomeSectionRequest } from "../../../types/homeSections";
 import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
@@ -39,6 +39,11 @@ export function HomeSectionsForm({
   onChange,
   onToggleBook
 }: HomeSectionsFormProps) {
+  const titleId = useId();
+  const titleErrorId = `${titleId}-error`;
+  const statusId = useId();
+  const booksLegendId = useId();
+
   const bookItems = useMemo(
     () =>
       activeBooks.map((book) => ({
@@ -49,24 +54,32 @@ export function HomeSectionsForm({
   );
 
   return (
-    <form className="book-form modern" onSubmit={onSubmit}>
+    <form className="book-form modern" onSubmit={onSubmit} noValidate>
       <fieldset className="form-field acervo-fieldset">
         <legend>Identificacao</legend>
-        <label className="form-field">
+        <label className="form-field" htmlFor={titleId}>
           <span>Titulo</span>
           <input
+            id={titleId}
             type="text"
             value={form.title}
             maxLength={150}
             onChange={(event) => onChange({ ...form, title: event.target.value })}
             disabled={needsSchoolContext}
             required
+            aria-invalid={isTitleInvalid || undefined}
+            aria-describedby={isTitleInvalid ? titleErrorId : undefined}
           />
-          {isTitleInvalid ? <small className="warning-text">Informe um titulo valido.</small> : null}
+          {isTitleInvalid ? (
+            <small id={titleErrorId} role="alert" className="warning-text">
+              Informe um titulo valido.
+            </small>
+          ) : null}
         </label>
-        <label className="form-field">
+        <label className="form-field" htmlFor={statusId}>
           <span>Status</span>
           <select
+            id={statusId}
             value={form.status}
             onChange={(event) => onChange({ ...form, status: event.target.value })}
             disabled={needsSchoolContext}
@@ -78,7 +91,7 @@ export function HomeSectionsForm({
       </fieldset>
 
       <fieldset className="form-field acervo-fieldset">
-        <legend>Livros da seção</legend>
+        <legend id={booksLegendId}>Livros da seção</legend>
         {needsSchoolContext ? (
           <small className="form-hint">Selecione uma escola para listar livros disponiveis.</small>
         ) : booksLoading ? (
@@ -92,6 +105,7 @@ export function HomeSectionsForm({
             tall
             disabled={saving || needsSchoolContext}
             emptyMessage="Nenhum livro ativo disponivel no contexto atual."
+            aria-labelledby={booksLegendId}
           />
         )}
       </fieldset>

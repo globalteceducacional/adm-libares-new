@@ -31,6 +31,9 @@ type SearchableSelectProps = {
   className?: string;
   /** Estilo compacto para filtros de listagem (BerrySelect). */
   compact?: boolean;
+  /** Marca o controle como invalido para leitores de tela. */
+  invalid?: boolean;
+  "aria-describedby"?: string;
 };
 
 function normalize(value: string): string {
@@ -60,7 +63,9 @@ export function SearchableSelect({
   emptyLabel = "Nenhum",
   id,
   className,
-  compact = false
+  compact = false,
+  invalid = false,
+  "aria-describedby": ariaDescribedBy
 }: SearchableSelectProps) {
   const generatedId = useId();
   const selectId = id ?? generatedId;
@@ -201,6 +206,8 @@ export function SearchableSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listboxId}
+        aria-invalid={invalid || undefined}
+        aria-describedby={ariaDescribedBy}
         onClick={() => {
           if (disabled) {
             return;

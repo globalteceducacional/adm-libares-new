@@ -1,5 +1,5 @@
 import type { FormEvent } from "react";
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { motion } from "framer-motion";
 import type { UpsertSiteSectionRequest } from "../../../types/siteSections";
 import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
@@ -37,6 +37,11 @@ export function SiteSectionsForm({
   onChange,
   onToggleSite
 }: SiteSectionsFormProps) {
+  const titleId = useId();
+  const titleErrorId = `${titleId}-error`;
+  const statusId = useId();
+  const sitesLegendId = useId();
+
   const siteItems = useMemo(
     () =>
       activeSites.map((site) => ({
@@ -47,23 +52,31 @@ export function SiteSectionsForm({
   );
 
   return (
-    <form className="book-form modern" onSubmit={onSubmit}>
+    <form className="book-form modern" onSubmit={onSubmit} noValidate>
       <fieldset className="form-field acervo-fieldset">
         <legend>Identificacao</legend>
-        <label className="form-field">
+        <label className="form-field" htmlFor={titleId}>
           <span>Titulo</span>
           <input
+            id={titleId}
             type="text"
             value={form.title}
             maxLength={150}
             onChange={(event) => onChange({ ...form, title: event.target.value })}
             required
+            aria-invalid={isTitleInvalid || undefined}
+            aria-describedby={isTitleInvalid ? titleErrorId : undefined}
           />
-          {isTitleInvalid ? <small className="warning-text">Informe um titulo valido.</small> : null}
+          {isTitleInvalid ? (
+            <small id={titleErrorId} role="alert" className="warning-text">
+              Informe um titulo valido.
+            </small>
+          ) : null}
         </label>
-        <label className="form-field">
+        <label className="form-field" htmlFor={statusId}>
           <span>Status</span>
           <select
+            id={statusId}
             value={form.status}
             onChange={(event) => onChange({ ...form, status: event.target.value })}
           >
@@ -74,7 +87,7 @@ export function SiteSectionsForm({
       </fieldset>
 
       <fieldset className="form-field acervo-fieldset">
-        <legend>Sites da seção</legend>
+        <legend id={sitesLegendId}>Sites da seção</legend>
         {sitesLoading ? (
           <small className="form-hint">Carregando sites...</small>
         ) : (
@@ -86,6 +99,7 @@ export function SiteSectionsForm({
             tall
             disabled={saving}
             emptyMessage="Nenhum site ativo disponivel."
+            aria-labelledby={sitesLegendId}
           />
         )}
       </fieldset>
