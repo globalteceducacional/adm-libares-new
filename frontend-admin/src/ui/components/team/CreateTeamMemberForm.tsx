@@ -127,7 +127,7 @@ export function CreateTeamMemberForm({
           whileTap={{ scale: 0.98 }}
           className="primary-btn"
           type="submit"
-          disabled={disabled || isFormInvalid}
+          disabled={disabled}
         >
           {saving ? "Salvando..." : "Criar membro da equipe"}
         </motion.button>
@@ -135,6 +135,11 @@ export function CreateTeamMemberForm({
           Limpar formulario
         </button>
       </div>
+      {isFormInvalid ? (
+        <small className="warning-text form-field--full">
+          Preencha usuario, nome, senha (min. 6) e escola.
+        </small>
+      ) : null}
     </form>
   );
 }

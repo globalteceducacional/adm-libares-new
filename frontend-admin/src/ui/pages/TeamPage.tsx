@@ -13,7 +13,6 @@ import { useAuth } from "../../features/auth/AuthContext";
 import { PermissionGate } from "../../features/auth/PermissionGate";
 import { usePermission } from "../../features/auth/usePermission";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { useTimedMessage } from "../../hooks/useTimedMessage";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
 import { BerryFormPanel } from "../components/layout/BerryFormPanel";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
@@ -26,7 +25,7 @@ import {
   toCreateTeamMemberRequest
 } from "../components/team/CreateTeamMemberForm";
 import type { TeamMemberResponse } from "../../types/team";
-import { Alert, StatusBadge } from "../../shared/ui";
+import { Alert, StatusBadge, useToast } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 
@@ -42,6 +41,7 @@ function formatRoleLabel(roleCode: string): string {
 
 export function TeamPage() {
   const location = useLocation();
+  const { showToast } = useToast();
   const { isSuperAdmin, requiresSchoolContext, schoolContextId } = useAuth();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const teamQuery = useTeamMembersQuery();
@@ -79,7 +79,8 @@ export function TeamPage() {
   );
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
-  const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
+  // Erros de campo so apos tentativa de salvar.
+  const [showValidation, setShowValidation] = useState(false);
   const canCreate = usePermission("team.create");
   const needsSchoolContext = requiresSchoolContext && !schoolContextId;
 
@@ -109,26 +110,33 @@ export function TeamPage() {
 
   function resetCreateForm() {
     setCreateForm(buildInitialTeamMemberForm(isSuperAdmin, defaultSchoolId));
+    setShowValidation(false);
+    setFormError("");
   }
 
   async function handleCreateMember(event: FormEvent) {
     event.preventDefault();
-    if (!canCreate || needsSchoolContext || isCreateFormInvalid) {
+    if (!canCreate || needsSchoolContext) {
+      return;
+    }
+    setShowValidation(true);
+    if (isCreateFormInvalid) {
+      setFormError("Preencha os campos obrigatorios antes de salvar.");
       return;
     }
 
     setFormError("");
-    clearSuccess();
     setSaving(true);
     try {
       await createTeamMember(toCreateTeamMemberRequest(createForm));
       resetCreateForm();
-      showSuccess("Membro da equipe criado com sucesso.");
+      showToast("Membro da equipe criado com sucesso.", "success");
       await invalidate.team();
     } catch (requestError) {
-      setFormError(
-        requestError instanceof Error ? requestError.message : "Falha ao criar membro da equipe"
-      );
+      const message =
+        requestError instanceof Error ? requestError.message : "Falha ao criar membro da equipe";
+      setFormError(message);
+      showToast(message, "error");
     } finally {
       setSaving(false);
     }
@@ -228,21 +236,12 @@ export function TeamPage() {
             saving={saving}
             isSuperAdmin={isSuperAdmin}
             needsSchoolContext={needsSchoolContext}
-            isFormInvalid={isCreateFormInvalid}
+            isFormInvalid={showValidation && isCreateFormInvalid}
             schoolOptions={schoolOptions}
             onSubmit={handleCreateMember}
-            onReset={() => {
-              resetCreateForm();
-              clearSuccess();
-              setFormError("");
-            }}
+            onReset={resetCreateForm}
             onChange={setCreateForm}
           />
-          {success ? (
-            <Alert tone="success" className="mt-3">
-              {success}
-            </Alert>
-          ) : null}
           {formError ? (
             <Alert tone="danger" className="mt-3">
               {formError}
@@ -265,7 +264,6 @@ export function TeamPage() {
         emptyMessage={emptyMessage}
         countLabel={`${filteredMembers.length} membro(s) com o filtro atual`}
         error={queryError}
-        success={canCreate ? undefined : success}
         renderMobileCard={(member) => (
           <article className="book-card">
             <div className="book-card-body">

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Pencil, Plus, Power, Tags, Trash2 } from "lucide-react";
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   createSiteCategory,
@@ -16,6 +16,7 @@ import {
 import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { PermissionGate } from "../../features/auth/PermissionGate";
 import { usePermission } from "../../features/auth/usePermission";
+import { SiteCategoryDetailModal } from "../components/siteCategories/SiteCategoryDetailModal";
 import { SiteCategoryFormModal } from "../components/siteCategories/SiteCategoryFormModal";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
@@ -53,6 +54,7 @@ export function SiteCategoriesPage() {
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<SiteCategoryResponse | null>(null);
   const [form, setForm] = useState<UpsertSiteCategoryRequest>(EMPTY_FORM);
   // Erros de campo so apos tentativa de salvar (evita vermelho no form vazio).
   const [showValidation, setShowValidation] = useState(false);
@@ -79,6 +81,15 @@ export function SiteCategoriesPage() {
     setFormError("");
     setFormModalOpen(true);
   }
+
+  useEffect(() => {
+    setSelectedCategory((current) => {
+      if (!current) {
+        return null;
+      }
+      return categories.find((item) => item.id === current.id) ?? null;
+    });
+  }, [categories]);
 
   async function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -142,6 +153,7 @@ export function SiteCategoriesPage() {
       image: category.image ?? "",
       status: category.status
     });
+    setSelectedCategory(null);
     setFormModalOpen(true);
   }
 
@@ -181,6 +193,9 @@ export function SiteCategoriesPage() {
       await deleteSiteCategory(categoryId);
       if (editingId === categoryId) {
         closeFormModal();
+      }
+      if (selectedCategory?.id === categoryId) {
+        setSelectedCategory(null);
       }
       showToast("Categoria do Site desativada com sucesso.", "success");
       await invalidate.siteCategories();
@@ -332,6 +347,7 @@ export function SiteCategoriesPage() {
         emptyMessage="Nenhuma categoria encontrada para os filtros aplicados."
         countLabel={`${filteredCategories.length} categoria(s) com o filtro atual`}
         error={listingError}
+        onRowClick={setSelectedCategory}
         renderMobileCard={(category) => (
           <article className="book-card">
             <div className="book-card-media">
@@ -366,6 +382,18 @@ export function SiteCategoriesPage() {
         onReset={closeFormModal}
         onFormChange={setForm}
         onImageChange={handleImageChange}
+      />
+
+      <SiteCategoryDetailModal
+        category={selectedCategory}
+        open={selectedCategory !== null}
+        saving={saving}
+        canUpdate={canUpdate}
+        canDelete={canDelete}
+        onClose={() => setSelectedCategory(null)}
+        onEdit={handleEdit}
+        onActivate={handleActivate}
+        onDelete={(category) => setConfirmDeleteId(category.id)}
       />
 
       <ConfirmDialog

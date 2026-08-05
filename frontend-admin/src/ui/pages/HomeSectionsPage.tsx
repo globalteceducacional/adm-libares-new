@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { LayoutList, Pencil, Plus, Power, Trash2 } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   createHomeSection,
@@ -17,6 +17,7 @@ import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { useAuth } from "../../features/auth/AuthContext";
 import { PermissionGate } from "../../features/auth/PermissionGate";
 import { usePermission } from "../../features/auth/usePermission";
+import { HomeSectionDetailModal } from "../components/homeSections/HomeSectionDetailModal";
 import { HomeSectionFormModal } from "../components/homeSections/HomeSectionFormModal";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
@@ -56,6 +57,7 @@ export function HomeSectionsPage() {
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [selectedSection, setSelectedSection] = useState<HomeSectionResponse | null>(null);
   const [form, setForm] = useState<UpsertHomeSectionRequest>(EMPTY_FORM);
   // Erros de campo so apos tentativa de salvar (evita vermelho no form vazio).
   const [showValidation, setShowValidation] = useState(false);
@@ -88,6 +90,15 @@ export function HomeSectionsPage() {
     setFormError("");
     setFormModalOpen(true);
   }
+
+  useEffect(() => {
+    setSelectedSection((current) => {
+      if (!current) {
+        return null;
+      }
+      return sections.find((item) => item.id === current.id) ?? null;
+    });
+  }, [sections]);
 
   function toggleBook(bookId: number) {
     setForm((current) => {
@@ -151,6 +162,7 @@ export function HomeSectionsPage() {
       bookIds: [...section.bookIds],
       status: section.status
     });
+    setSelectedSection(null);
     setFormModalOpen(true);
   }
 
@@ -191,6 +203,9 @@ export function HomeSectionsPage() {
       await deleteHomeSection(sectionId);
       if (editingId === sectionId) {
         closeFormModal();
+      }
+      if (selectedSection?.id === sectionId) {
+        setSelectedSection(null);
       }
       showToast("Seção desativada com sucesso.", "success");
       await invalidate.homeSections();
@@ -347,6 +362,7 @@ export function HomeSectionsPage() {
         emptyMessage="Nenhuma seção encontrada para os filtros aplicados."
         countLabel={`${filteredSections.length} seção(ões) com o filtro atual`}
         error={listingError}
+        onRowClick={setSelectedSection}
         renderMobileCard={(section) => (
           <article className="book-card">
             <div className="book-card-body">
@@ -374,6 +390,18 @@ export function HomeSectionsPage() {
         onReset={closeFormModal}
         onFormChange={setForm}
         onToggleBook={toggleBook}
+      />
+
+      <HomeSectionDetailModal
+        section={selectedSection}
+        open={selectedSection !== null}
+        saving={saving}
+        canUpdate={canUpdate}
+        canDelete={canDelete}
+        onClose={() => setSelectedSection(null)}
+        onEdit={handleEdit}
+        onActivate={handleActivate}
+        onDelete={(section) => setConfirmDeleteId(section.id)}
       />
 
       <ConfirmDialog

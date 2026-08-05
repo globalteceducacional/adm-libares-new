@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Pencil, Plus, Power, Trash2, UserRound } from "lucide-react";
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   createSiteAuthor,
@@ -16,6 +16,7 @@ import {
 import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { PermissionGate } from "../../features/auth/PermissionGate";
 import { usePermission } from "../../features/auth/usePermission";
+import { SiteAuthorDetailModal } from "../components/siteAuthors/SiteAuthorDetailModal";
 import { SiteAuthorFormModal } from "../components/siteAuthors/SiteAuthorFormModal";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
@@ -55,6 +56,7 @@ export function SiteAuthorsPage() {
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [selectedAuthor, setSelectedAuthor] = useState<SiteAuthorResponse | null>(null);
   const [form, setForm] = useState<UpsertSiteAuthorRequest>(EMPTY_FORM);
   // Erros de campo so apos tentativa de salvar (evita vermelho no form vazio).
   const [showValidation, setShowValidation] = useState(false);
@@ -81,6 +83,15 @@ export function SiteAuthorsPage() {
     setFormError("");
     setFormModalOpen(true);
   }
+
+  useEffect(() => {
+    setSelectedAuthor((current) => {
+      if (!current) {
+        return null;
+      }
+      return authors.find((item) => item.id === current.id) ?? null;
+    });
+  }, [authors]);
 
   async function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -146,6 +157,7 @@ export function SiteAuthorsPage() {
       image: author.image ?? "",
       status: author.status
     });
+    setSelectedAuthor(null);
     setFormModalOpen(true);
   }
 
@@ -186,6 +198,9 @@ export function SiteAuthorsPage() {
       await deleteSiteAuthor(authorId);
       if (editingId === authorId) {
         closeFormModal();
+      }
+      if (selectedAuthor?.id === authorId) {
+        setSelectedAuthor(null);
       }
       showToast("Autor do Site desativado com sucesso.", "success");
       await invalidate.siteAuthors();
@@ -339,6 +354,7 @@ export function SiteAuthorsPage() {
         emptyMessage="Nenhum autor encontrado para os filtros aplicados."
         countLabel={`${filteredAuthors.length} autor(es) com o filtro atual`}
         error={listingError}
+        onRowClick={setSelectedAuthor}
         renderMobileCard={(author) => (
           <article className="book-card">
             <div className="book-card-media">
@@ -373,6 +389,18 @@ export function SiteAuthorsPage() {
         onReset={closeFormModal}
         onFormChange={setForm}
         onImageChange={handleImageChange}
+      />
+
+      <SiteAuthorDetailModal
+        author={selectedAuthor}
+        open={selectedAuthor !== null}
+        saving={saving}
+        canUpdate={canUpdate}
+        canDelete={canDelete}
+        onClose={() => setSelectedAuthor(null)}
+        onEdit={handleEdit}
+        onActivate={handleActivate}
+        onDelete={(author) => setConfirmDeleteId(author.id)}
       />
 
       <ConfirmDialog
