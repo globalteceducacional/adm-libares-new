@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Globe, Pencil, Plus, Trash2 } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   createSite,
@@ -21,6 +21,7 @@ import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { PermissionGate } from "../../features/auth/PermissionGate";
 import { usePermission } from "../../features/auth/usePermission";
 import { SiteFormModal } from "../components/sites/SiteFormModal";
+import { SiteDetailModal } from "../components/sites/SiteDetailModal";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
 import { ListingPageShell } from "../components/layout/ListingPageShell";
@@ -68,6 +69,7 @@ export function SitesPage() {
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [selectedSite, setSelectedSite] = useState<SiteResponse | null>(null);
   const [form, setForm] = useState<UpsertSiteRequest>(EMPTY_SITE_FORM);
   // Erros de campo so apos tentativa de salvar (evita vermelho no form vazio).
   const [showValidation, setShowValidation] = useState(false);
@@ -117,6 +119,23 @@ export function SitesPage() {
     }
     return map;
   }, [authors]);
+
+  const categoryById = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const category of categories) {
+      map.set(category.id, decodeHtmlEntities(category.name));
+    }
+    return map;
+  }, [categories]);
+
+  useEffect(() => {
+    setSelectedSite((current) => {
+      if (!current) {
+        return null;
+      }
+      return sites.find((item) => item.id === current.id) ?? null;
+    });
+  }, [sites]);
 
   function resetForm() {
     setForm(EMPTY_SITE_FORM);
@@ -209,6 +228,7 @@ export function SitesPage() {
   }
 
   function handleEdit(site: SiteResponse) {
+    setSelectedSite(null);
     setEditingId(site.id);
     setUploadError("");
     setFormError("");
@@ -255,6 +275,9 @@ export function SitesPage() {
       await deleteSite(siteId);
       if (editingId === siteId) {
         closeFormModal();
+      }
+      if (selectedSite?.id === siteId) {
+        setSelectedSite(null);
       }
       showToast("Site excluido com sucesso.", "success");
       await invalidate.sites();
@@ -438,6 +461,7 @@ export function SitesPage() {
         emptyMessage="Nenhum site encontrado para os filtros aplicados."
         countLabel={`${filteredSites.length} site(s) com o filtro atual`}
         error={listingError}
+        onRowClick={setSelectedSite}
         renderMobileCard={(site) => (
           <article className="book-card">
             <div className="book-card-media">
@@ -507,6 +531,31 @@ export function SitesPage() {
         onFormChange={setForm}
         onCoverSelected={handleCoverSelected}
         onSiteFileSelected={handleSiteFileSelected}
+      />
+
+      <SiteDetailModal
+        site={selectedSite}
+        open={selectedSite !== null}
+        saving={saving}
+        authorLabel={
+          selectedSite
+            ? authorById.get(selectedSite.authorId) ?? `Autor #${selectedSite.authorId}`
+            : undefined
+        }
+        categoryLabels={
+          selectedSite
+            ? selectedSite.categoryIds.map(
+                (id) => categoryById.get(id) ?? `Categoria #${id}`
+              )
+            : []
+        }
+        canUpdate={canUpdate}
+        canToggle={canToggle}
+        canDelete={canDelete}
+        onClose={() => setSelectedSite(null)}
+        onEdit={handleEdit}
+        onToggleStatus={handleToggleStatus}
+        onDelete={(site) => setConfirmDeleteId(site.id)}
       />
 
       <ConfirmDialog

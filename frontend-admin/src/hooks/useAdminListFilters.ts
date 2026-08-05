@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { AdminStatusFilter } from "../types/adminList";
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 function parseStatus(params: URLSearchParams): AdminStatusFilter {
   const raw = params.get("status");
@@ -9,7 +11,9 @@ function parseStatus(params: URLSearchParams): AdminStatusFilter {
 
 /**
  * Mantém busca (`q`) e, opcionalmente, status (`status`) alinhados à query string.
- * Preserva outros parâmetros ao atualizar (ex.: período no dashboard não é tocado aqui).
+ * O input de busca atualiza o estado local na hora; a URL (`q`) só após debounce,
+ * para evitar churn a cada tecla. Status continua síncrono.
+ * Preserva outros parâmetros ao atualizar (ex.: período no dashboard).
  */
 export function useAdminListFilters(options?: { syncStatus?: boolean }) {
   const syncStatus = options?.syncStatus !== false;
@@ -20,28 +24,54 @@ export function useAdminListFilters(options?: { syncStatus?: boolean }) {
     syncStatus ? parseStatus(searchParams) : "all"
   );
 
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchRef = useRef(search);
+  searchRef.current = search;
+
+  // Sincroniza estado local quando a URL muda por navegação externa (voltar/avançar).
   useEffect(() => {
-    setSearchState(searchParams.get("q") ?? "");
+    const urlQ = searchParams.get("q") ?? "";
+    if (urlQ !== searchRef.current) {
+      setSearchState(urlQ);
+    }
     if (syncStatus) {
       setStatusState(parseStatus(searchParams));
     }
   }, [searchParams, syncStatus]);
 
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
   const setSearch = useCallback(
     (value: string) => {
       setSearchState(value);
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          if (value.trim()) {
-            next.set("q", value);
-          } else {
-            next.delete("q");
-          }
-          return next;
-        },
-        { replace: true }
-      );
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      debounceRef.current = setTimeout(() => {
+        setSearchParams(
+          (prev) => {
+            const next = new URLSearchParams(prev);
+            const trimmed = value.trim();
+            const currentQ = prev.get("q") ?? "";
+            if (trimmed === currentQ) {
+              return prev;
+            }
+            if (trimmed) {
+              next.set("q", trimmed);
+            } else {
+              next.delete("q");
+            }
+            return next;
+          },
+          { replace: true }
+        );
+      }, SEARCH_DEBOUNCE_MS);
     },
     [setSearchParams]
   );

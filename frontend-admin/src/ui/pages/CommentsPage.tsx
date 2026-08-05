@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Trash2 } from "lucide-react";
+import { Eye, EyeOff, MessageSquare, Trash2 } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { deleteComment, updateCommentStatus } from "../../services/commentsService";
@@ -10,17 +10,20 @@ import {
 } from "../../features/shared/api/queries";
 import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { useTimedMessage } from "../../hooks/useTimedMessage";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
+import { ListingMiniStats } from "../components/layout/ListingMiniStats";
+import { ListingPageShell } from "../components/layout/ListingPageShell";
+import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import { CommentDetailModal } from "../components/comments/CommentDetailModal";
 import type { CommentResponse } from "../../types/comments";
-import { ConfirmDialog, PageShell, StatusBadge } from "../../shared/ui";
+import { ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
 
 export function CommentsPage() {
   const location = useLocation();
+  const { showToast } = useToast();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const commentsQuery = useCommentsQuery();
   const invalidate = useInvalidateAdminQueries();
@@ -33,7 +36,6 @@ export function CommentsPage() {
   const [actionError, setActionError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [selectedComment, setSelectedComment] = useState<CommentResponse | null>(null);
-  const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const error = actionError || queryError;
 
   useEffect(() => {
@@ -47,17 +49,20 @@ export function CommentsPage() {
 
   async function handleToggleStatus(comment: CommentResponse) {
     setActionError("");
-    clearSuccess();
     setSaving(true);
     try {
       const nextStatus = comment.status === "0" ? "1" : "0";
       await updateCommentStatus(comment.id, { status: nextStatus });
-      showSuccess(nextStatus === "1" ? "Comentario publicado com sucesso." : "Comentario ocultado com sucesso.");
+      showToast(
+        nextStatus === "1" ? "Comentario publicado com sucesso." : "Comentario ocultado com sucesso.",
+        "success"
+      );
       await invalidate.comments();
     } catch (requestError) {
       const message =
         requestError instanceof Error ? requestError.message : "Falha ao atualizar status";
       setActionError(message);
+      showToast(message, "error");
     } finally {
       setSaving(false);
     }
@@ -69,19 +74,19 @@ export function CommentsPage() {
     }
     const commentId = confirmDeleteId;
     setActionError("");
-    clearSuccess();
     setSaving(true);
     try {
       await deleteComment(commentId);
       if (selectedComment?.id === commentId) {
         setSelectedComment(null);
       }
-      showSuccess("Comentario excluido com sucesso.");
+      showToast("Comentario excluido com sucesso.", "success");
       await invalidate.comments();
     } catch (requestError) {
       const message =
         requestError instanceof Error ? requestError.message : "Falha ao excluir comentario";
       setActionError(message);
+      showToast(message, "error");
     } finally {
       setSaving(false);
       setConfirmDeleteId(null);
@@ -164,6 +169,16 @@ export function CommentsPage() {
     });
   }, [comments, search, statusFilter]);
 
+  const listStats = useMemo(() => {
+    const published = comments.filter((comment) => comment.status === "1").length;
+    return [
+      { label: "Total", value: comments.length },
+      { label: "Publicados", value: published },
+      { label: "Ocultos", value: comments.length - published },
+      { label: "Exibidos", value: filteredComments.length, hint: "com filtros atuais" }
+    ];
+  }, [comments, filteredComments]);
+
   const emptyMessage = useMemo(
     () =>
       `Nenhum comentario encontrado para os filtros aplicados.${
@@ -173,16 +188,18 @@ export function CommentsPage() {
   );
 
   return (
-    <PageShell
-      title="Comentarios"
-      description="Modere comentarios publicados nos livros e controle a visibilidade."
+    <ListingPageShell
       breadcrumbs={buildBreadcrumbs(location.pathname)}
+      hero={
+        <PageHeroStrip
+          icon={MessageSquare}
+          title="Comentarios"
+          description="Modere comentarios publicados nos livros e controle a visibilidade."
+          tone="primary"
+        />
+      }
+      stats={<ListingMiniStats items={listStats} />}
     >
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.24 }}
-      >
       <AdminListingSection<CommentResponse>
         title="Lista de comentarios"
         search={search}
@@ -199,7 +216,6 @@ export function CommentsPage() {
         emptyMessage={emptyMessage}
         countLabel={`${filteredComments.length} comentario(s) com o filtro atual`}
         error={error}
-        success={success}
         legendActiveLabel="Publicado"
         legendInactiveLabel="Oculto"
         onRowClick={setSelectedComment}
@@ -226,28 +242,28 @@ export function CommentsPage() {
             >
               <TableRowActions>
                 <motion.button
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.98 }}
-                className="table-btn icon"
-                type="button"
-                onClick={() => handleToggleStatus(comment)}
-                disabled={saving}
-              >
-                {comment.status === "1" ? <EyeOff size={14} /> : <Eye size={14} />}
-                {comment.status === "1" ? "Ocultar" : "Publicar"}
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.98 }}
-                className="table-btn danger icon"
-                type="button"
-                onClick={() => setConfirmDeleteId(comment.id)}
-                disabled={saving}
-                aria-label={`Excluir o comentario #${comment.id}`}
-              >
-                <Trash2 size={14} />
-                Excluir
-              </motion.button>
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="table-btn icon"
+                  type="button"
+                  onClick={() => handleToggleStatus(comment)}
+                  disabled={saving}
+                >
+                  {comment.status === "1" ? <EyeOff size={14} /> : <Eye size={14} />}
+                  {comment.status === "1" ? "Ocultar" : "Publicar"}
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="table-btn danger icon"
+                  type="button"
+                  onClick={() => setConfirmDeleteId(comment.id)}
+                  disabled={saving}
+                  aria-label={`Excluir o comentario #${comment.id}`}
+                >
+                  <Trash2 size={14} />
+                  Excluir
+                </motion.button>
               </TableRowActions>
             </div>
           </article>
@@ -272,7 +288,6 @@ export function CommentsPage() {
         onConfirm={handleConfirmDelete}
         onCancel={() => setConfirmDeleteId(null)}
       />
-      </motion.div>
-    </PageShell>
+    </ListingPageShell>
   );
 }

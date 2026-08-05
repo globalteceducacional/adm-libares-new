@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Trash2 } from "lucide-react";
+import { MessageSquare, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { deleteSiteComment } from "../../services/siteCommentsService";
@@ -11,17 +11,20 @@ import {
 import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { usePermission } from "../../features/auth/usePermission";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { useTimedMessage } from "../../hooks/useTimedMessage";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
+import { ListingMiniStats } from "../components/layout/ListingMiniStats";
+import { ListingPageShell } from "../components/layout/ListingPageShell";
+import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import type { SiteCommentResponse } from "../../types/siteComments";
-import { ConfirmDialog, PageShell } from "../../shared/ui";
+import { ConfirmDialog, useToast } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
 
 export function SiteCommentsPage() {
   const location = useLocation();
-  const { search, setSearch } = useAdminListFilters();
+  const { showToast } = useToast();
+  const { search, setSearch } = useAdminListFilters({ syncStatus: false });
   const commentsQuery = useSiteCommentsQuery();
   const invalidate = useInvalidateAdminQueries();
   const comments = commentsQuery.data ?? [];
@@ -32,7 +35,6 @@ export function SiteCommentsPage() {
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
-  const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const canModerate = usePermission("sites.comments.moderate");
   const error = actionError || queryError;
 
@@ -42,16 +44,16 @@ export function SiteCommentsPage() {
     }
     const commentId = confirmDeleteId;
     setActionError("");
-    clearSuccess();
     setSaving(true);
     try {
       await deleteSiteComment(commentId);
-      showSuccess("Comentario excluido com sucesso.");
+      showToast("Comentario excluido com sucesso.", "success");
       await invalidate.siteComments();
     } catch (requestError) {
-      setActionError(
-        requestError instanceof Error ? requestError.message : "Falha ao excluir comentario"
-      );
+      const message =
+        requestError instanceof Error ? requestError.message : "Falha ao excluir comentario";
+      setActionError(message);
+      showToast(message, "error");
     } finally {
       setSaving(false);
       setConfirmDeleteId(null);
@@ -128,77 +130,85 @@ export function SiteCommentsPage() {
     });
   }, [comments, search]);
 
-  return (
-    <PageShell
-      title="Comentarios do Site"
-      description="Modere comentarios publicados nos conteudos do catalogo Site."
-      breadcrumbs={buildBreadcrumbs(location.pathname)}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.24 }}
-      >
-        <AdminListingSection<SiteCommentResponse>
-          title="Lista de comentarios"
-          search={search}
-          onSearchChange={setSearch}
-          searchPlaceholder="Buscar por site, usuario, texto ou ID"
-          columns={columns}
-          data={filteredComments}
-          loading={loading}
-          keyExtractor={(comment) => comment.id}
-          emptyMessage="Nenhum comentario encontrado para os filtros aplicados."
-          countLabel={`${filteredComments.length} comentario(s) com o filtro atual`}
-          error={error}
-          success={success}
-          renderMobileCard={(comment) => (
-            <article className="book-card">
-              <div className="book-card-body">
-                <p className="book-card-id">#{comment.id}</p>
-                <h3>Site #{comment.siteId}</h3>
-                <p className="book-card-author">
-                  {decodeHtmlEntities(comment.userName) ||
-                    (comment.userId ? `Usuario #${comment.userId}` : "Usuario anonimo")}
-                </p>
-                <p className="book-card-author">{decodeHtmlEntities(comment.commentText)}</p>
-              </div>
-              {canModerate ? (
-                <div
-                  className="book-card-actions"
-                  onClick={(event) => event.stopPropagation()}
-                  onKeyDown={(event) => event.stopPropagation()}
-                >
-                  <TableRowActions>
-                    <motion.button
-                      whileHover={{ scale: 1.04 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="table-btn danger icon"
-                      type="button"
-                      onClick={() => setConfirmDeleteId(comment.id)}
-                      disabled={saving}
-                      aria-label={`Excluir o comentario #${comment.id}`}
-                    >
-                      <Trash2 size={14} />
-                      Excluir
-                    </motion.button>
-                  </TableRowActions>
-                </div>
-              ) : null}
-            </article>
-          )}
-        />
+  const listStats = useMemo(
+    () => [
+      { label: "Total", value: comments.length },
+      { label: "Exibidos", value: filteredComments.length, hint: "com filtros atuais" }
+    ],
+    [comments.length, filteredComments.length]
+  );
 
-        <ConfirmDialog
-          open={confirmDeleteId !== null}
-          title="Excluir comentario"
-          description="Esta acao nao pode ser desfeita. Deseja realmente excluir este comentario?"
-          confirmLabel="Excluir"
-          loading={saving}
-          onConfirm={handleConfirmDelete}
-          onCancel={() => setConfirmDeleteId(null)}
+  return (
+    <ListingPageShell
+      breadcrumbs={buildBreadcrumbs(location.pathname)}
+      hero={
+        <PageHeroStrip
+          icon={MessageSquare}
+          title="Comentarios do Site"
+          description="Modere comentarios publicados nos conteudos do catalogo Site."
+          tone="primary"
         />
-      </motion.div>
-    </PageShell>
+      }
+      stats={<ListingMiniStats items={listStats} />}
+    >
+      <AdminListingSection<SiteCommentResponse>
+        title="Lista de comentarios"
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Buscar por site, usuario, texto ou ID"
+        columns={columns}
+        data={filteredComments}
+        loading={loading}
+        keyExtractor={(comment) => comment.id}
+        emptyMessage="Nenhum comentario encontrado para os filtros aplicados."
+        countLabel={`${filteredComments.length} comentario(s) com o filtro atual`}
+        error={error}
+        renderMobileCard={(comment) => (
+          <article className="book-card">
+            <div className="book-card-body">
+              <p className="book-card-id">#{comment.id}</p>
+              <h3>Site #{comment.siteId}</h3>
+              <p className="book-card-author">
+                {decodeHtmlEntities(comment.userName) ||
+                  (comment.userId ? `Usuario #${comment.userId}` : "Usuario anonimo")}
+              </p>
+              <p className="book-card-author">{decodeHtmlEntities(comment.commentText)}</p>
+            </div>
+            {canModerate ? (
+              <div
+                className="book-card-actions"
+                onClick={(event) => event.stopPropagation()}
+                onKeyDown={(event) => event.stopPropagation()}
+              >
+                <TableRowActions>
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="table-btn danger icon"
+                    type="button"
+                    onClick={() => setConfirmDeleteId(comment.id)}
+                    disabled={saving}
+                    aria-label={`Excluir o comentario #${comment.id}`}
+                  >
+                    <Trash2 size={14} />
+                    Excluir
+                  </motion.button>
+                </TableRowActions>
+              </div>
+            ) : null}
+          </article>
+        )}
+      />
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="Excluir comentario"
+        description="Esta acao nao pode ser desfeita. Deseja realmente excluir este comentario?"
+        confirmLabel="Excluir"
+        loading={saving}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
+    </ListingPageShell>
   );
 }
