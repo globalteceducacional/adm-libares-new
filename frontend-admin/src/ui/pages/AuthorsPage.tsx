@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Pencil, Trash2, UserRound } from "lucide-react";
+import { Pencil, Plus, Trash2, UserRound } from "lucide-react";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -17,9 +17,8 @@ import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { PermissionGate } from "../../features/auth/PermissionGate";
 import { usePermission } from "../../features/auth/usePermission";
 import { AuthorDetailModal } from "../components/authors/AuthorDetailModal";
-import { AuthorsForm } from "../components/authors/AuthorsForm";
+import { AuthorFormModal } from "../components/authors/AuthorFormModal";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
-import { BerryFormPanel } from "../components/layout/BerryFormPanel";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
 import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
@@ -27,14 +26,22 @@ import { LegacyImage } from "../components/LegacyImage";
 import type { AuthorResponse, UpsertAuthorRequest } from "../../types/authors";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
 import { useTimedMessage } from "../../hooks/useTimedMessage";
-import { Alert, ConfirmDialog, StatusBadge } from "../../shared/ui";
+import { Alert, Button, ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { stripHtml } from "../../shared/lib/stripHtml";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
 
+const EMPTY_FORM: UpsertAuthorRequest = {
+  name: "",
+  description: "",
+  image: "",
+  status: "1"
+};
+
 export function AuthorsPage() {
   const location = useLocation();
+  const { showToast } = useToast();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const authorsQuery = useAuthorsQuery();
   const invalidate = useInvalidateAdminQueries();
@@ -48,15 +55,11 @@ export function AuthorsPage() {
   const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<AuthorResponse | null>(null);
-  const [form, setForm] = useState<UpsertAuthorRequest>({
-    name: "",
-    description: "",
-    image: "",
-    status: "1"
-  });
+  const [form, setForm] = useState<UpsertAuthorRequest>(EMPTY_FORM);
 
   const isNameInvalid = form.name.trim().length === 0;
   const isFormInvalid = isNameInvalid;
@@ -65,8 +68,21 @@ export function AuthorsPage() {
   const canDeleteAuthor = usePermission("books.delete");
 
   function resetForm() {
-    setForm({ name: "", description: "", image: "", status: "1" });
+    setForm(EMPTY_FORM);
     setEditingId(null);
+  }
+
+  function closeFormModal() {
+    resetForm();
+    clearSuccess();
+    setFormError("");
+    setFormModalOpen(false);
+  }
+
+  function openCreateForm() {
+    resetForm();
+    setFormError("");
+    setFormModalOpen(true);
   }
 
   useEffect(() => {
@@ -115,13 +131,12 @@ export function AuthorsPage() {
       };
       if (editingId) {
         await updateAuthor(editingId, payload);
-        resetForm();
-        showSuccess("Autor atualizado com sucesso.");
+        showToast("Autor atualizado com sucesso.", "success");
       } else {
         await createAuthor(payload);
-        resetForm();
-        showSuccess("Autor criado com sucesso.");
+        showToast("Autor criado com sucesso.", "success");
       }
+      closeFormModal();
       await invalidate.authors();
       await invalidate.authorOptions();
     } catch (submitError) {
@@ -133,13 +148,15 @@ export function AuthorsPage() {
 
   function handleEdit(author: AuthorResponse) {
     setEditingId(author.id);
+    setFormError("");
     setForm({
       name: decodeHtmlEntities(author.name),
       description: stripHtml(author.description) ?? "",
       image: author.image ?? "",
       status: author.status
     });
-    document.getElementById("author-form-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setSelectedAuthor(null);
+    setFormModalOpen(true);
   }
 
   async function handleConfirmDelete() {
@@ -153,7 +170,7 @@ export function AuthorsPage() {
     try {
       await deleteAuthor(authorId);
       if (editingId === authorId) {
-        resetForm();
+        closeFormModal();
       }
       if (selectedAuthor?.id === authorId) {
         setSelectedAuthor(null);
@@ -163,6 +180,10 @@ export function AuthorsPage() {
       await invalidate.authorOptions();
     } catch (deleteError) {
       setFormError(deleteError instanceof Error ? deleteError.message : "Falha ao desativar autor");
+      showToast(
+        deleteError instanceof Error ? deleteError.message : "Falha ao desativar autor",
+        "error"
+      );
     } finally {
       setSaving(false);
       setConfirmDeleteId(null);
@@ -267,45 +288,28 @@ export function AuthorsPage() {
           title="Autores"
           description="Gerencie autores do catalogo, fotos e status para vincular aos livros."
           tone="success"
+          actions={
+            <PermissionGate permission="books.create">
+              <Button type="button" onClick={openCreateForm} disabled={saving}>
+                <Plus size={16} />
+                Novo autor
+              </Button>
+            </PermissionGate>
+          }
         />
       }
       stats={<ListingMiniStats items={listStats} />}
     >
-      <PermissionGate permission={editingId ? "books.update" : "books.create"}>
-        <BerryFormPanel
-          id="author-form-section"
-          icon={UserRound}
-          title={editingId ? "Editar autor" : "Cadastrar novo autor"}
-          description="Preencha nome, descricao e foto para organizar o catalogo de autores."
-        >
-          <AuthorsForm
-            form={form}
-            editingId={editingId}
-            saving={saving}
-            uploadingImage={uploadingImage}
-            isNameInvalid={isNameInvalid}
-            isFormInvalid={isFormInvalid}
-            onSubmit={handleSubmit}
-            onReset={() => {
-              resetForm();
-              clearSuccess();
-              setFormError("");
-            }}
-            onChange={setForm}
-            onImageChange={handleImageChange}
-          />
-          {success ? (
-            <Alert tone="success" className="mt-3">
-              {success}
-            </Alert>
-          ) : null}
-          {formError ? (
-            <Alert tone="danger" className="mt-3">
-              {formError}
-            </Alert>
-          ) : null}
-        </BerryFormPanel>
-      </PermissionGate>
+      {success ? (
+        <Alert tone="success" className="mb-3">
+          {success}
+        </Alert>
+      ) : null}
+      {formError && !formModalOpen ? (
+        <Alert tone="danger" className="mb-3">
+          {formError}
+        </Alert>
+      ) : null}
 
       <AdminListingSection<AuthorResponse>
         title="Listagem de autores"
@@ -341,6 +345,22 @@ export function AuthorsPage() {
             </div>
           </article>
         )}
+      />
+
+      <AuthorFormModal
+        open={formModalOpen}
+        editingId={editingId}
+        form={form}
+        isNameInvalid={isNameInvalid}
+        isFormInvalid={isFormInvalid}
+        saving={saving}
+        uploadingImage={uploadingImage}
+        error={formError}
+        onClose={closeFormModal}
+        onSubmit={handleSubmit}
+        onReset={closeFormModal}
+        onFormChange={setForm}
+        onImageChange={handleImageChange}
       />
 
       <AuthorDetailModal

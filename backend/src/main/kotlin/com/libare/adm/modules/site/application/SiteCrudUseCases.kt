@@ -57,6 +57,44 @@ class UpdateSiteUseCase(
 }
 
 @Service
+class ToggleSiteStatusUseCase(
+    private val repo: SiteItemJpaRepository,
+    private val sitePolicy: SitePolicy
+) {
+    @Transactional
+    fun execute(siteId: Long, rawStatus: String): SiteResponse {
+        sitePolicy.requireToggleStatus()
+
+        val normalized = rawStatus.trim()
+        if (normalized != "0" && normalized != "1") {
+            throw BadRequestException("Status invalido. Use 0 (inativo) ou 1 (ativo).")
+        }
+
+        val existing = repo.findById(siteId.toInt())
+            .orElseThrow { NotFoundException("Site nao encontrado") }
+
+        val saved = repo.save(
+            SiteItemEntity(
+                id = existing.id,
+                categoryIds = existing.categoryIds,
+                authorId = existing.authorId,
+                title = existing.title,
+                description = existing.description,
+                coverImage = existing.coverImage,
+                fileType = existing.fileType,
+                fileUrl = existing.fileUrl,
+                featured = existing.featured,
+                status = if (normalized == "0") 0 else 1,
+                totalRate = existing.totalRate,
+                rateAvg = existing.rateAvg,
+                views = existing.views
+            )
+        )
+        return toResponse(saved)
+    }
+}
+
+@Service
 class DeleteSiteUseCase(
     private val repo: SiteItemJpaRepository,
     private val jdbcTemplate: JdbcTemplate,

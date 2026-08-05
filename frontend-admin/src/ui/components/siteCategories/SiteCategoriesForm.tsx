@@ -1,35 +1,33 @@
 import type { ChangeEvent, FormEvent } from "react";
 import { motion } from "framer-motion";
-import type { UpsertCategoryRequest } from "../../../types/categories";
+import type { UpsertSiteCategoryRequest } from "../../../types/siteCategories";
 import { LegacyImage } from "../LegacyImage";
 
-type CategoriesFormProps = {
-  form: UpsertCategoryRequest;
+type SiteCategoriesFormProps = {
+  form: UpsertSiteCategoryRequest;
   editingId: number | null;
   saving: boolean;
   uploadingImage: boolean;
   isNameInvalid: boolean;
-  isFormInvalid: boolean;
   inModal?: boolean;
   onSubmit: (event: FormEvent) => Promise<void>;
   onReset: () => void;
-  onChange: (next: UpsertCategoryRequest) => void;
+  onChange: (next: UpsertSiteCategoryRequest) => void;
   onImageChange: (event: ChangeEvent<HTMLInputElement>) => void;
 };
 
-export function CategoriesForm({
+export function SiteCategoriesForm({
   form,
   editingId,
   saving,
   uploadingImage,
   isNameInvalid,
-  isFormInvalid,
   inModal = false,
   onSubmit,
   onReset,
   onChange,
   onImageChange
-}: CategoriesFormProps) {
+}: SiteCategoriesFormProps) {
   const isBusy = saving || uploadingImage;
 
   return (
@@ -41,7 +39,7 @@ export function CategoriesForm({
           <input
             type="text"
             value={form.name}
-            maxLength={50}
+            maxLength={255}
             onChange={(event) => onChange({ ...form, name: event.target.value })}
             required
           />
@@ -91,7 +89,7 @@ export function CategoriesForm({
           whileTap={{ scale: 0.98 }}
           className="primary-btn"
           type="submit"
-          disabled={isBusy || isFormInvalid}
+          disabled={isBusy || isNameInvalid}
         >
           {saving ? "Salvando..." : editingId ? "Atualizar categoria" : "Criar categoria"}
         </motion.button>

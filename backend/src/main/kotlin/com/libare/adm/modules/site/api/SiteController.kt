@@ -4,10 +4,12 @@ import com.libare.adm.modules.catalog.infrastructure.storage.LegacyBookAssetStor
 import com.libare.adm.modules.site.api.dto.SiteCoverUploadResponse
 import com.libare.adm.modules.site.api.dto.SiteFileUploadResponse
 import com.libare.adm.modules.site.api.dto.SiteResponse
+import com.libare.adm.modules.site.api.dto.ToggleSiteStatusRequest
 import com.libare.adm.modules.site.api.dto.UpsertSiteRequest
 import com.libare.adm.modules.site.application.CreateSiteUseCase
 import com.libare.adm.modules.site.application.DeleteSiteUseCase
 import com.libare.adm.modules.site.application.ListSitesUseCase
+import com.libare.adm.modules.site.application.ToggleSiteStatusUseCase
 import com.libare.adm.modules.site.application.UpdateSiteUseCase
 import com.libare.adm.shared.exception.ForbiddenException
 import com.libare.adm.shared.openapi.AdminSecured
@@ -26,6 +28,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -45,6 +48,7 @@ class SiteController(
     private val listSitesUseCase: ListSitesUseCase,
     private val createSiteUseCase: CreateSiteUseCase,
     private val updateSiteUseCase: UpdateSiteUseCase,
+    private val toggleSiteStatusUseCase: ToggleSiteStatusUseCase,
     private val deleteSiteUseCase: DeleteSiteUseCase,
     private val legacyBookAssetStorage: LegacyBookAssetStorage,
     private val authorizationService: AuthorizationService
@@ -102,6 +106,27 @@ class SiteController(
         @Valid @RequestBody request: UpsertSiteRequest
     ): ResponseEntity<SiteResponse> =
         ResponseEntity.ok(updateSiteUseCase.execute(siteId, request))
+
+    @Operation(
+        summary = "Alternar status do conteudo Site",
+        description = "Ativa ou desativa um conteudo (status 0 ou 1). Requer permissao sites.toggle_status (ex.: role PROFESSOR)."
+    )
+    @AdminSecured
+    @AdminWriteResponses
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "Status atualizado",
+            content = [Content(schema = Schema(implementation = SiteResponse::class))]
+        )
+    )
+    @PatchMapping("/{siteId}/status")
+    fun toggleStatus(
+        @Parameter(description = "ID do conteudo (site)", required = true)
+        @PathVariable siteId: Long,
+        @Valid @RequestBody request: ToggleSiteStatusRequest
+    ): ResponseEntity<SiteResponse> =
+        ResponseEntity.ok(toggleSiteStatusUseCase.execute(siteId, request.status))
 
     @Operation(
         summary = "Excluir conteudo do site",

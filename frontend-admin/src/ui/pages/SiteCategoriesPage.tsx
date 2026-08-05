@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Pencil, Tags, Trash2 } from "lucide-react";
+import { Pencil, Plus, Tags, Trash2 } from "lucide-react";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -16,8 +16,8 @@ import {
 import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { PermissionGate } from "../../features/auth/PermissionGate";
 import { usePermission } from "../../features/auth/usePermission";
+import { SiteCategoryFormModal } from "../components/siteCategories/SiteCategoryFormModal";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
-import { BerryFormPanel } from "../components/layout/BerryFormPanel";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
 import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
@@ -25,13 +25,20 @@ import { LegacyImage } from "../components/LegacyImage";
 import type { SiteCategoryResponse, UpsertSiteCategoryRequest } from "../../types/siteCategories";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
 import { useTimedMessage } from "../../hooks/useTimedMessage";
-import { Alert, ConfirmDialog, StatusBadge } from "../../shared/ui";
+import { Alert, Button, ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
 
+const EMPTY_FORM: UpsertSiteCategoryRequest = {
+  name: "",
+  image: "",
+  status: "1"
+};
+
 export function SiteCategoriesPage() {
   const location = useLocation();
+  const { showToast } = useToast();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const categoriesQuery = useSiteCategoriesQuery();
   const invalidate = useInvalidateAdminQueries();
@@ -45,13 +52,10 @@ export function SiteCategoriesPage() {
   const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
-  const [form, setForm] = useState<UpsertSiteCategoryRequest>({
-    name: "",
-    image: "",
-    status: "1"
-  });
+  const [form, setForm] = useState<UpsertSiteCategoryRequest>(EMPTY_FORM);
 
   const isNameInvalid = form.name.trim().length === 0;
   const canCreate = usePermission("sites.create");
@@ -59,8 +63,21 @@ export function SiteCategoriesPage() {
   const canDelete = usePermission("sites.delete");
 
   function resetForm() {
-    setForm({ name: "", image: "", status: "1" });
+    setForm(EMPTY_FORM);
     setEditingId(null);
+  }
+
+  function closeFormModal() {
+    resetForm();
+    clearSuccess();
+    setFormError("");
+    setFormModalOpen(false);
+  }
+
+  function openCreateForm() {
+    resetForm();
+    setFormError("");
+    setFormModalOpen(true);
   }
 
   async function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
@@ -98,12 +115,12 @@ export function SiteCategoriesPage() {
       };
       if (editingId) {
         await updateSiteCategory(editingId, payload);
-        showSuccess("Categoria do Site atualizada com sucesso.");
+        showToast("Categoria do Site atualizada com sucesso.", "success");
       } else {
         await createSiteCategory(payload);
-        showSuccess("Categoria do Site criada com sucesso.");
+        showToast("Categoria do Site criada com sucesso.", "success");
       }
-      resetForm();
+      closeFormModal();
       await invalidate.siteCategories();
     } catch (submitError) {
       setFormError(submitError instanceof Error ? submitError.message : "Falha ao salvar categoria");
@@ -114,12 +131,13 @@ export function SiteCategoriesPage() {
 
   function handleEdit(category: SiteCategoryResponse) {
     setEditingId(category.id);
+    setFormError("");
     setForm({
       name: decodeHtmlEntities(category.name),
       image: category.image ?? "",
       status: category.status
     });
-    document.getElementById("site-category-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setFormModalOpen(true);
   }
 
   async function handleConfirmDelete() {
@@ -133,14 +151,15 @@ export function SiteCategoriesPage() {
     try {
       await deleteSiteCategory(categoryId);
       if (editingId === categoryId) {
-        resetForm();
+        closeFormModal();
       }
       showSuccess("Categoria do Site desativada com sucesso.");
       await invalidate.siteCategories();
     } catch (deleteError) {
-      setFormError(
-        deleteError instanceof Error ? deleteError.message : "Falha ao desativar categoria"
-      );
+      const message =
+        deleteError instanceof Error ? deleteError.message : "Falha ao desativar categoria";
+      setFormError(message);
+      showToast(message, "error");
     } finally {
       setSaving(false);
       setConfirmDeleteId(null);
@@ -239,98 +258,28 @@ export function SiteCategoriesPage() {
           title="Categorias do Site"
           description="Gerencie categorias globais do catalogo Site."
           tone="warning"
+          actions={
+            <PermissionGate permission="sites.create">
+              <Button type="button" onClick={openCreateForm} disabled={saving}>
+                <Plus size={16} />
+                Nova categoria
+              </Button>
+            </PermissionGate>
+          }
         />
       }
       stats={<ListingMiniStats items={listStats} />}
     >
-      <PermissionGate permission={editingId ? "sites.update" : "sites.create"}>
-        <BerryFormPanel
-          id="site-category-form"
-          icon={Tags}
-          title={editingId ? "Editar categoria" : "Cadastrar nova categoria"}
-          description="Defina nome, imagem e status da categoria Site."
-        >
-          <form className="book-form modern" onSubmit={handleSubmit}>
-            <label className="form-field">
-              <span>Nome</span>
-              <input
-                type="text"
-                value={form.name}
-                maxLength={255}
-                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                required
-              />
-              {isNameInvalid ? <small className="warning-text">Informe um nome valido.</small> : null}
-            </label>
-            <div className="form-field">
-              <span>Imagem da categoria</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                disabled={saving || uploadingImage}
-              />
-              {uploadingImage ? <small className="form-hint">Enviando imagem...</small> : null}
-              {form.image ? (
-                <div className="book-cover-preview">
-                  <LegacyImage
-                    legacyPath={form.image}
-                    folder="images"
-                    alt="Pre-visualizacao da imagem"
-                    className="table-avatar h-24 w-24"
-                    fallbackClassName="table-avatar-placeholder h-24 w-24"
-                    fallbackText={form.name.trim().charAt(0).toUpperCase() || "C"}
-                  />
-                  <small className="form-hint">{form.image}</small>
-                </div>
-              ) : null}
-            </div>
-            <label className="form-field">
-              <span>Status</span>
-              <select
-                value={form.status}
-                onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}
-              >
-                <option value="1">Ativo</option>
-                <option value="0">Inativo</option>
-              </select>
-            </label>
-            <div className="book-form-actions">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="primary-btn"
-                type="submit"
-                disabled={saving || uploadingImage || isNameInvalid}
-              >
-                {saving ? "Salvando..." : editingId ? "Atualizar categoria" : "Criar categoria"}
-              </motion.button>
-              <button
-                className="secondary-btn"
-                type="button"
-                onClick={() => {
-                  resetForm();
-                  clearSuccess();
-                  setFormError("");
-                }}
-                disabled={saving || uploadingImage}
-              >
-                Limpar formulario
-              </button>
-            </div>
-          </form>
-          {success ? (
-            <Alert tone="success" className="mt-3">
-              {success}
-            </Alert>
-          ) : null}
-          {formError ? (
-            <Alert tone="danger" className="mt-3">
-              {formError}
-            </Alert>
-          ) : null}
-        </BerryFormPanel>
-      </PermissionGate>
+      {success ? (
+        <Alert tone="success" className="mb-3">
+          {success}
+        </Alert>
+      ) : null}
+      {formError && !formModalOpen ? (
+        <Alert tone="danger" className="mb-3">
+          {formError}
+        </Alert>
+      ) : null}
 
       <AdminListingSection<SiteCategoryResponse>
         title="Listagem de categorias"
@@ -365,6 +314,21 @@ export function SiteCategoriesPage() {
             </div>
           </article>
         )}
+      />
+
+      <SiteCategoryFormModal
+        open={formModalOpen}
+        editingId={editingId}
+        form={form}
+        isNameInvalid={isNameInvalid}
+        saving={saving}
+        uploadingImage={uploadingImage}
+        error={formError}
+        onClose={closeFormModal}
+        onSubmit={handleSubmit}
+        onReset={closeFormModal}
+        onFormChange={setForm}
+        onImageChange={handleImageChange}
       />
 
       <ConfirmDialog

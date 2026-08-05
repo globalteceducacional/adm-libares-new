@@ -140,7 +140,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         label: "Autores",
         icon: Pencil,
         description: "Autores do catalogo Site",
-        permission: "sites.view",
+        permission: "sites.update",
         keywords: ["site", "autores"]
       },
       {
@@ -149,7 +149,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         label: "Categorias",
         icon: Tags,
         description: "Categorias do catalogo Site",
-        permission: "sites.view",
+        permission: "sites.update",
         keywords: ["site", "categorias"]
       },
       {
@@ -158,7 +158,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         label: "Seções",
         icon: LayoutList,
         description: "Seções da home do Site",
-        permission: "sites.view",
+        permission: "sites.update",
         keywords: ["site", "secoes", "seções", "home"]
       },
       {

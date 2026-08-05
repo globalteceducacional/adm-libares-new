@@ -30,6 +30,13 @@ export function deleteSite(siteId: number): Promise<void> {
   });
 }
 
+export function toggleSiteStatus(siteId: number, status: "0" | "1"): Promise<SiteResponse> {
+  return apiRequest<SiteResponse>(`/api/v1/sites/${siteId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status })
+  });
+}
+
 export function uploadSiteCover(file: File): Promise<SiteCoverUploadResponse> {
   const formData = new FormData();
   formData.append("file", file);

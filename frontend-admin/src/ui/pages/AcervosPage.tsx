@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Library, Pencil, Trash2 } from "lucide-react";
+import { Library, Pencil, Plus, Trash2 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { createAcervo, deleteAcervo, updateAcervo } from "../../services/acervosService";
@@ -12,23 +12,29 @@ import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { PermissionGate } from "../../features/auth/PermissionGate";
 import { useAnyPermission } from "../../features/auth/usePermission";
 import { AcervoDetailModal } from "../components/acervos/AcervoDetailModal";
-import { AcervosForm } from "../components/acervos/AcervosForm";
+import { AcervoFormModal } from "../components/acervos/AcervoFormModal";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
-import { BerryFormPanel } from "../components/layout/BerryFormPanel";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
 import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import type { AcervoResponse, UpsertAcervoRequest } from "../../types/acervos";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
 import { useTimedMessage } from "../../hooks/useTimedMessage";
-import { Alert, ConfirmDialog, StatusBadge } from "../../shared/ui";
+import { Alert, Button, ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { stripHtml } from "../../shared/lib/stripHtml";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
 
+const EMPTY_FORM: UpsertAcervoRequest = {
+  name: "",
+  description: "",
+  status: "1"
+};
+
 export function AcervosPage() {
   const location = useLocation();
+  const { showToast } = useToast();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const acervosQuery = useAcervosQuery();
   const invalidate = useInvalidateAdminQueries();
@@ -41,23 +47,34 @@ export function AcervosPage() {
   const [formError, setFormError] = useState("");
   const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const [saving, setSaving] = useState(false);
+  const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [selectedAcervo, setSelectedAcervo] = useState<AcervoResponse | null>(null);
-  const [form, setForm] = useState<UpsertAcervoRequest>({
-    name: "",
-    description: "",
-    status: "1"
-  });
+  const [form, setForm] = useState<UpsertAcervoRequest>(EMPTY_FORM);
 
   const isNameInvalid = form.name.trim().length === 0;
   const isFormInvalid = isNameInvalid;
+  const canCreateAcervo = useAnyPermission(["acervos.create"]);
   const canUpdateAcervo = useAnyPermission(["acervos.update"]);
   const canDeleteAcervo = useAnyPermission(["acervos.delete"]);
 
   function resetForm() {
-    setForm({ name: "", description: "", status: "1" });
+    setForm(EMPTY_FORM);
     setEditingId(null);
+  }
+
+  function closeFormModal() {
+    resetForm();
+    clearSuccess();
+    setFormError("");
+    setFormModalOpen(false);
+  }
+
+  function openCreateForm() {
+    resetForm();
+    setFormError("");
+    setFormModalOpen(true);
   }
 
   useEffect(() => {
@@ -83,13 +100,12 @@ export function AcervosPage() {
       };
       if (editingId) {
         await updateAcervo(editingId, payload);
-        resetForm();
-        showSuccess("Acervo atualizado com sucesso.");
+        showToast("Acervo atualizado com sucesso.", "success");
       } else {
         await createAcervo(payload);
-        resetForm();
-        showSuccess("Acervo criado com sucesso.");
+        showToast("Acervo criado com sucesso.", "success");
       }
+      closeFormModal();
       await invalidate.acervos();
       await invalidate.acervoOptions();
     } catch (submitError) {
@@ -101,12 +117,14 @@ export function AcervosPage() {
 
   function handleEdit(acervo: AcervoResponse) {
     setEditingId(acervo.id);
+    setFormError("");
     setForm({
       name: decodeHtmlEntities(acervo.name),
       description: stripHtml(acervo.description) ?? "",
       status: acervo.status
     });
-    document.getElementById("acervo-form-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setSelectedAcervo(null);
+    setFormModalOpen(true);
   }
 
   async function handleConfirmDelete() {
@@ -120,7 +138,7 @@ export function AcervosPage() {
     try {
       await deleteAcervo(acervoId);
       if (editingId === acervoId) {
-        resetForm();
+        closeFormModal();
       }
       if (selectedAcervo?.id === acervoId) {
         setSelectedAcervo(null);
@@ -129,7 +147,10 @@ export function AcervosPage() {
       await invalidate.acervos();
       await invalidate.acervoOptions();
     } catch (deleteError) {
-      setFormError(deleteError instanceof Error ? deleteError.message : "Falha ao desativar acervo");
+      const message =
+        deleteError instanceof Error ? deleteError.message : "Falha ao desativar acervo";
+      setFormError(message);
+      showToast(message, "error");
     } finally {
       setSaving(false);
       setConfirmDeleteId(null);
@@ -235,91 +256,92 @@ export function AcervosPage() {
           title="Acervos"
           description="Gerencie as bibliotecas digitais de cada escola e vincule livros aos acervos corretos."
           tone="success"
+          actions={
+            canCreateAcervo ? (
+              <PermissionGate anyOf={["acervos.create"]}>
+                <Button type="button" onClick={openCreateForm} disabled={saving}>
+                  <Plus size={16} />
+                  Novo acervo
+                </Button>
+              </PermissionGate>
+            ) : null
+          }
         />
       }
       stats={<ListingMiniStats items={listStats} />}
     >
-        <PermissionGate anyOf={["acervos.create", "acervos.update"]}>
-          <BerryFormPanel
-            id="acervo-form-section"
-            icon={Library}
-            title={editingId ? "Editar acervo" : "Cadastrar novo acervo"}
-            description="Preencha nome e descricao para organizar livros e usuarios por biblioteca."
-          >
-            <AcervosForm
-              form={form}
-              editingId={editingId}
-              saving={saving}
-              isNameInvalid={isNameInvalid}
-              isFormInvalid={isFormInvalid}
-              onSubmit={handleSubmit}
-              onReset={() => {
-                resetForm();
-                clearSuccess();
-                setFormError("");
-              }}
-              onChange={setForm}
-            />
-            {success ? (
-              <Alert tone="success" className="mt-3">
-                {success}
-              </Alert>
-            ) : null}
-            {formError ? (
-              <Alert tone="danger" className="mt-3">
-                {formError}
-              </Alert>
-            ) : null}
-          </BerryFormPanel>
-        </PermissionGate>
+      {success ? (
+        <Alert tone="success" className="mb-3">
+          {success}
+        </Alert>
+      ) : null}
+      {formError && !formModalOpen ? (
+        <Alert tone="danger" className="mb-3">
+          {formError}
+        </Alert>
+      ) : null}
 
-        <AdminListingSection<AcervoResponse>
-          title="Listagem de acervos"
-          search={search}
-          onSearchChange={setSearch}
-          searchPlaceholder="Buscar por nome, descricao ou ID"
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-          columns={columns}
-          data={filteredAcervos}
-          loading={loading}
-          keyExtractor={(acervo) => acervo.id}
-          emptyMessage="Nenhum acervo encontrado para os filtros aplicados."
-          countLabel={`${filteredAcervos.length} acervo(s) com o filtro atual`}
-          error={listingError}
-          onRowClick={setSelectedAcervo}
-          renderMobileCard={(acervo) => (
-            <article className="book-card">
-              <div className="book-card-body">
-                <p className="book-card-id">#{acervo.id}</p>
-                <h3>{decodeHtmlEntities(acervo.name)}</h3>
-                <p className="book-card-author">
-                  {acervo.bookCount} livros · {acervo.userCount} usuarios
-                </p>
-                <StatusBadge active={acervo.status === "1"} />
-              </div>
-            </article>
-          )}
-        />
+      <AdminListingSection<AcervoResponse>
+        title="Listagem de acervos"
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Buscar por nome, descricao ou ID"
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        columns={columns}
+        data={filteredAcervos}
+        loading={loading}
+        keyExtractor={(acervo) => acervo.id}
+        emptyMessage="Nenhum acervo encontrado para os filtros aplicados."
+        countLabel={`${filteredAcervos.length} acervo(s) com o filtro atual`}
+        error={listingError}
+        onRowClick={setSelectedAcervo}
+        renderMobileCard={(acervo) => (
+          <article className="book-card">
+            <div className="book-card-body">
+              <p className="book-card-id">#{acervo.id}</p>
+              <h3>{decodeHtmlEntities(acervo.name)}</h3>
+              <p className="book-card-author">
+                {acervo.bookCount} livros · {acervo.userCount} usuarios
+              </p>
+              <StatusBadge active={acervo.status === "1"} />
+            </div>
+          </article>
+        )}
+      />
 
-        <AcervoDetailModal
-          acervo={selectedAcervo}
-          open={selectedAcervo !== null}
-          saving={saving}
-          onClose={() => setSelectedAcervo(null)}
-          onEdit={handleEdit}
-          onDelete={(acervo) => setConfirmDeleteId(acervo.id)}
-        />
+      <AcervoFormModal
+        open={formModalOpen}
+        editingId={editingId}
+        form={form}
+        isNameInvalid={isNameInvalid}
+        isFormInvalid={isFormInvalid}
+        saving={saving}
+        error={formError}
+        onClose={closeFormModal}
+        onSubmit={handleSubmit}
+        onReset={closeFormModal}
+        onFormChange={setForm}
+      />
 
-        <ConfirmDialog
-          open={confirmDeleteId !== null}
-          title="Desativar acervo"
-          description="O acervo sera marcado como inativo. Deseja continuar?"
-          confirmLabel="Desativar"
-          loading={saving}
-          onConfirm={handleConfirmDelete}
-          onCancel={() => setConfirmDeleteId(null)}
-        />
+      <AcervoDetailModal
+        acervo={selectedAcervo}
+        open={selectedAcervo !== null}
+        saving={saving}
+        onClose={() => setSelectedAcervo(null)}
+        onEdit={handleEdit}
+        onDelete={(acervo) => setConfirmDeleteId(acervo.id)}
+      />
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="Desativar acervo"
+        description="O acervo sera marcado como inativo. Deseja continuar?"
+        confirmLabel="Desativar"
+        loading={saving}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </ListingPageShell>
   );
 }

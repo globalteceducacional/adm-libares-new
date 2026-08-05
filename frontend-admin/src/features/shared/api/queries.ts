@@ -143,12 +143,20 @@ export function useSitesQuery() {
   return useQuery({ queryKey: queryKeys.sites, queryFn: listSites });
 }
 
-export function useSiteAuthorsQuery() {
-  return useQuery({ queryKey: queryKeys.siteAuthors, queryFn: listSiteAuthors });
+export function useSiteAuthorsQuery(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.siteAuthors,
+    queryFn: listSiteAuthors,
+    enabled: options?.enabled ?? true
+  });
 }
 
-export function useSiteCategoriesQuery() {
-  return useQuery({ queryKey: queryKeys.siteCategories, queryFn: listSiteCategories });
+export function useSiteCategoriesQuery(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.siteCategories,
+    queryFn: listSiteCategories,
+    enabled: options?.enabled ?? true
+  });
 }
 
 export function useSiteSectionsQuery() {

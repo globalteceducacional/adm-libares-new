@@ -10,5 +10,6 @@ class SitePolicy(
     fun requireView() = authorizationService.check("sites.view")
     fun requireCreate() = authorizationService.check("sites.create")
     fun requireUpdate() = authorizationService.check("sites.update")
+    fun requireToggleStatus() = authorizationService.check("sites.toggle_status")
     fun requireDelete() = authorizationService.check("sites.delete")
 }

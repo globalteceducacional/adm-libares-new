@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { LayoutList, Pencil, Trash2 } from "lucide-react";
+import { LayoutList, Pencil, Plus, Trash2 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -16,15 +16,15 @@ import {
 import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { PermissionGate } from "../../features/auth/PermissionGate";
 import { usePermission } from "../../features/auth/usePermission";
+import { SiteSectionFormModal } from "../components/siteSections/SiteSectionFormModal";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
-import { BerryFormPanel } from "../components/layout/BerryFormPanel";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
 import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import type { SiteSectionResponse, UpsertSiteSectionRequest } from "../../types/siteSections";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
 import { useTimedMessage } from "../../hooks/useTimedMessage";
-import { Alert, ConfirmDialog, StatusBadge } from "../../shared/ui";
+import { Alert, Button, ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
@@ -37,6 +37,7 @@ const EMPTY_FORM: UpsertSiteSectionRequest = {
 
 export function SiteSectionsPage() {
   const location = useLocation();
+  const { showToast } = useToast();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const sectionsQuery = useSiteSectionsQuery();
   const sitesQuery = useSitesQuery();
@@ -52,6 +53,7 @@ export function SiteSectionsPage() {
   const [formError, setFormError] = useState("");
   const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const [saving, setSaving] = useState(false);
+  const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState<UpsertSiteSectionRequest>(EMPTY_FORM);
@@ -66,6 +68,19 @@ export function SiteSectionsPage() {
   function resetForm() {
     setForm(EMPTY_FORM);
     setEditingId(null);
+  }
+
+  function closeFormModal() {
+    resetForm();
+    clearSuccess();
+    setFormError("");
+    setFormModalOpen(false);
+  }
+
+  function openCreateForm() {
+    resetForm();
+    setFormError("");
+    setFormModalOpen(true);
   }
 
   function toggleSite(siteId: number) {
@@ -97,12 +112,12 @@ export function SiteSectionsPage() {
       };
       if (editingId) {
         await updateSiteSection(editingId, payload);
-        showSuccess("Seção do Site atualizada com sucesso.");
+        showToast("Seção do Site atualizada com sucesso.", "success");
       } else {
         await createSiteSection(payload);
-        showSuccess("Seção do Site criada com sucesso.");
+        showToast("Seção do Site criada com sucesso.", "success");
       }
-      resetForm();
+      closeFormModal();
       await invalidate.siteSections();
     } catch (submitError) {
       setFormError(submitError instanceof Error ? submitError.message : "Falha ao salvar seção");
@@ -113,12 +128,13 @@ export function SiteSectionsPage() {
 
   function handleEdit(section: SiteSectionResponse) {
     setEditingId(section.id);
+    setFormError("");
     setForm({
       title: decodeHtmlEntities(section.title),
       siteIds: [...section.siteIds],
       status: section.status
     });
-    document.getElementById("site-section-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setFormModalOpen(true);
   }
 
   async function handleConfirmDelete() {
@@ -132,12 +148,15 @@ export function SiteSectionsPage() {
     try {
       await deleteSiteSection(sectionId);
       if (editingId === sectionId) {
-        resetForm();
+        closeFormModal();
       }
       showSuccess("Seção do Site desativada com sucesso.");
       await invalidate.siteSections();
     } catch (deleteError) {
-      setFormError(deleteError instanceof Error ? deleteError.message : "Falha ao desativar seção");
+      const message =
+        deleteError instanceof Error ? deleteError.message : "Falha ao desativar seção";
+      setFormError(message);
+      showToast(message, "error");
     } finally {
       setSaving(false);
       setConfirmDeleteId(null);
@@ -227,105 +246,28 @@ export function SiteSectionsPage() {
           title="Seções do Site"
           description="Gerencie seções da home do Site e vincule conteudos."
           tone="primary"
+          actions={
+            <PermissionGate permission="sites.create">
+              <Button type="button" onClick={openCreateForm} disabled={saving}>
+                <Plus size={16} />
+                Nova seção
+              </Button>
+            </PermissionGate>
+          }
         />
       }
       stats={<ListingMiniStats items={listStats} />}
     >
-      <PermissionGate permission={editingId ? "sites.update" : "sites.create"}>
-        <BerryFormPanel
-          id="site-section-form"
-          icon={LayoutList}
-          title={editingId ? "Editar seção" : "Cadastrar nova seção"}
-          description="Defina o titulo, status e os sites vinculados a esta seção."
-        >
-          <form className="book-form modern" onSubmit={handleSubmit}>
-            <label className="form-field">
-              <span>Titulo</span>
-              <input
-                type="text"
-                value={form.title}
-                maxLength={150}
-                onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-                required
-              />
-              {isTitleInvalid ? <small className="warning-text">Informe um titulo valido.</small> : null}
-            </label>
-
-            <label className="form-field">
-              <span>Status</span>
-              <select
-                value={form.status}
-                onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}
-              >
-                <option value="1">Ativo</option>
-                <option value="0">Inativo</option>
-              </select>
-            </label>
-
-            <div className="form-field">
-              <span>Sites da seção</span>
-              {sitesQuery.isLoading ? (
-                <small className="form-hint">Carregando sites...</small>
-              ) : activeSites.length === 0 ? (
-                <small className="form-hint">Nenhum site ativo disponivel.</small>
-              ) : (
-                <div className="grid max-h-64 gap-2 overflow-y-auto rounded-xl border border-border bg-surface-2/40 p-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {activeSites.map((site) => (
-                    <label key={site.id} className="flex items-start gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        className="mt-1 accent-primary"
-                        checked={form.siteIds.includes(site.id)}
-                        onChange={() => toggleSite(site.id)}
-                        disabled={saving}
-                      />
-                      <span>
-                        <span className="font-medium">#{site.id}</span>{" "}
-                        {decodeHtmlEntities(site.title)}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              )}
-              <small className="form-hint">{form.siteIds.length} site(s) selecionado(s)</small>
-            </div>
-
-            <div className="book-form-actions">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="primary-btn"
-                type="submit"
-                disabled={saving || isTitleInvalid}
-              >
-                {saving ? "Salvando..." : editingId ? "Atualizar seção" : "Criar seção"}
-              </motion.button>
-              <button
-                className="secondary-btn"
-                type="button"
-                onClick={() => {
-                  resetForm();
-                  clearSuccess();
-                  setFormError("");
-                }}
-                disabled={saving}
-              >
-                Limpar formulario
-              </button>
-            </div>
-          </form>
-          {success ? (
-            <Alert tone="success" className="mt-3">
-              {success}
-            </Alert>
-          ) : null}
-          {formError ? (
-            <Alert tone="danger" className="mt-3">
-              {formError}
-            </Alert>
-          ) : null}
-        </BerryFormPanel>
-      </PermissionGate>
+      {success ? (
+        <Alert tone="success" className="mb-3">
+          {success}
+        </Alert>
+      ) : null}
+      {formError && !formModalOpen ? (
+        <Alert tone="danger" className="mb-3">
+          {formError}
+        </Alert>
+      ) : null}
 
       <AdminListingSection<SiteSectionResponse>
         title="Listagem de seções"
@@ -351,6 +293,22 @@ export function SiteSectionsPage() {
             </div>
           </article>
         )}
+      />
+
+      <SiteSectionFormModal
+        open={formModalOpen}
+        editingId={editingId}
+        form={form}
+        isTitleInvalid={isTitleInvalid}
+        sitesLoading={sitesQuery.isLoading}
+        activeSites={activeSites}
+        saving={saving}
+        error={formError}
+        onClose={closeFormModal}
+        onSubmit={handleSubmit}
+        onReset={closeFormModal}
+        onFormChange={setForm}
+        onToggleSite={toggleSite}
       />
 
       <ConfirmDialog

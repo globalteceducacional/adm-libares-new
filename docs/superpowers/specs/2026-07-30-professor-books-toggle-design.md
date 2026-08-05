@@ -21,7 +21,7 @@ Professores precisam entrar no painel admin, ver **apenas** os livros da escola 
 | Ações | Listar + toggle Ativo/Inativo (`status` `1`/`0`) |
 | Bloqueado | create, update completo, delete, upload, autores, categorias, seções ebook, usuários, escolas, etc. |
 | Permissões | `books.view` + `books.toggle_status` (nova). **Sem** `books.create` / `books.update` / `books.delete` |
-| Extensão Site | Também `sites.view` + `sites.toggle_status` — ver `2026-08-03-sites-modal-professor-toggle-design.md` |
+| Extensão Site | Também `sites.view` + `sites.toggle_status` (modal + PATCH status, V20) |
 | API toggle | `PATCH /api/v1/books/{id}/status` body `{ "status": "0" \| "1" }` — exige `books.toggle_status` + livro acessível na escola |
 | Seed teste | Escola + 1 acervo + vínculos de livros + usuário `teste.professor` |
 
@@ -90,7 +90,7 @@ teste.professor ──► app_admin_users
 - App leitor / Flutter  
 - Gestão de alunos pelo professor  
 
-> **Atualização 2026-08-03:** módulo Site para professor (listar + toggle) **não** está mais fora de escopo — ver `2026-08-03-sites-modal-professor-toggle-design.md`.
+> **Atualização 2026-08-03:** módulo Site para professor (listar + toggle) **não** está mais fora de escopo.
 
 ## Critérios de aceite
 

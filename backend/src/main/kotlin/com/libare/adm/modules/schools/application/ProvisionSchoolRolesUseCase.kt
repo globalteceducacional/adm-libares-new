@@ -78,7 +78,10 @@ class ProvisionSchoolRolesUseCase(
             INSERT IGNORE INTO app_role_permissions (role_id, permission_id)
             SELECT ?, p.id
             FROM app_permissions p
-            WHERE p.code IN ('books.view', 'books.toggle_status')
+            WHERE p.code IN (
+                'books.view', 'books.toggle_status',
+                'sites.view', 'sites.toggle_status'
+            )
             """.trimIndent(),
             roleId
         )

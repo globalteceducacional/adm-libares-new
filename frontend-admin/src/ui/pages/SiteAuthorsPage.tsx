@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Pencil, Trash2, UserRound } from "lucide-react";
+import { Pencil, Plus, Trash2, UserRound } from "lucide-react";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -16,8 +16,8 @@ import {
 import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { PermissionGate } from "../../features/auth/PermissionGate";
 import { usePermission } from "../../features/auth/usePermission";
+import { SiteAuthorFormModal } from "../components/siteAuthors/SiteAuthorFormModal";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
-import { BerryFormPanel } from "../components/layout/BerryFormPanel";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
 import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
@@ -25,14 +25,22 @@ import { LegacyImage } from "../components/LegacyImage";
 import type { SiteAuthorResponse, UpsertSiteAuthorRequest } from "../../types/siteAuthors";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
 import { useTimedMessage } from "../../hooks/useTimedMessage";
-import { Alert, ConfirmDialog, StatusBadge } from "../../shared/ui";
+import { Alert, Button, ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { stripHtml } from "../../shared/lib/stripHtml";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
 
+const EMPTY_FORM: UpsertSiteAuthorRequest = {
+  name: "",
+  description: "",
+  image: "",
+  status: "1"
+};
+
 export function SiteAuthorsPage() {
   const location = useLocation();
+  const { showToast } = useToast();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const authorsQuery = useSiteAuthorsQuery();
   const invalidate = useInvalidateAdminQueries();
@@ -46,14 +54,10 @@ export function SiteAuthorsPage() {
   const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
-  const [form, setForm] = useState<UpsertSiteAuthorRequest>({
-    name: "",
-    description: "",
-    image: "",
-    status: "1"
-  });
+  const [form, setForm] = useState<UpsertSiteAuthorRequest>(EMPTY_FORM);
 
   const isNameInvalid = form.name.trim().length === 0;
   const canCreate = usePermission("sites.create");
@@ -61,8 +65,21 @@ export function SiteAuthorsPage() {
   const canDelete = usePermission("sites.delete");
 
   function resetForm() {
-    setForm({ name: "", description: "", image: "", status: "1" });
+    setForm(EMPTY_FORM);
     setEditingId(null);
+  }
+
+  function closeFormModal() {
+    resetForm();
+    clearSuccess();
+    setFormError("");
+    setFormModalOpen(false);
+  }
+
+  function openCreateForm() {
+    resetForm();
+    setFormError("");
+    setFormModalOpen(true);
   }
 
   async function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
@@ -101,12 +118,12 @@ export function SiteAuthorsPage() {
       };
       if (editingId) {
         await updateSiteAuthor(editingId, payload);
-        showSuccess("Autor do Site atualizado com sucesso.");
+        showToast("Autor do Site atualizado com sucesso.", "success");
       } else {
         await createSiteAuthor(payload);
-        showSuccess("Autor do Site criado com sucesso.");
+        showToast("Autor do Site criado com sucesso.", "success");
       }
-      resetForm();
+      closeFormModal();
       await invalidate.siteAuthors();
     } catch (submitError) {
       setFormError(submitError instanceof Error ? submitError.message : "Falha ao salvar autor");
@@ -117,13 +134,14 @@ export function SiteAuthorsPage() {
 
   function handleEdit(author: SiteAuthorResponse) {
     setEditingId(author.id);
+    setFormError("");
     setForm({
       name: decodeHtmlEntities(author.name),
       description: stripHtml(author.description) ?? "",
       image: author.image ?? "",
       status: author.status
     });
-    document.getElementById("site-author-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setFormModalOpen(true);
   }
 
   async function handleConfirmDelete() {
@@ -137,12 +155,15 @@ export function SiteAuthorsPage() {
     try {
       await deleteSiteAuthor(authorId);
       if (editingId === authorId) {
-        resetForm();
+        closeFormModal();
       }
       showSuccess("Autor do Site desativado com sucesso.");
       await invalidate.siteAuthors();
     } catch (deleteError) {
-      setFormError(deleteError instanceof Error ? deleteError.message : "Falha ao desativar autor");
+      const message =
+        deleteError instanceof Error ? deleteError.message : "Falha ao desativar autor";
+      setFormError(message);
+      showToast(message, "error");
     } finally {
       setSaving(false);
       setConfirmDeleteId(null);
@@ -243,108 +264,28 @@ export function SiteAuthorsPage() {
           title="Autores do Site"
           description="Gerencie autores do catalogo Site, fotos e status para vincular aos conteudos."
           tone="success"
+          actions={
+            <PermissionGate permission="sites.create">
+              <Button type="button" onClick={openCreateForm} disabled={saving}>
+                <Plus size={16} />
+                Novo autor
+              </Button>
+            </PermissionGate>
+          }
         />
       }
       stats={<ListingMiniStats items={listStats} />}
     >
-      <PermissionGate permission={editingId ? "sites.update" : "sites.create"}>
-        <BerryFormPanel
-          id="site-author-form"
-          icon={UserRound}
-          title={editingId ? "Editar autor" : "Cadastrar novo autor"}
-          description="Preencha nome, descricao e foto para o catalogo Site."
-        >
-          <form className="book-form modern" onSubmit={handleSubmit}>
-            <label className="form-field">
-              <span>Nome</span>
-              <input
-                type="text"
-                value={form.name}
-                maxLength={255}
-                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                required
-              />
-              {isNameInvalid ? <small className="warning-text">Informe um nome valido.</small> : null}
-            </label>
-            <label className="form-field">
-              <span>Descricao</span>
-              <textarea
-                rows={4}
-                value={form.description ?? ""}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, description: event.target.value }))
-                }
-              />
-            </label>
-            <div className="form-field">
-              <span>Foto do autor</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                disabled={saving || uploadingImage}
-              />
-              {uploadingImage ? <small className="form-hint">Enviando imagem...</small> : null}
-              {form.image ? (
-                <div className="book-cover-preview">
-                  <LegacyImage
-                    legacyPath={form.image}
-                    folder="images"
-                    alt="Pre-visualizacao da foto"
-                    className="table-avatar h-24 w-24"
-                    fallbackClassName="table-avatar-placeholder h-24 w-24"
-                    fallbackText={form.name.trim().charAt(0).toUpperCase() || "A"}
-                  />
-                  <small className="form-hint">{form.image}</small>
-                </div>
-              ) : null}
-            </div>
-            <label className="form-field">
-              <span>Status</span>
-              <select
-                value={form.status}
-                onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}
-              >
-                <option value="1">Ativo</option>
-                <option value="0">Inativo</option>
-              </select>
-            </label>
-            <div className="book-form-actions">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="primary-btn"
-                type="submit"
-                disabled={saving || uploadingImage || isNameInvalid}
-              >
-                {saving ? "Salvando..." : editingId ? "Atualizar autor" : "Criar autor"}
-              </motion.button>
-              <button
-                className="secondary-btn"
-                type="button"
-                onClick={() => {
-                  resetForm();
-                  clearSuccess();
-                  setFormError("");
-                }}
-                disabled={saving || uploadingImage}
-              >
-                Limpar formulario
-              </button>
-            </div>
-          </form>
-          {success ? (
-            <Alert tone="success" className="mt-3">
-              {success}
-            </Alert>
-          ) : null}
-          {formError ? (
-            <Alert tone="danger" className="mt-3">
-              {formError}
-            </Alert>
-          ) : null}
-        </BerryFormPanel>
-      </PermissionGate>
+      {success ? (
+        <Alert tone="success" className="mb-3">
+          {success}
+        </Alert>
+      ) : null}
+      {formError && !formModalOpen ? (
+        <Alert tone="danger" className="mb-3">
+          {formError}
+        </Alert>
+      ) : null}
 
       <AdminListingSection<SiteAuthorResponse>
         title="Listagem de autores"
@@ -379,6 +320,21 @@ export function SiteAuthorsPage() {
             </div>
           </article>
         )}
+      />
+
+      <SiteAuthorFormModal
+        open={formModalOpen}
+        editingId={editingId}
+        form={form}
+        isNameInvalid={isNameInvalid}
+        saving={saving}
+        uploadingImage={uploadingImage}
+        error={formError}
+        onClose={closeFormModal}
+        onSubmit={handleSubmit}
+        onReset={closeFormModal}
+        onFormChange={setForm}
+        onImageChange={handleImageChange}
       />
 
       <ConfirmDialog

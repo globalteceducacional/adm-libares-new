@@ -68,7 +68,9 @@ React Admin                    Flutter (app Site)
 
 ## Permissões RBAC
 
-Flyway seed (+ atribuição a perfis platform / super-admin). Perfis de escola **não** recebem `sites.*` por padrão.
+Flyway seed (+ atribuição a perfis platform / super-admin). Perfis `SCHOOL_ADMIN` **não** recebem `sites.*` por padrão.
+
+**Exceção:** role `PROFESSOR` recebe `sites.view` + `sites.toggle_status` (V20 + `ProvisionSchoolRolesUseCase`).
 
 | Código | Uso |
 |--------|-----|
@@ -123,7 +125,7 @@ Confirmado via código PHP canónico (`adm-libares/*_site.php`, 2026-07-23). Enc
 
 | Recurso | Rotas |
 |---------|--------|
-| Sites | `GET/POST /sites`, `PUT/DELETE /sites/{id}`, upload capa/arquivo |
+| Sites | `GET/POST /sites`, `PUT/DELETE /sites/{id}`, `PATCH /sites/{id}/status`, upload capa/arquivo |
 | Autores | `/site-authors` |
 | Categorias | `/site-categories` |
 | Seções | `/site-sections` |
@@ -161,7 +163,7 @@ Novo grupo de menu **Site** (paralelo a “Catálogo”):
 | Seções | `/sites/secoes` | `sites.update` |
 | Comentários | `/sites/comentarios` | `sites.comments.view` |
 
-- Create/edit de **Sites** em **modal** (`SiteFormModal`), padrao Livros — ver `2026-08-03-sites-modal-professor-toggle-design.md`.
+- Create/edit de **Sites** em **modal** (`SiteFormModal`), padrao Livros.
 - Role **PROFESSOR**: `sites.view` + `sites.toggle_status`; UI so listagem + Ativar/Desativar.
 - API: `PATCH /api/v1/sites/{id}/status`.
 - Sem seletor de acervo/escola (Site continua global).
@@ -185,6 +187,7 @@ Novo grupo de menu **Site** (paralelo a “Catálogo”):
 - [x] Painel administra Sites/Autores/Categorias/Seções/Comentários sem PHP
 - [ ] App Site funciona apontando host para Kotlin em `/api_sites.php`
 - [x] Permissões `sites.*` controlam menu e APIs admin
+- [x] Create/edit Sites em modal; PROFESSOR com view + toggle (`sites.toggle_status`)
 - [x] Delete de Site não remove dados de ebook (`tbl_books` / `tbl_comments`)
 - [x] Telas `*_site.php` e `api_sites.php` PHP podem ser desligadas após cutover
 

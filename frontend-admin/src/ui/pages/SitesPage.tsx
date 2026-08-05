@@ -1,10 +1,11 @@
 import { motion } from "framer-motion";
-import { Globe, Pencil, Trash2 } from "lucide-react";
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { Globe, Pencil, Plus, Trash2 } from "lucide-react";
+import { FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   createSite,
   deleteSite,
+  toggleSiteStatus,
   updateSite,
   uploadSiteCover,
   uploadSiteFile
@@ -19,8 +20,8 @@ import {
 import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { PermissionGate } from "../../features/auth/PermissionGate";
 import { usePermission } from "../../features/auth/usePermission";
+import { SiteFormModal } from "../components/sites/SiteFormModal";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
-import { BerryFormPanel } from "../components/layout/BerryFormPanel";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
 import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
@@ -29,23 +30,28 @@ import type { UpsertSiteRequest, SiteResponse } from "../../types/sites";
 import { EMPTY_SITE_FORM } from "../../types/sites";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
 import { useTimedMessage } from "../../hooks/useTimedMessage";
-import { Alert, ConfirmDialog, StatusBadge } from "../../shared/ui";
+import { Alert, ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { stripHtml } from "../../shared/lib/stripHtml";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
 
-function toggleId(current: number[], id: number): number[] {
-  return current.includes(id) ? current.filter((value) => value !== id) : [...current, id];
-}
-
 export function SitesPage() {
   const location = useLocation();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const sitesQuery = useSitesQuery();
-  const authorsQuery = useSiteAuthorsQuery();
-  const categoriesQuery = useSiteCategoriesQuery();
   const invalidate = useInvalidateAdminQueries();
+  const { showToast } = useToast();
+
+  const canCreate = usePermission("sites.create");
+  const canUpdate = usePermission("sites.update");
+  const canToggle = usePermission("sites.toggle_status");
+  const canDelete = usePermission("sites.delete");
+  const professorMode = canToggle && !canUpdate && !canCreate;
+  const canManage = canCreate || canUpdate;
+
+  const authorsQuery = useSiteAuthorsQuery({ enabled: canManage });
+  const categoriesQuery = useSiteCategoriesQuery({ enabled: canManage });
 
   const sites = sitesQuery.data ?? [];
   const authors = authorsQuery.data ?? [];
@@ -61,13 +67,10 @@ export function SitesPage() {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState<UpsertSiteRequest>(EMPTY_SITE_FORM);
-
-  const canCreate = usePermission("sites.create");
-  const canUpdate = usePermission("sites.update");
-  const canDelete = usePermission("sites.delete");
 
   const activeAuthors = useMemo(() => authors.filter((author) => author.status === "1"), [authors]);
   const activeCategories = useMemo(
@@ -121,12 +124,20 @@ export function SitesPage() {
     setUploadError("");
   }
 
-  async function handleCoverChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) {
-      return;
-    }
+  function closeFormModal() {
+    resetForm();
+    clearSuccess();
+    setFormError("");
+    setFormModalOpen(false);
+  }
+
+  function openCreateForm() {
+    resetForm();
+    setFormError("");
+    setFormModalOpen(true);
+  }
+
+  async function handleCoverSelected(file: File) {
     setUploadError("");
     setUploadingCover(true);
     try {
@@ -139,12 +150,7 @@ export function SitesPage() {
     }
   }
 
-  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) {
-      return;
-    }
+  async function handleSiteFileSelected(file: File) {
     setUploadError("");
     setUploadingFile(true);
     try {
@@ -184,12 +190,14 @@ export function SitesPage() {
       };
       if (editingId) {
         await updateSite(editingId, payload);
+        showToast("Site atualizado com sucesso.", "success");
         showSuccess("Site atualizado com sucesso.");
       } else {
         await createSite(payload);
+        showToast("Site criado com sucesso.", "success");
         showSuccess("Site criado com sucesso.");
       }
-      resetForm();
+      closeFormModal();
       await invalidate.sites();
     } catch (submitError) {
       setFormError(submitError instanceof Error ? submitError.message : "Falha ao salvar site");
@@ -213,7 +221,26 @@ export function SitesPage() {
       featured: site.featured === "1" ? "1" : "0",
       status: site.status
     });
-    document.getElementById("site-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setFormModalOpen(true);
+  }
+
+  async function handleToggleStatus(site: SiteResponse) {
+    const nextStatus: "0" | "1" = site.status === "1" ? "0" : "1";
+    setSaving(true);
+    clearSuccess();
+    try {
+      await toggleSiteStatus(site.id, nextStatus);
+      const label = nextStatus === "1" ? "ativado" : "desativado";
+      showToast(`Site ${label} com sucesso.`, "success");
+      showSuccess(`Site ${label} com sucesso.`);
+      await invalidate.sites();
+    } catch (toggleError) {
+      const message =
+        toggleError instanceof Error ? toggleError.message : "Falha ao alterar status";
+      showToast(message, "error");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleConfirmDelete() {
@@ -227,12 +254,17 @@ export function SitesPage() {
     try {
       await deleteSite(siteId);
       if (editingId === siteId) {
-        resetForm();
+        closeFormModal();
       }
+      showToast("Site excluido com sucesso.", "success");
       showSuccess("Site excluido com sucesso.");
       await invalidate.sites();
     } catch (deleteError) {
       setFormError(deleteError instanceof Error ? deleteError.message : "Falha ao excluir site");
+      showToast(
+        deleteError instanceof Error ? deleteError.message : "Falha ao excluir site",
+        "error"
+      );
     } finally {
       setSaving(false);
       setConfirmDeleteId(null);
@@ -279,11 +311,7 @@ export function SitesPage() {
         key: "featured",
         label: "Destaque",
         render: (site) => (
-          <StatusBadge
-            active={site.featured === "1"}
-            activeLabel="Sim"
-            inactiveLabel="Nao"
-          />
+          <StatusBadge active={site.featured === "1"} activeLabel="Sim" inactiveLabel="Nao" />
         )
       },
       {
@@ -310,6 +338,23 @@ export function SitesPage() {
                 Editar
               </motion.button>
             ) : null}
+            {canToggle ? (
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.98 }}
+                className="table-btn icon"
+                type="button"
+                onClick={() => handleToggleStatus(site)}
+                disabled={saving}
+                aria-label={
+                  site.status === "1"
+                    ? `Desativar o site ${decodeHtmlEntities(site.title)}`
+                    : `Ativar o site ${decodeHtmlEntities(site.title)}`
+                }
+              >
+                {site.status === "1" ? "Desativar" : "Ativar"}
+              </motion.button>
+            ) : null}
             {canDelete ? (
               <motion.button
                 whileHover={{ scale: 1.04 }}
@@ -327,7 +372,7 @@ export function SitesPage() {
         )
       }
     ],
-    [saving, canUpdate, canDelete, authorById]
+    [saving, canUpdate, canDelete, canToggle, authorById]
   );
 
   const listStats = useMemo(() => {
@@ -341,12 +386,13 @@ export function SitesPage() {
     ];
   }, [sites, filteredSites]);
 
-  const optionsError =
-    authorsQuery.error
+  const formErrorMessage =
+    formError ||
+    (authorsQuery.error
       ? getQueryErrorMessage(authorsQuery.error, "Falha ao carregar autores")
       : categoriesQuery.error
         ? getQueryErrorMessage(categoriesQuery.error, "Falha ao carregar categorias")
-        : "";
+        : "");
 
   return (
     <ListingPageShell
@@ -355,236 +401,35 @@ export function SitesPage() {
         <PageHeroStrip
           icon={Globe}
           title="Sites"
-          description="Gerencie conteudos do catalogo Site: capa, arquivo, categorias e destaque."
+          description={
+            professorMode
+              ? "Visualize e ative/desative os conteudos do catalogo Site."
+              : "Gerencie conteudos do catalogo Site: capa, arquivo, categorias e destaque."
+          }
           tone="primary"
+          actions={
+            <PermissionGate permission="sites.create">
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.98 }}
+                className="primary-btn icon"
+                type="button"
+                onClick={openCreateForm}
+              >
+                <Plus size={16} />
+                Novo site
+              </motion.button>
+            </PermissionGate>
+          }
         />
       }
       stats={<ListingMiniStats items={listStats} />}
     >
-      <PermissionGate permission={editingId ? "sites.update" : "sites.create"}>
-        <BerryFormPanel
-          id="site-form"
-          icon={Globe}
-          title={editingId ? "Editar site" : "Cadastrar novo site"}
-          description="Preencha categorias, autor, titulo, descricao, capa e arquivo."
-        >
-          <form className="book-form modern" onSubmit={handleSubmit}>
-            <fieldset className="form-field acervo-fieldset">
-              <legend>Categorias</legend>
-              {activeCategories.length === 0 ? (
-                <small className="warning-text">Nenhuma categoria ativa cadastrada.</small>
-              ) : (
-                <div className="acervo-checkbox-grid">
-                  {activeCategories.map((category) => (
-                    <label key={category.id} className="acervo-checkbox-item">
-                      <input
-                        type="checkbox"
-                        checked={form.categoryIds.includes(category.id)}
-                        onChange={() =>
-                          setForm((current) => ({
-                            ...current,
-                            categoryIds: toggleId(current.categoryIds, category.id)
-                          }))
-                        }
-                      />
-                      <span>{decodeHtmlEntities(category.name)}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-              {isCategoriesInvalid ? (
-                <small className="warning-text">Selecione ao menos uma categoria.</small>
-              ) : null}
-            </fieldset>
-
-            <label className="form-field">
-              <span>Autor</span>
-              <select
-                value={form.authorId}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    authorId: Number(event.target.value) || 0
-                  }))
-                }
-                required
-              >
-                <option value={0}>Selecione um autor</option>
-                {authorOptions.map((author) => (
-                  <option key={author.id} value={author.id}>
-                    {decodeHtmlEntities(author.name)} (#{author.id})
-                  </option>
-                ))}
-              </select>
-              {isAuthorInvalid ? (
-                <small className="warning-text">Selecione um autor antes de salvar.</small>
-              ) : null}
-            </label>
-
-            <label className="form-field">
-              <span>Titulo</span>
-              <input
-                type="text"
-                value={form.title}
-                maxLength={255}
-                onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-                required
-              />
-              {isTitleInvalid ? <small className="warning-text">Informe um titulo valido.</small> : null}
-            </label>
-
-            <label className="form-field">
-              <span>Descricao</span>
-              <textarea
-                rows={6}
-                value={form.description}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, description: event.target.value }))
-                }
-                required
-              />
-              {isDescriptionInvalid ? (
-                <small className="warning-text">A descricao e obrigatoria.</small>
-              ) : null}
-            </label>
-
-            <div className="form-field">
-              <span>Capa</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleCoverChange}
-                disabled={saving || uploadingCover}
-              />
-              {uploadingCover ? <small className="form-hint">Enviando capa...</small> : null}
-              {form.coverImage ? (
-                <div className="book-cover-preview">
-                  <LegacyImage
-                    legacyPath={form.coverImage}
-                    folder="images"
-                    alt="Pre-visualizacao da capa"
-                    className="book-form-cover"
-                    fallbackClassName="book-form-cover-placeholder"
-                    fallbackText="Capa indisponivel"
-                  />
-                  <small className="form-hint">{form.coverImage}</small>
-                </div>
-              ) : null}
-              {isCoverInvalid ? <small className="warning-text">Envie a imagem da capa.</small> : null}
-            </div>
-
-            <label className="form-field">
-              <span>Tipo de arquivo</span>
-              <select
-                value={form.fileType}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    fileType: event.target.value === "local" ? "local" : "server_url"
-                  }))
-                }
-              >
-                <option value="server_url">URL externa (server_url)</option>
-                <option value="local">Arquivo local</option>
-              </select>
-            </label>
-
-            {form.fileType === "server_url" ? (
-              <label className="form-field">
-                <span>URL do arquivo</span>
-                <input
-                  type="url"
-                  value={form.fileUrl ?? ""}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, fileUrl: event.target.value }))
-                  }
-                  placeholder="https://..."
-                />
-              </label>
-            ) : (
-              <div className="form-field">
-                <span>Arquivo (PDF ou EPUB)</span>
-                <input
-                  type="file"
-                  accept=".pdf,.epub,application/pdf,application/epub+zip"
-                  onChange={handleFileChange}
-                  disabled={saving || uploadingFile}
-                />
-                {uploadingFile ? <small className="form-hint">Enviando arquivo...</small> : null}
-                {form.fileUrl ? <small className="form-hint break-all">{form.fileUrl}</small> : null}
-              </div>
-            )}
-            {isFileInvalid ? (
-              <small className="warning-text">
-                {form.fileType === "server_url"
-                  ? "Informe a URL do arquivo."
-                  : "Envie o arquivo PDF ou EPUB."}
-              </small>
-            ) : null}
-
-            <label className="form-field acervo-checkbox-item">
-              <input
-                type="checkbox"
-                checked={form.featured === "1"}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    featured: event.target.checked ? "1" : "0"
-                  }))
-                }
-              />
-              <span>Destaque na home (featured)</span>
-            </label>
-
-            <label className="form-field">
-              <span>Status</span>
-              <select
-                value={form.status}
-                onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}
-              >
-                <option value="1">Ativo</option>
-                <option value="0">Inativo</option>
-              </select>
-            </label>
-
-            {uploadError ? <p className="error-text">{uploadError}</p> : null}
-
-            <div className="book-form-actions">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="primary-btn"
-                type="submit"
-                disabled={saving || uploadingCover || uploadingFile || isFormInvalid}
-              >
-                {saving ? "Salvando..." : editingId ? "Atualizar site" : "Criar site"}
-              </motion.button>
-              <button
-                className="secondary-btn"
-                type="button"
-                onClick={() => {
-                  resetForm();
-                  clearSuccess();
-                  setFormError("");
-                }}
-                disabled={saving}
-              >
-                Limpar formulario
-              </button>
-            </div>
-          </form>
-          {success ? (
-            <Alert tone="success" className="mt-3">
-              {success}
-            </Alert>
-          ) : null}
-          {formError || optionsError ? (
-            <Alert tone="danger" className="mt-3">
-              {formError || optionsError}
-            </Alert>
-          ) : null}
-        </BerryFormPanel>
-      </PermissionGate>
+      {success ? (
+        <Alert tone="success" className="mb-3">
+          {success}
+        </Alert>
+      ) : null}
 
       <AdminListingSection<SiteResponse>
         title="Listagem de sites"
@@ -619,9 +464,57 @@ export function SitesPage() {
                 {authorById.get(site.authorId) ?? `Autor #${site.authorId}`}
               </p>
               <StatusBadge active={site.status === "1"} />
+              <div className="book-card-actions">
+                {canToggle ? (
+                  <button
+                    type="button"
+                    className="table-btn icon"
+                    onClick={() => handleToggleStatus(site)}
+                    disabled={saving}
+                  >
+                    {site.status === "1" ? "Desativar" : "Ativar"}
+                  </button>
+                ) : null}
+                {canUpdate ? (
+                  <button
+                    type="button"
+                    className="table-btn icon"
+                    onClick={() => handleEdit(site)}
+                    disabled={saving}
+                  >
+                    Editar
+                  </button>
+                ) : null}
+              </div>
             </div>
           </article>
         )}
+      />
+
+      <SiteFormModal
+        open={formModalOpen}
+        editingId={editingId}
+        form={form}
+        authorOptions={authorOptions}
+        categoryOptions={activeCategories}
+        isAuthorInvalid={isAuthorInvalid}
+        isTitleInvalid={isTitleInvalid}
+        isCategoriesInvalid={isCategoriesInvalid}
+        isDescriptionInvalid={isDescriptionInvalid}
+        isCoverInvalid={isCoverInvalid}
+        isFileInvalid={isFileInvalid}
+        isFormInvalid={isFormInvalid}
+        saving={saving}
+        uploadingCover={uploadingCover}
+        uploadingFile={uploadingFile}
+        uploadError={uploadError}
+        error={formErrorMessage}
+        onClose={closeFormModal}
+        onSubmit={handleSubmit}
+        onReset={closeFormModal}
+        onFormChange={setForm}
+        onCoverSelected={handleCoverSelected}
+        onSiteFileSelected={handleSiteFileSelected}
       />
 
       <ConfirmDialog
