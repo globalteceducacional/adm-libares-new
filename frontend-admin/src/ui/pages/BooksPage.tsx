@@ -26,7 +26,6 @@ import { LegacyImage } from "../components/LegacyImage";
 import type { BookResponse, UpsertBookRequest } from "../../types/books";
 import { EMPTY_BOOK_FORM } from "../../types/books";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { useTimedMessage } from "../../hooks/useTimedMessage";
 import { ConfirmDialog, StatusBadge, Button, useToast } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
@@ -60,7 +59,6 @@ export function BooksPage() {
     ? getQueryErrorMessage(booksQuery.error, "Falha ao buscar livros")
     : undefined;
   const [formError, setFormError] = useState("");
-  const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const [saving, setSaving] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -70,6 +68,8 @@ export function BooksPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [selectedBook, setSelectedBook] = useState<BookResponse | null>(null);
   const [form, setForm] = useState<UpsertBookRequest>(EMPTY_BOOK_FORM);
+  // Erros de campo so apos tentativa de salvar (evita vermelho no form vazio).
+  const [showValidation, setShowValidation] = useState(false);
 
   const selectedAuthorExists = authorOptions.some((author) => author.id === form.authorId);
   const authorOptionsWithFallback =
@@ -116,11 +116,11 @@ export function BooksPage() {
     setForm(EMPTY_BOOK_FORM);
     setEditingId(null);
     setUploadError("");
+    setShowValidation(false);
   }
 
   function closeFormModal() {
     resetForm();
-    clearSuccess();
     setFormError("");
     setFormModalOpen(false);
   }
@@ -169,19 +169,21 @@ export function BooksPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    setShowValidation(true);
+    if (isFormInvalid) {
+      setFormError("Preencha os campos obrigatorios antes de salvar.");
+      return;
+    }
     setFormError("");
-    clearSuccess();
     setSaving(true);
 
     try {
       if (editingId) {
         await updateBook(editingId, form);
         showToast("Livro atualizado com sucesso.", "success");
-        showSuccess("Livro atualizado com sucesso.");
       } else {
         await createBook(form);
         showToast("Livro criado com sucesso.", "success");
-        showSuccess("Livro criado com sucesso.");
       }
       closeFormModal();
       await invalidate.books();
@@ -197,12 +199,10 @@ export function BooksPage() {
   async function handleToggleStatus(book: BookResponse) {
     const nextStatus: "0" | "1" = book.status === "1" ? "0" : "1";
     setSaving(true);
-    clearSuccess();
     try {
       await toggleBookStatus(book.id, nextStatus);
       const label = nextStatus === "1" ? "ativado" : "desativado";
       showToast(`Livro ${label} com sucesso.`, "success");
-      showSuccess(`Livro ${label} com sucesso.`);
       await invalidate.books();
     } catch (toggleError) {
       const message =
@@ -218,6 +218,7 @@ export function BooksPage() {
     setEditingId(book.id);
     setUploadError("");
     setFormError("");
+    setShowValidation(false);
     setForm({
       title: decodeHtmlEntities(book.title),
       authorId: book.authorId,
@@ -253,7 +254,6 @@ export function BooksPage() {
     }
     const bookId = confirmDeleteId;
     setFormError("");
-    clearSuccess();
     setSaving(true);
     try {
       await deleteBook(bookId);
@@ -263,7 +263,6 @@ export function BooksPage() {
       if (selectedBook?.id === bookId) {
         setSelectedBook(null);
       }
-      showSuccess("Livro excluido com sucesso.");
       showToast("Livro excluido com sucesso.", "success");
       await invalidate.books();
     } catch (deleteError) {
@@ -449,7 +448,6 @@ export function BooksPage() {
     >
       <AdminListingSection<BookResponse>
         title="Listagem de livros"
-        success={success}
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Buscar por titulo, autor ou ID"
@@ -565,14 +563,13 @@ export function BooksPage() {
         categoryOptions={categoryOptions}
         homeSectionOptions={homeSectionOptions}
         selectedAuthorExists={selectedAuthorExists}
-        isAuthorInvalid={isAuthorInvalid}
-        isTitleInvalid={isTitleInvalid}
-        isAcervosInvalid={isAcervosInvalid}
-        isCategoriesInvalid={isCategoriesInvalid}
-        isDescriptionInvalid={isDescriptionInvalid}
-        isCoverInvalid={isCoverInvalid}
-        isFileInvalid={isFileInvalid}
-        isFormInvalid={isFormInvalid}
+        isAuthorInvalid={showValidation && isAuthorInvalid}
+        isTitleInvalid={showValidation && isTitleInvalid}
+        isAcervosInvalid={showValidation && isAcervosInvalid}
+        isCategoriesInvalid={showValidation && isCategoriesInvalid}
+        isDescriptionInvalid={showValidation && isDescriptionInvalid}
+        isCoverInvalid={showValidation && isCoverInvalid}
+        isFileInvalid={showValidation && isFileInvalid}
         saving={saving}
         uploadingCover={uploadingCover}
         uploadingFile={uploadingFile}

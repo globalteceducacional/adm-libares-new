@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Pencil, Shield, Trash2 } from "lucide-react";
+import { Pencil, Power, Shield, Trash2 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { createRole, deleteRole, updateRole } from "../../services/rolesService";
@@ -19,11 +19,11 @@ import { BerrySelect } from "../components/layout/BerrySelect";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
 import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
-import type { PermissionResponse, RoleResponse, UpsertRoleRequest } from "../../types/roles";
+import type { RoleResponse, UpsertRoleRequest } from "../../types/roles";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { useTimedMessage } from "../../hooks/useTimedMessage";
-import { Alert, Badge, Button, ConfirmDialog, Field, Input, StatusBadge } from "../../shared/ui";
+import { Alert, Badge, Button, ConfirmDialog, Field, Input, StatusBadge, useToast } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
+import { SearchableCheckboxList } from "../components/form/SearchableCheckboxList";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
 
@@ -51,11 +51,13 @@ export function RolesPage() {
       : undefined;
 
   const [formError, setFormError] = useState("");
-  const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
+  const { showToast } = useToast();
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState<UpsertRoleRequest>(EMPTY_ROLE_FORM);
+  // Erros de campo so apos tentativa de salvar.
+  const [showValidation, setShowValidation] = useState(false);
 
   const canCreate = usePermission("roles.create");
   const canUpdate = usePermission("roles.update");
@@ -67,20 +69,31 @@ export function RolesPage() {
   const isEditingSystemRole = editingRole?.isSystem ?? false;
   const isNameInvalid = form.name.trim().length === 0;
   const isPermissionsInvalid = form.permissionCodes.length === 0;
+  const isFormInvalid = isNameInvalid || isPermissionsInvalid;
 
-  const permissionsByModule = useMemo(() => {
-    const grouped = new Map<string, PermissionResponse[]>();
-    permissions.forEach((permission) => {
-      const list = grouped.get(permission.module) ?? [];
-      list.push(permission);
-      grouped.set(permission.module, list);
-    });
-    return Array.from(grouped.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [permissions]);
+  const permissionItems = useMemo(
+    () =>
+      [...permissions]
+        .sort((a, b) => {
+          const moduleCmp = a.module.localeCompare(b.module, "pt-BR");
+          if (moduleCmp !== 0) {
+            return moduleCmp;
+          }
+          return a.code.localeCompare(b.code, "pt-BR");
+        })
+        .map((permission) => ({
+          id: permission.code,
+          label: permission.code,
+          description: `${permission.module} — ${permission.description}`
+        })),
+    [permissions]
+  );
 
   function resetForm() {
     setForm(EMPTY_ROLE_FORM);
     setEditingId(null);
+    setShowValidation(false);
+    setFormError("");
   }
 
   function togglePermission(code: string) {
@@ -100,9 +113,13 @@ export function RolesPage() {
     if (needsSchoolContext || isEditingSystemRole) {
       return;
     }
+    setShowValidation(true);
+    if (isFormInvalid) {
+      setFormError("Preencha os campos obrigatorios antes de salvar.");
+      return;
+    }
 
     setFormError("");
-    clearSuccess();
     setSaving(true);
 
     try {
@@ -115,11 +132,11 @@ export function RolesPage() {
       if (editingId) {
         await updateRole(editingId, payload);
         resetForm();
-        showSuccess("Perfil atualizado com sucesso.");
+        showToast("Perfil atualizado com sucesso.", "success");
       } else {
         await createRole(payload);
         resetForm();
-        showSuccess("Perfil criado com sucesso.");
+        showToast("Perfil criado com sucesso.", "success");
       }
 
       await invalidate.roles();
@@ -132,6 +149,8 @@ export function RolesPage() {
 
   function handleEdit(role: RoleResponse) {
     setEditingId(role.id);
+    setShowValidation(false);
+    setFormError("");
     setForm({
       name: decodeHtmlEntities(role.name),
       status: role.status,
@@ -140,23 +159,51 @@ export function RolesPage() {
     document.getElementById("role-form-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  // Reenvia os valores como vieram da API para trocar apenas o status.
+  async function handleActivate(role: RoleResponse) {
+    if (!canUpdate || role.isSystem) {
+      return;
+    }
+    setFormError("");
+    setSaving(true);
+    try {
+      await updateRole(role.id, {
+        name: role.name,
+        status: "1",
+        permissionCodes: [...role.permissionCodes]
+      });
+      showToast("Perfil ativado com sucesso.", "success");
+      await invalidate.roles();
+    } catch (activateError) {
+      const message =
+        activateError instanceof Error ? activateError.message : "Falha ao ativar perfil";
+      setFormError(message);
+      showToast(message, "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleConfirmDelete() {
     if (confirmDeleteId === null) {
       return;
     }
     const roleId = confirmDeleteId;
     setFormError("");
-    clearSuccess();
     setSaving(true);
     try {
       await deleteRole(roleId);
       if (editingId === roleId) {
         resetForm();
       }
-      showSuccess("Perfil desativado com sucesso.");
+      showToast("Perfil desativado com sucesso.", "success");
       await invalidate.roles();
     } catch (deleteError) {
       setFormError(deleteError instanceof Error ? deleteError.message : "Falha ao desativar perfil");
+      showToast(
+        deleteError instanceof Error ? deleteError.message : "Falha ao desativar perfil",
+        "error"
+      );
     } finally {
       setSaving(false);
       setConfirmDeleteId(null);
@@ -217,7 +264,20 @@ export function RolesPage() {
                 {role.isSystem ? "Ver" : "Editar"}
               </motion.button>
             ) : null}
-            {canDelete && !role.isSystem ? (
+            {canUpdate && !role.isSystem && role.status !== "1" ? (
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.98 }}
+                className="table-btn icon"
+                type="button"
+                onClick={() => handleActivate(role)}
+                disabled={saving}
+              >
+                <Power size={14} />
+                Ativar
+              </motion.button>
+            ) : null}
+            {canDelete && !role.isSystem && role.status === "1" ? (
               <motion.button
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.98 }}
@@ -286,12 +346,17 @@ export function RolesPage() {
           >
               <form className="space-y-4" onSubmit={handleSubmit} noValidate>
                 <div className="grid gap-4 md:grid-cols-2">
-                  <Field label="Nome" required>
+                  <Field
+                    label="Nome"
+                    required
+                    error={showValidation && isNameInvalid ? "Informe um nome valido." : undefined}
+                  >
                     <Input
                       value={form.name}
                       onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
                       disabled={isEditingSystemRole || needsSchoolContext}
                       required
+                      invalid={showValidation && isNameInvalid}
                     />
                   </Field>
                   <BerrySelect
@@ -305,38 +370,25 @@ export function RolesPage() {
                   </BerrySelect>
                 </div>
 
-                <div className="space-y-3">
-                  <p className="font-display text-sm font-semibold text-foreground">Permissoes</p>
-                  {permissionsByModule.map(([module, modulePermissions]) => (
-                    <div key={module} className="berry-permission-module rounded-xl border border-border bg-surface-2/40 p-3">
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">{module}</p>
-                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        {modulePermissions.map((permission) => (
-                          <label key={permission.code} className="flex items-start gap-2 text-sm">
-                            <input
-                              type="checkbox"
-                              className="mt-1 accent-primary"
-                              checked={form.permissionCodes.includes(permission.code)}
-                              onChange={() => togglePermission(permission.code)}
-                              disabled={isEditingSystemRole || needsSchoolContext || !canManageRoles}
-                            />
-                            <span>
-                              <span className="font-medium">{permission.code}</span>
-                              <span className="block text-xs text-muted">{permission.description}</span>
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <fieldset className="form-field acervo-fieldset">
+                  <legend>Permissoes</legend>
+                  <SearchableCheckboxList
+                    items={permissionItems}
+                    selectedIds={form.permissionCodes}
+                    onToggle={togglePermission}
+                    searchPlaceholder="Buscar permissao por codigo ou modulo..."
+                    tall
+                    disabled={isEditingSystemRole || needsSchoolContext || !canManageRoles}
+                    emptyMessage="Nenhuma permissao disponivel."
+                  />
+                  {showValidation && isPermissionsInvalid ? (
+                    <small className="warning-text">Selecione ao menos uma permissao.</small>
+                  ) : null}
+                </fieldset>
 
                 <div className="flex gap-2">
                   {!isEditingSystemRole && (editingId ? canUpdate : canCreate) ? (
-                    <Button
-                      type="submit"
-                      disabled={saving || needsSchoolContext || isNameInvalid || isPermissionsInvalid}
-                    >
+                    <Button type="submit" disabled={saving || needsSchoolContext}>
                       {editingId ? "Salvar perfil" : "Criar perfil"}
                     </Button>
                   ) : null}
@@ -348,11 +400,6 @@ export function RolesPage() {
                 </div>
               </form>
 
-              {success ? (
-                <Alert tone="success" className="mt-3">
-                  {success}
-                </Alert>
-              ) : null}
               {formError ? (
                 <Alert tone="danger" className="mt-3">
                   {formError}

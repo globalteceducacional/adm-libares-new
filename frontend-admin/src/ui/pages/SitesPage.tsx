@@ -29,8 +29,7 @@ import { LegacyImage } from "../components/LegacyImage";
 import type { UpsertSiteRequest, SiteResponse } from "../../types/sites";
 import { EMPTY_SITE_FORM } from "../../types/sites";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { useTimedMessage } from "../../hooks/useTimedMessage";
-import { Alert, ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
+import { ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { stripHtml } from "../../shared/lib/stripHtml";
 import { type DataTableColumn } from "../components/table/DataTable";
@@ -62,7 +61,6 @@ export function SitesPage() {
     : undefined;
 
   const [formError, setFormError] = useState("");
-  const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const [saving, setSaving] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -71,6 +69,8 @@ export function SitesPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState<UpsertSiteRequest>(EMPTY_SITE_FORM);
+  // Erros de campo so apos tentativa de salvar (evita vermelho no form vazio).
+  const [showValidation, setShowValidation] = useState(false);
 
   const activeAuthors = useMemo(() => authors.filter((author) => author.status === "1"), [authors]);
   const activeCategories = useMemo(
@@ -122,11 +122,11 @@ export function SitesPage() {
     setForm(EMPTY_SITE_FORM);
     setEditingId(null);
     setUploadError("");
+    setShowValidation(false);
   }
 
   function closeFormModal() {
     resetForm();
-    clearSuccess();
     setFormError("");
     setFormModalOpen(false);
   }
@@ -173,8 +173,12 @@ export function SitesPage() {
       setFormError("Sem permissao para esta acao.");
       return;
     }
+    setShowValidation(true);
+    if (isFormInvalid) {
+      setFormError("Preencha os campos obrigatorios antes de salvar.");
+      return;
+    }
     setFormError("");
-    clearSuccess();
     setSaving(true);
     try {
       const payload: UpsertSiteRequest = {
@@ -191,11 +195,9 @@ export function SitesPage() {
       if (editingId) {
         await updateSite(editingId, payload);
         showToast("Site atualizado com sucesso.", "success");
-        showSuccess("Site atualizado com sucesso.");
       } else {
         await createSite(payload);
         showToast("Site criado com sucesso.", "success");
-        showSuccess("Site criado com sucesso.");
       }
       closeFormModal();
       await invalidate.sites();
@@ -210,6 +212,7 @@ export function SitesPage() {
     setEditingId(site.id);
     setUploadError("");
     setFormError("");
+    setShowValidation(false);
     setForm({
       categoryIds: [...site.categoryIds],
       authorId: site.authorId,
@@ -227,12 +230,10 @@ export function SitesPage() {
   async function handleToggleStatus(site: SiteResponse) {
     const nextStatus: "0" | "1" = site.status === "1" ? "0" : "1";
     setSaving(true);
-    clearSuccess();
     try {
       await toggleSiteStatus(site.id, nextStatus);
       const label = nextStatus === "1" ? "ativado" : "desativado";
       showToast(`Site ${label} com sucesso.`, "success");
-      showSuccess(`Site ${label} com sucesso.`);
       await invalidate.sites();
     } catch (toggleError) {
       const message =
@@ -249,7 +250,6 @@ export function SitesPage() {
     }
     const siteId = confirmDeleteId;
     setFormError("");
-    clearSuccess();
     setSaving(true);
     try {
       await deleteSite(siteId);
@@ -257,7 +257,6 @@ export function SitesPage() {
         closeFormModal();
       }
       showToast("Site excluido com sucesso.", "success");
-      showSuccess("Site excluido com sucesso.");
       await invalidate.sites();
     } catch (deleteError) {
       setFormError(deleteError instanceof Error ? deleteError.message : "Falha ao excluir site");
@@ -425,12 +424,6 @@ export function SitesPage() {
       }
       stats={<ListingMiniStats items={listStats} />}
     >
-      {success ? (
-        <Alert tone="success" className="mb-3">
-          {success}
-        </Alert>
-      ) : null}
-
       <AdminListingSection<SiteResponse>
         title="Listagem de sites"
         search={search}
@@ -497,13 +490,12 @@ export function SitesPage() {
         form={form}
         authorOptions={authorOptions}
         categoryOptions={activeCategories}
-        isAuthorInvalid={isAuthorInvalid}
-        isTitleInvalid={isTitleInvalid}
-        isCategoriesInvalid={isCategoriesInvalid}
-        isDescriptionInvalid={isDescriptionInvalid}
-        isCoverInvalid={isCoverInvalid}
-        isFileInvalid={isFileInvalid}
-        isFormInvalid={isFormInvalid}
+        isAuthorInvalid={showValidation && isAuthorInvalid}
+        isTitleInvalid={showValidation && isTitleInvalid}
+        isCategoriesInvalid={showValidation && isCategoriesInvalid}
+        isDescriptionInvalid={showValidation && isDescriptionInvalid}
+        isCoverInvalid={showValidation && isCoverInvalid}
+        isFileInvalid={showValidation && isFileInvalid}
         saving={saving}
         uploadingCover={uploadingCover}
         uploadingFile={uploadingFile}

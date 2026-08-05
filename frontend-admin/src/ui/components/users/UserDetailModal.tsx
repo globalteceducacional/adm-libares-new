@@ -1,9 +1,10 @@
 import { Trash2, UserCheck, UserX } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
 import { Button, DetailField, Modal, StatusBadge } from "../../../shared/ui";
 import type { AcervoOptionResponse } from "../../../types/acervos";
 import type { UserResponse } from "../../../types/users";
+import { SearchableSelect } from "../form/SearchableSelect";
 import { LegacyImage } from "../LegacyImage";
 
 type UserDetailModalProps = {
@@ -36,6 +37,15 @@ export function UserDetailModal({
       setAcervoError("");
     }
   }, [user]);
+
+  const acervoSelectOptions = useMemo(
+    () =>
+      acervoOptions.map((acervo) => ({
+        value: String(acervo.id),
+        label: decodeHtmlEntities(acervo.name)
+      })),
+    [acervoOptions]
+  );
 
   if (!user) {
     return null;
@@ -135,21 +145,20 @@ export function UserDetailModal({
           O usuario vera no app apenas os livros do acervo selecionado.
         </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
-          <label className="form-field flex-1">
+          <div className="form-field flex-1">
             <span>Acervo</span>
-            <select
+            <SearchableSelect
+              options={acervoSelectOptions}
               value={selectedAcervoId}
-              onChange={(event) => setSelectedAcervoId(event.target.value)}
+              onChange={setSelectedAcervoId}
+              placeholder="Selecione um acervo"
+              searchPlaceholder="Buscar acervo..."
+              emptyMessage="Nenhum acervo ativo cadastrado."
+              allowEmpty
+              emptyLabel="Selecione um acervo"
               disabled={saving || acervoOptions.length === 0}
-            >
-              <option value="">Selecione um acervo</option>
-              {acervoOptions.map((acervo) => (
-                <option key={acervo.id} value={acervo.id}>
-                  {decodeHtmlEntities(acervo.name)}
-                </option>
-              ))}
-            </select>
-          </label>
+            />
+          </div>
           <Button
             variant="primary"
             type="button"

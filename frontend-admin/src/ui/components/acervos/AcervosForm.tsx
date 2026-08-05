@@ -70,7 +70,7 @@ export function AcervosForm({
           whileTap={{ scale: 0.98 }}
           className="primary-btn"
           type="submit"
-          disabled={saving || isFormInvalid}
+          disabled={saving}
         >
           {saving ? "Salvando..." : editingId ? "Atualizar acervo" : "Criar acervo"}
         </motion.button>

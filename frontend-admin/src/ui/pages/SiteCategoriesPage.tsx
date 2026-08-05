@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Pencil, Plus, Tags, Trash2 } from "lucide-react";
+import { Pencil, Plus, Power, Tags, Trash2 } from "lucide-react";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -24,7 +24,6 @@ import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import { LegacyImage } from "../components/LegacyImage";
 import type { SiteCategoryResponse, UpsertSiteCategoryRequest } from "../../types/siteCategories";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { useTimedMessage } from "../../hooks/useTimedMessage";
 import { Alert, Button, ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
@@ -49,13 +48,14 @@ export function SiteCategoriesPage() {
     : undefined;
 
   const [formError, setFormError] = useState("");
-  const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState<UpsertSiteCategoryRequest>(EMPTY_FORM);
+  // Erros de campo so apos tentativa de salvar (evita vermelho no form vazio).
+  const [showValidation, setShowValidation] = useState(false);
 
   const isNameInvalid = form.name.trim().length === 0;
   const canCreate = usePermission("sites.create");
@@ -65,11 +65,11 @@ export function SiteCategoriesPage() {
   function resetForm() {
     setForm(EMPTY_FORM);
     setEditingId(null);
+    setShowValidation(false);
   }
 
   function closeFormModal() {
     resetForm();
-    clearSuccess();
     setFormError("");
     setFormModalOpen(false);
   }
@@ -104,8 +104,12 @@ export function SiteCategoriesPage() {
       setFormError("Sem permissao para esta acao.");
       return;
     }
+    setShowValidation(true);
+    if (isNameInvalid) {
+      setFormError("Preencha os campos obrigatorios antes de salvar.");
+      return;
+    }
     setFormError("");
-    clearSuccess();
     setSaving(true);
     try {
       const payload: UpsertSiteCategoryRequest = {
@@ -132,6 +136,7 @@ export function SiteCategoriesPage() {
   function handleEdit(category: SiteCategoryResponse) {
     setEditingId(category.id);
     setFormError("");
+    setShowValidation(false);
     setForm({
       name: decodeHtmlEntities(category.name),
       image: category.image ?? "",
@@ -140,20 +145,44 @@ export function SiteCategoriesPage() {
     setFormModalOpen(true);
   }
 
+  // Reenvia os valores como vieram da API para trocar apenas o status.
+  async function handleActivate(category: SiteCategoryResponse) {
+    if (!canUpdate) {
+      return;
+    }
+    setFormError("");
+    setSaving(true);
+    try {
+      await updateSiteCategory(category.id, {
+        name: category.name,
+        image: category.image ?? undefined,
+        status: "1"
+      });
+      showToast("Categoria do Site ativada com sucesso.", "success");
+      await invalidate.siteCategories();
+    } catch (activateError) {
+      const message =
+        activateError instanceof Error ? activateError.message : "Falha ao ativar categoria";
+      setFormError(message);
+      showToast(message, "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleConfirmDelete() {
     if (confirmDeleteId === null) {
       return;
     }
     const categoryId = confirmDeleteId;
     setFormError("");
-    clearSuccess();
     setSaving(true);
     try {
       await deleteSiteCategory(categoryId);
       if (editingId === categoryId) {
         closeFormModal();
       }
-      showSuccess("Categoria do Site desativada com sucesso.");
+      showToast("Categoria do Site desativada com sucesso.", "success");
       await invalidate.siteCategories();
     } catch (deleteError) {
       const message =
@@ -220,7 +249,20 @@ export function SiteCategoriesPage() {
                 Editar
               </motion.button>
             ) : null}
-            {canDelete ? (
+            {canUpdate && category.status !== "1" ? (
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.98 }}
+                className="table-btn icon"
+                type="button"
+                onClick={() => handleActivate(category)}
+                disabled={saving}
+              >
+                <Power size={14} />
+                Ativar
+              </motion.button>
+            ) : null}
+            {canDelete && category.status === "1" ? (
               <motion.button
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.98 }}
@@ -270,11 +312,6 @@ export function SiteCategoriesPage() {
       }
       stats={<ListingMiniStats items={listStats} />}
     >
-      {success ? (
-        <Alert tone="success" className="mb-3">
-          {success}
-        </Alert>
-      ) : null}
       {formError && !formModalOpen ? (
         <Alert tone="danger" className="mb-3">
           {formError}
@@ -320,7 +357,7 @@ export function SiteCategoriesPage() {
         open={formModalOpen}
         editingId={editingId}
         form={form}
-        isNameInvalid={isNameInvalid}
+        isNameInvalid={showValidation && isNameInvalid}
         saving={saving}
         uploadingImage={uploadingImage}
         error={formError}

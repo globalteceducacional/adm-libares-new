@@ -89,7 +89,7 @@ export function SiteCategoriesForm({
           whileTap={{ scale: 0.98 }}
           className="primary-btn"
           type="submit"
-          disabled={isBusy || isNameInvalid}
+          disabled={isBusy}
         >
           {saving ? "Salvando..." : editingId ? "Atualizar categoria" : "Criar categoria"}
         </motion.button>

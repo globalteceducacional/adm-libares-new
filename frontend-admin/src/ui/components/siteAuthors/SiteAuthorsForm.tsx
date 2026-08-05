@@ -97,7 +97,7 @@ export function SiteAuthorsForm({
           whileTap={{ scale: 0.98 }}
           className="primary-btn"
           type="submit"
-          disabled={isBusy || isNameInvalid}
+          disabled={isBusy}
         >
           {saving ? "Salvando..." : editingId ? "Atualizar autor" : "Criar autor"}
         </motion.button>

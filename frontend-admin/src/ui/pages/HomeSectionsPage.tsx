@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { LayoutList, Pencil, Plus, Trash2 } from "lucide-react";
+import { LayoutList, Pencil, Plus, Power, Trash2 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -24,7 +24,6 @@ import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import type { HomeSectionResponse, UpsertHomeSectionRequest } from "../../types/homeSections";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { useTimedMessage } from "../../hooks/useTimedMessage";
 import { Alert, Button, ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
@@ -53,12 +52,13 @@ export function HomeSectionsPage() {
     : undefined;
 
   const [formError, setFormError] = useState("");
-  const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const [saving, setSaving] = useState(false);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState<UpsertHomeSectionRequest>(EMPTY_FORM);
+  // Erros de campo so apos tentativa de salvar (evita vermelho no form vazio).
+  const [showValidation, setShowValidation] = useState(false);
 
   const canCreate = usePermission("books.create");
   const canUpdate = usePermission("books.update");
@@ -74,11 +74,11 @@ export function HomeSectionsPage() {
   function resetForm() {
     setForm(EMPTY_FORM);
     setEditingId(null);
+    setShowValidation(false);
   }
 
   function closeFormModal() {
     resetForm();
-    clearSuccess();
     setFormError("");
     setFormModalOpen(false);
   }
@@ -110,8 +110,12 @@ export function HomeSectionsPage() {
       setFormError("Sem permissao para esta acao.");
       return;
     }
+    setShowValidation(true);
+    if (isTitleInvalid) {
+      setFormError("Preencha os campos obrigatorios antes de salvar.");
+      return;
+    }
     setFormError("");
-    clearSuccess();
     setSaving(true);
 
     try {
@@ -141,6 +145,7 @@ export function HomeSectionsPage() {
   function handleEdit(section: HomeSectionResponse) {
     setEditingId(section.id);
     setFormError("");
+    setShowValidation(false);
     setForm({
       title: decodeHtmlEntities(section.title),
       bookIds: [...section.bookIds],
@@ -149,20 +154,45 @@ export function HomeSectionsPage() {
     setFormModalOpen(true);
   }
 
+  // Reenvia os valores como vieram da API para trocar apenas o status.
+  async function handleActivate(section: HomeSectionResponse) {
+    if (!canUpdate) {
+      return;
+    }
+    setFormError("");
+    setSaving(true);
+    try {
+      await updateHomeSection(section.id, {
+        title: section.title,
+        bookIds: [...section.bookIds],
+        status: "1"
+      });
+      showToast("Seção ativada com sucesso.", "success");
+      await invalidate.homeSections();
+      await invalidate.homeSectionOptions();
+    } catch (activateError) {
+      const message =
+        activateError instanceof Error ? activateError.message : "Falha ao ativar seção";
+      setFormError(message);
+      showToast(message, "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleConfirmDelete() {
     if (confirmDeleteId === null) {
       return;
     }
     const sectionId = confirmDeleteId;
     setFormError("");
-    clearSuccess();
     setSaving(true);
     try {
       await deleteHomeSection(sectionId);
       if (editingId === sectionId) {
         closeFormModal();
       }
-      showSuccess("Seção desativada com sucesso.");
+      showToast("Seção desativada com sucesso.", "success");
       await invalidate.homeSections();
       await invalidate.homeSectionOptions();
     } catch (deleteError) {
@@ -221,7 +251,20 @@ export function HomeSectionsPage() {
                 Editar
               </motion.button>
             ) : null}
-            {canDelete ? (
+            {canUpdate && section.status !== "1" ? (
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.98 }}
+                className="table-btn icon"
+                type="button"
+                onClick={() => handleActivate(section)}
+                disabled={saving}
+              >
+                <Power size={14} />
+                Ativar
+              </motion.button>
+            ) : null}
+            {canDelete && section.status === "1" ? (
               <motion.button
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.98 }}
@@ -284,11 +327,6 @@ export function HomeSectionsPage() {
           Selecione uma escola no topo do painel para carregar livros e montar seções por tenant.
         </Alert>
       ) : null}
-      {success ? (
-        <Alert tone="success" className="mb-3">
-          {success}
-        </Alert>
-      ) : null}
       {formError && !formModalOpen ? (
         <Alert tone="danger" className="mb-3">
           {formError}
@@ -325,7 +363,7 @@ export function HomeSectionsPage() {
         open={formModalOpen}
         editingId={editingId}
         form={form}
-        isTitleInvalid={isTitleInvalid}
+        isTitleInvalid={showValidation && isTitleInvalid}
         needsSchoolContext={needsSchoolContext}
         booksLoading={booksQuery.isLoading}
         activeBooks={activeBooks}

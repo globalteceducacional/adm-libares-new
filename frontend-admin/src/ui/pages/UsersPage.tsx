@@ -18,7 +18,7 @@ import { useAdminListFilters } from "../../hooks/useAdminListFilters";
 import { useTimedMessage } from "../../hooks/useTimedMessage";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
 import { BerryFormPanel } from "../components/layout/BerryFormPanel";
-import { BerrySelect } from "../components/layout/BerrySelect";
+import { SearchableSelect } from "../components/form/SearchableSelect";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
 import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
@@ -85,6 +85,17 @@ export function UsersPage() {
     const school = schoolsQuery.data?.find((item) => item.id === schoolContextId);
     return school ? decodeHtmlEntities(school.name) : `Escola #${schoolContextId}`;
   }, [schoolContextId, schoolsQuery.data]);
+
+  const acervoFilterOptions = useMemo(
+    () => [
+      { value: "all", label: "Todos os acervos" },
+      ...acervoOptions.map((acervo) => ({
+        value: String(acervo.id),
+        label: decodeHtmlEntities(acervo.name)
+      }))
+    ],
+    [acervoOptions]
+  );
 
   const isCreateFormInvalid =
     createForm.name.trim().length === 0 ||
@@ -363,19 +374,16 @@ export function UsersPage() {
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
         secondaryFilter={
-          <BerrySelect
+          <SearchableSelect
             label="Acervo"
+            compact
+            options={acervoFilterOptions}
             value={acervoFilter}
-            aria-label="Filtrar por acervo"
-            onChange={(event) => setAcervoFilter(event.target.value)}
-          >
-            <option value="all">Todos os acervos</option>
-            {acervoOptions.map((acervo) => (
-              <option key={acervo.id} value={acervo.id}>
-                {decodeHtmlEntities(acervo.name)}
-              </option>
-            ))}
-          </BerrySelect>
+            onChange={setAcervoFilter}
+            placeholder="Todos os acervos"
+            searchPlaceholder="Buscar acervo..."
+            emptyMessage="Nenhum acervo disponivel."
+          />
         }
         columns={columns}
         data={filteredUsers}

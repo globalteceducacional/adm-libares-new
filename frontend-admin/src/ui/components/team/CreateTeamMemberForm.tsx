@@ -1,8 +1,10 @@
 import type { FormEvent } from "react";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import type { SchoolResponse } from "../../../types/schools";
 import type { CreateTeamMemberRequest, TeamRoleCode } from "../../../types/team";
 import { BerrySelect } from "../layout/BerrySelect";
+import { SearchableSelect } from "../form/SearchableSelect";
 import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
 
 export type CreateTeamMemberFormState = {
@@ -37,6 +39,14 @@ export function CreateTeamMemberForm({
   onChange
 }: CreateTeamMemberFormProps) {
   const disabled = saving || needsSchoolContext;
+  const schoolSelectOptions = useMemo(
+    () =>
+      schoolOptions.map((school) => ({
+        value: String(school.id),
+        label: decodeHtmlEntities(school.name)
+      })),
+    [schoolOptions]
+  );
 
   return (
     <form className="book-form modern" onSubmit={onSubmit} noValidate>
@@ -79,20 +89,19 @@ export function CreateTeamMemberForm({
           <small className="warning-text">A senha deve ter no minimo 6 caracteres.</small>
         ) : null}
       </label>
-      <BerrySelect
+      <SearchableSelect
         label="Escola"
+        options={schoolSelectOptions}
         value={form.schoolId}
-        onChange={(event) => onChange({ ...form, schoolId: event.target.value })}
+        onChange={(next) => onChange({ ...form, schoolId: next })}
+        placeholder="Selecione uma escola"
+        searchPlaceholder="Buscar escola..."
+        emptyMessage="Nenhuma escola disponivel."
+        allowEmpty
+        emptyLabel="Selecione uma escola"
         disabled={disabled || (!isSuperAdmin && schoolOptions.length <= 1)}
         required
-      >
-        <option value="">Selecione uma escola</option>
-        {schoolOptions.map((school) => (
-          <option key={school.id} value={school.id}>
-            {decodeHtmlEntities(school.name)}
-          </option>
-        ))}
-      </BerrySelect>
+      />
       {isSuperAdmin ? (
         <BerrySelect
           label="Perfil"

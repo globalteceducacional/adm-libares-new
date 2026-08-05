@@ -9,6 +9,7 @@ type AcervoDetailModalProps = {
   saving?: boolean;
   onClose: () => void;
   onEdit: (acervo: AcervoResponse) => void;
+  onActivate?: (acervo: AcervoResponse) => void;
   onDelete: (acervo: AcervoResponse) => void;
 };
 
@@ -18,6 +19,7 @@ export function AcervoDetailModal({
   saving = false,
   onClose,
   onEdit,
+  onActivate,
   onDelete
 }: AcervoDetailModalProps) {
   if (!acervo) {
@@ -49,16 +51,29 @@ export function AcervoDetailModal({
           >
             Editar
           </Button>
-          <Button
-            variant="danger"
-            onClick={() => {
-              onDelete(acervo);
-              onClose();
-            }}
-            disabled={saving}
-          >
-            Desativar
-          </Button>
+          {onActivate && acervo.status !== "1" ? (
+            <Button
+              onClick={() => {
+                onActivate(acervo);
+                onClose();
+              }}
+              disabled={saving}
+            >
+              Ativar
+            </Button>
+          ) : null}
+          {acervo.status === "1" ? (
+            <Button
+              variant="danger"
+              onClick={() => {
+                onDelete(acervo);
+                onClose();
+              }}
+              disabled={saving}
+            >
+              Desativar
+            </Button>
+          ) : null}
         </>
       }
     >

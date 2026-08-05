@@ -1,9 +1,11 @@
 import { motion } from "framer-motion";
-import type { ChangeEvent, FormEvent } from "react";
+import { useMemo, type ChangeEvent, type FormEvent } from "react";
 import type { UpsertSiteRequest } from "../../../types/sites";
 import type { SiteAuthorResponse } from "../../../types/siteAuthors";
 import type { SiteCategoryResponse } from "../../../types/siteCategories";
 import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
+import { SearchableCheckboxList } from "../form/SearchableCheckboxList";
+import { SearchableSelect } from "../form/SearchableSelect";
 import { LegacyImage } from "../LegacyImage";
 
 type SitesFormProps = {
@@ -16,7 +18,6 @@ type SitesFormProps = {
   isDescriptionInvalid: boolean;
   isCoverInvalid: boolean;
   isFileInvalid: boolean;
-  isFormInvalid: boolean;
   editingId: number | null;
   saving: boolean;
   uploadingCover: boolean;
@@ -43,7 +44,6 @@ export function SitesForm({
   isDescriptionInvalid,
   isCoverInvalid,
   isFileInvalid,
-  isFormInvalid,
   editingId,
   saving,
   uploadingCover,
@@ -56,6 +56,22 @@ export function SitesForm({
   onSiteFileSelected
 }: SitesFormProps) {
   const isBusy = saving || uploadingCover || uploadingFile;
+  const categoryItems = useMemo(
+    () =>
+      categoryOptions.map((category) => ({
+        id: category.id,
+        label: decodeHtmlEntities(category.name)
+      })),
+    [categoryOptions]
+  );
+  const authorSelectOptions = useMemo(
+    () =>
+      authorOptions.map((author) => ({
+        value: String(author.id),
+        label: `${decodeHtmlEntities(author.name)} (#${author.id})`
+      })),
+    [authorOptions]
+  );
 
   async function handleCoverChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -75,55 +91,41 @@ export function SitesForm({
     <form className="book-form modern" onSubmit={onSubmit}>
       <fieldset className="form-field acervo-fieldset">
         <legend>Categorias</legend>
-        {categoryOptions.length === 0 ? (
-          <small className="warning-text">Nenhuma categoria ativa cadastrada.</small>
-        ) : (
-          <div className="acervo-checkbox-grid">
-            {categoryOptions.map((category) => (
-              <label key={category.id} className="acervo-checkbox-item">
-                <input
-                  type="checkbox"
-                  checked={form.categoryIds.includes(category.id)}
-                  onChange={() =>
-                    onChange({
-                      ...form,
-                      categoryIds: toggleId(form.categoryIds, category.id)
-                    })
-                  }
-                />
-                <span>{decodeHtmlEntities(category.name)}</span>
-              </label>
-            ))}
-          </div>
-        )}
+        <SearchableCheckboxList
+          items={categoryItems}
+          selectedIds={form.categoryIds}
+          onToggle={(id) =>
+            onChange({
+              ...form,
+              categoryIds: toggleId(form.categoryIds, id)
+            })
+          }
+          searchPlaceholder="Buscar categoria..."
+          tall
+          emptyMessage="Nenhuma categoria ativa cadastrada."
+        />
         {isCategoriesInvalid ? (
           <small className="warning-text">Selecione ao menos uma categoria.</small>
         ) : null}
       </fieldset>
 
-      <label className="form-field">
+      <div className="form-field form-field--span-2">
         <span>Autor</span>
-        <select
-          value={form.authorId}
-          onChange={(event) =>
-            onChange({
-              ...form,
-              authorId: Number(event.target.value) || 0
-            })
-          }
+        <SearchableSelect
+          options={authorSelectOptions}
+          value={form.authorId > 0 ? String(form.authorId) : ""}
+          onChange={(next) => onChange({ ...form, authorId: Number(next) || 0 })}
+          placeholder="Selecione um autor"
+          searchPlaceholder="Buscar autor por nome ou ID..."
+          emptyMessage="Nenhum autor ativo cadastrado."
+          allowEmpty
+          emptyLabel="Selecione um autor"
           required
-        >
-          <option value={0}>Selecione um autor</option>
-          {authorOptions.map((author) => (
-            <option key={author.id} value={author.id}>
-              {decodeHtmlEntities(author.name)} (#{author.id})
-            </option>
-          ))}
-        </select>
+        />
         {isAuthorInvalid ? (
           <small className="warning-text">Selecione um autor antes de salvar.</small>
         ) : null}
-      </label>
+      </div>
 
       <label className="form-field">
         <span>Titulo</span>
@@ -137,7 +139,7 @@ export function SitesForm({
         {isTitleInvalid ? <small className="warning-text">Informe um titulo valido.</small> : null}
       </label>
 
-      <label className="form-field">
+      <label className="form-field form-field--full">
         <span>Descricao</span>
         <textarea
           rows={6}
@@ -150,7 +152,7 @@ export function SitesForm({
         ) : null}
       </label>
 
-      <div className="form-field">
+      <div className="form-field form-field--full">
         <span>Capa</span>
         <input
           type="file"
@@ -192,7 +194,7 @@ export function SitesForm({
       </label>
 
       {form.fileType === "server_url" ? (
-        <label className="form-field">
+        <label className="form-field form-field--span-2">
           <span>URL do arquivo</span>
           <input
             type="url"
@@ -202,7 +204,7 @@ export function SitesForm({
           />
         </label>
       ) : (
-        <div className="form-field">
+        <div className="form-field form-field--span-2">
           <span>Arquivo (PDF ou EPUB)</span>
           <input
             type="file"
@@ -215,14 +217,14 @@ export function SitesForm({
         </div>
       )}
       {isFileInvalid ? (
-        <small className="warning-text">
+        <small className="warning-text form-field--full">
           {form.fileType === "server_url"
             ? "Informe a URL do arquivo."
             : "Envie o arquivo PDF ou EPUB."}
         </small>
       ) : null}
 
-      <label className="form-field acervo-checkbox-item">
+      <label className="form-field form-field--full acervo-checkbox-item">
         <input
           type="checkbox"
           checked={form.featured === "1"}
@@ -255,7 +257,7 @@ export function SitesForm({
           whileTap={{ scale: 0.98 }}
           className="primary-btn"
           type="submit"
-          disabled={isBusy || isFormInvalid}
+          disabled={isBusy}
         >
           {saving ? "Salvando..." : editingId ? "Atualizar site" : "Criar site"}
         </motion.button>

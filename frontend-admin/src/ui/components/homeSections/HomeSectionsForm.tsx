@@ -1,7 +1,9 @@
 import type { FormEvent } from "react";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import type { UpsertHomeSectionRequest } from "../../../types/homeSections";
 import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
+import { SearchableCheckboxList } from "../form/SearchableCheckboxList";
 
 type BookOption = {
   id: number;
@@ -37,6 +39,15 @@ export function HomeSectionsForm({
   onChange,
   onToggleBook
 }: HomeSectionsFormProps) {
+  const bookItems = useMemo(
+    () =>
+      activeBooks.map((book) => ({
+        id: book.id,
+        label: `#${book.id} ${decodeHtmlEntities(book.title)}`
+      })),
+    [activeBooks]
+  );
+
   return (
     <form className="book-form modern" onSubmit={onSubmit}>
       <fieldset className="form-field acervo-fieldset">
@@ -67,35 +78,22 @@ export function HomeSectionsForm({
       </fieldset>
 
       <fieldset className="form-field acervo-fieldset">
-        <legend>Livros</legend>
-        <div className="form-field">
-          <span>Livros da seção</span>
-          {needsSchoolContext ? (
-            <small className="form-hint">Selecione uma escola para listar livros disponiveis.</small>
-          ) : booksLoading ? (
-            <small className="form-hint">Carregando livros...</small>
-          ) : activeBooks.length === 0 ? (
-            <small className="form-hint">Nenhum livro ativo disponivel no contexto atual.</small>
-          ) : (
-            <div className="grid max-h-64 gap-2 overflow-y-auto rounded-xl border border-border bg-surface-2/40 p-3 sm:grid-cols-2 lg:grid-cols-3">
-              {activeBooks.map((book) => (
-                <label key={book.id} className="flex items-start gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    className="mt-1 accent-primary"
-                    checked={form.bookIds.includes(book.id)}
-                    onChange={() => onToggleBook(book.id)}
-                    disabled={saving || needsSchoolContext}
-                  />
-                  <span>
-                    <span className="font-medium">#{book.id}</span> {decodeHtmlEntities(book.title)}
-                  </span>
-                </label>
-              ))}
-            </div>
-          )}
-          <small className="form-hint">{form.bookIds.length} livro(s) selecionado(s)</small>
-        </div>
+        <legend>Livros da seção</legend>
+        {needsSchoolContext ? (
+          <small className="form-hint">Selecione uma escola para listar livros disponiveis.</small>
+        ) : booksLoading ? (
+          <small className="form-hint">Carregando livros...</small>
+        ) : (
+          <SearchableCheckboxList
+            items={bookItems}
+            selectedIds={form.bookIds}
+            onToggle={onToggleBook}
+            searchPlaceholder="Buscar livro por titulo ou ID..."
+            tall
+            disabled={saving || needsSchoolContext}
+            emptyMessage="Nenhum livro ativo disponivel no contexto atual."
+          />
+        )}
       </fieldset>
 
       <div className="book-form-actions">
@@ -104,7 +102,7 @@ export function HomeSectionsForm({
           whileTap={{ scale: 0.98 }}
           className="primary-btn"
           type="submit"
-          disabled={saving || needsSchoolContext || isTitleInvalid}
+          disabled={saving || needsSchoolContext}
         >
           {saving ? "Salvando..." : editingId ? "Atualizar seção" : "Criar seção"}
         </motion.button>

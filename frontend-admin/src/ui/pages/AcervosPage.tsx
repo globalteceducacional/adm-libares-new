@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Library, Pencil, Plus, Trash2 } from "lucide-react";
+import { Library, Pencil, Plus, Power, Trash2 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { createAcervo, deleteAcervo, updateAcervo } from "../../services/acervosService";
@@ -19,7 +19,6 @@ import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import type { AcervoResponse, UpsertAcervoRequest } from "../../types/acervos";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { useTimedMessage } from "../../hooks/useTimedMessage";
 import { Alert, Button, ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { stripHtml } from "../../shared/lib/stripHtml";
@@ -45,13 +44,14 @@ export function AcervosPage() {
     : undefined;
 
   const [formError, setFormError] = useState("");
-  const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const [saving, setSaving] = useState(false);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [selectedAcervo, setSelectedAcervo] = useState<AcervoResponse | null>(null);
   const [form, setForm] = useState<UpsertAcervoRequest>(EMPTY_FORM);
+  // Erros de campo so apos tentativa de salvar (evita vermelho no form vazio).
+  const [showValidation, setShowValidation] = useState(false);
 
   const isNameInvalid = form.name.trim().length === 0;
   const isFormInvalid = isNameInvalid;
@@ -62,11 +62,11 @@ export function AcervosPage() {
   function resetForm() {
     setForm(EMPTY_FORM);
     setEditingId(null);
+    setShowValidation(false);
   }
 
   function closeFormModal() {
     resetForm();
-    clearSuccess();
     setFormError("");
     setFormModalOpen(false);
   }
@@ -88,8 +88,12 @@ export function AcervosPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    setShowValidation(true);
+    if (isFormInvalid) {
+      setFormError("Preencha os campos obrigatorios antes de salvar.");
+      return;
+    }
     setFormError("");
-    clearSuccess();
     setSaving(true);
 
     try {
@@ -118,6 +122,7 @@ export function AcervosPage() {
   function handleEdit(acervo: AcervoResponse) {
     setEditingId(acervo.id);
     setFormError("");
+    setShowValidation(false);
     setForm({
       name: decodeHtmlEntities(acervo.name),
       description: stripHtml(acervo.description) ?? "",
@@ -127,13 +132,38 @@ export function AcervosPage() {
     setFormModalOpen(true);
   }
 
+  // Reenvia os valores como vieram da API para trocar apenas o status.
+  async function handleActivate(acervo: AcervoResponse) {
+    if (!canUpdateAcervo) {
+      return;
+    }
+    setFormError("");
+    setSaving(true);
+    try {
+      await updateAcervo(acervo.id, {
+        name: acervo.name,
+        description: acervo.description ?? undefined,
+        status: "1"
+      });
+      showToast("Acervo ativado com sucesso.", "success");
+      await invalidate.acervos();
+      await invalidate.acervoOptions();
+    } catch (activateError) {
+      const message =
+        activateError instanceof Error ? activateError.message : "Falha ao ativar acervo";
+      setFormError(message);
+      showToast(message, "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleConfirmDelete() {
     if (confirmDeleteId === null) {
       return;
     }
     const acervoId = confirmDeleteId;
     setFormError("");
-    clearSuccess();
     setSaving(true);
     try {
       await deleteAcervo(acervoId);
@@ -143,7 +173,7 @@ export function AcervosPage() {
       if (selectedAcervo?.id === acervoId) {
         setSelectedAcervo(null);
       }
-      showSuccess("Acervo desativado com sucesso.");
+      showToast("Acervo desativado com sucesso.", "success");
       await invalidate.acervos();
       await invalidate.acervoOptions();
     } catch (deleteError) {
@@ -211,7 +241,20 @@ export function AcervosPage() {
                 Editar
               </motion.button>
             ) : null}
-            {canDeleteAcervo ? (
+            {canUpdateAcervo && acervo.status !== "1" ? (
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.98 }}
+                className="table-btn icon"
+                type="button"
+                onClick={() => handleActivate(acervo)}
+                disabled={saving}
+              >
+                <Power size={14} />
+                Ativar
+              </motion.button>
+            ) : null}
+            {canDeleteAcervo && acervo.status === "1" ? (
               <motion.button
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.98 }}
@@ -270,11 +313,6 @@ export function AcervosPage() {
       }
       stats={<ListingMiniStats items={listStats} />}
     >
-      {success ? (
-        <Alert tone="success" className="mb-3">
-          {success}
-        </Alert>
-      ) : null}
       {formError && !formModalOpen ? (
         <Alert tone="danger" className="mb-3">
           {formError}
@@ -314,7 +352,7 @@ export function AcervosPage() {
         open={formModalOpen}
         editingId={editingId}
         form={form}
-        isNameInvalid={isNameInvalid}
+        isNameInvalid={showValidation && isNameInvalid}
         isFormInvalid={isFormInvalid}
         saving={saving}
         error={formError}
@@ -330,6 +368,7 @@ export function AcervosPage() {
         saving={saving}
         onClose={() => setSelectedAcervo(null)}
         onEdit={handleEdit}
+        onActivate={handleActivate}
         onDelete={(acervo) => setConfirmDeleteId(acervo.id)}
       />
 

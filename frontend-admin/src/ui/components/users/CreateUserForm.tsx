@@ -1,8 +1,10 @@
 import type { FormEvent } from "react";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import type { AcervoOptionResponse } from "../../../types/acervos";
 import type { CreateUserRequest } from "../../../types/users";
 import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
+import { SearchableSelect } from "../form/SearchableSelect";
 
 export type CreateUserFormState = {
   name: string;
@@ -37,6 +39,14 @@ export function CreateUserForm({
   onChange
 }: CreateUserFormProps) {
   const disabled = saving || needsSchoolContext;
+  const acervoSelectOptions = useMemo(
+    () =>
+      acervoOptions.map((acervo) => ({
+        value: String(acervo.id),
+        label: decodeHtmlEntities(acervo.name)
+      })),
+    [acervoOptions]
+  );
 
   return (
     <form className="book-form modern" onSubmit={onSubmit} noValidate>
@@ -98,22 +108,21 @@ export function CreateUserForm({
           required
         />
       </label>
-      <label className="form-field">
+      <div className="form-field">
         <span>Acervo</span>
-        <select
+        <SearchableSelect
+          options={acervoSelectOptions}
           value={form.acervoId}
-          onChange={(event) => onChange({ ...form, acervoId: event.target.value })}
+          onChange={(next) => onChange({ ...form, acervoId: next })}
+          placeholder="Selecione um acervo"
+          searchPlaceholder="Buscar acervo..."
+          emptyMessage="Nenhum acervo ativo cadastrado."
+          allowEmpty
+          emptyLabel="Selecione um acervo"
           disabled={disabled}
           required
-        >
-          <option value="">Selecione um acervo</option>
-          {acervoOptions.map((acervo) => (
-            <option key={acervo.id} value={acervo.id}>
-              {decodeHtmlEntities(acervo.name)}
-            </option>
-          ))}
-        </select>
-      </label>
+        />
+      </div>
       <label className="form-field">
         <span>Status</span>
         <select

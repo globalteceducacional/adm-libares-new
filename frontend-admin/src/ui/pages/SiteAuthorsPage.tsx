@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Pencil, Plus, Trash2, UserRound } from "lucide-react";
+import { Pencil, Plus, Power, Trash2, UserRound } from "lucide-react";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -24,7 +24,6 @@ import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import { LegacyImage } from "../components/LegacyImage";
 import type { SiteAuthorResponse, UpsertSiteAuthorRequest } from "../../types/siteAuthors";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { useTimedMessage } from "../../hooks/useTimedMessage";
 import { Alert, Button, ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { stripHtml } from "../../shared/lib/stripHtml";
@@ -51,13 +50,14 @@ export function SiteAuthorsPage() {
     : undefined;
 
   const [formError, setFormError] = useState("");
-  const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState<UpsertSiteAuthorRequest>(EMPTY_FORM);
+  // Erros de campo so apos tentativa de salvar (evita vermelho no form vazio).
+  const [showValidation, setShowValidation] = useState(false);
 
   const isNameInvalid = form.name.trim().length === 0;
   const canCreate = usePermission("sites.create");
@@ -67,11 +67,11 @@ export function SiteAuthorsPage() {
   function resetForm() {
     setForm(EMPTY_FORM);
     setEditingId(null);
+    setShowValidation(false);
   }
 
   function closeFormModal() {
     resetForm();
-    clearSuccess();
     setFormError("");
     setFormModalOpen(false);
   }
@@ -106,8 +106,12 @@ export function SiteAuthorsPage() {
       setFormError("Sem permissao para esta acao.");
       return;
     }
+    setShowValidation(true);
+    if (isNameInvalid) {
+      setFormError("Preencha os campos obrigatorios antes de salvar.");
+      return;
+    }
     setFormError("");
-    clearSuccess();
     setSaving(true);
     try {
       const payload: UpsertSiteAuthorRequest = {
@@ -135,6 +139,7 @@ export function SiteAuthorsPage() {
   function handleEdit(author: SiteAuthorResponse) {
     setEditingId(author.id);
     setFormError("");
+    setShowValidation(false);
     setForm({
       name: decodeHtmlEntities(author.name),
       description: stripHtml(author.description) ?? "",
@@ -144,20 +149,45 @@ export function SiteAuthorsPage() {
     setFormModalOpen(true);
   }
 
+  // Reenvia os valores como vieram da API para trocar apenas o status.
+  async function handleActivate(author: SiteAuthorResponse) {
+    if (!canUpdate) {
+      return;
+    }
+    setFormError("");
+    setSaving(true);
+    try {
+      await updateSiteAuthor(author.id, {
+        name: author.name,
+        description: author.description ?? undefined,
+        image: author.image ?? undefined,
+        status: "1"
+      });
+      showToast("Autor do Site ativado com sucesso.", "success");
+      await invalidate.siteAuthors();
+    } catch (activateError) {
+      const message =
+        activateError instanceof Error ? activateError.message : "Falha ao ativar autor";
+      setFormError(message);
+      showToast(message, "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleConfirmDelete() {
     if (confirmDeleteId === null) {
       return;
     }
     const authorId = confirmDeleteId;
     setFormError("");
-    clearSuccess();
     setSaving(true);
     try {
       await deleteSiteAuthor(authorId);
       if (editingId === authorId) {
         closeFormModal();
       }
-      showSuccess("Autor do Site desativado com sucesso.");
+      showToast("Autor do Site desativado com sucesso.", "success");
       await invalidate.siteAuthors();
     } catch (deleteError) {
       const message =
@@ -226,7 +256,20 @@ export function SiteAuthorsPage() {
                 Editar
               </motion.button>
             ) : null}
-            {canDelete ? (
+            {canUpdate && author.status !== "1" ? (
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.98 }}
+                className="table-btn icon"
+                type="button"
+                onClick={() => handleActivate(author)}
+                disabled={saving}
+              >
+                <Power size={14} />
+                Ativar
+              </motion.button>
+            ) : null}
+            {canDelete && author.status === "1" ? (
               <motion.button
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.98 }}
@@ -276,11 +319,6 @@ export function SiteAuthorsPage() {
       }
       stats={<ListingMiniStats items={listStats} />}
     >
-      {success ? (
-        <Alert tone="success" className="mb-3">
-          {success}
-        </Alert>
-      ) : null}
       {formError && !formModalOpen ? (
         <Alert tone="danger" className="mb-3">
           {formError}
@@ -326,7 +364,7 @@ export function SiteAuthorsPage() {
         open={formModalOpen}
         editingId={editingId}
         form={form}
-        isNameInvalid={isNameInvalid}
+        isNameInvalid={showValidation && isNameInvalid}
         saving={saving}
         uploadingImage={uploadingImage}
         error={formError}

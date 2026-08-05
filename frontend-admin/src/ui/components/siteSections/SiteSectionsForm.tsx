@@ -1,7 +1,9 @@
 import type { FormEvent } from "react";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import type { UpsertSiteSectionRequest } from "../../../types/siteSections";
 import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
+import { SearchableCheckboxList } from "../form/SearchableCheckboxList";
 
 type SiteOption = {
   id: number;
@@ -35,6 +37,15 @@ export function SiteSectionsForm({
   onChange,
   onToggleSite
 }: SiteSectionsFormProps) {
+  const siteItems = useMemo(
+    () =>
+      activeSites.map((site) => ({
+        id: site.id,
+        label: `#${site.id} ${decodeHtmlEntities(site.title)}`
+      })),
+    [activeSites]
+  );
+
   return (
     <form className="book-form modern" onSubmit={onSubmit}>
       <fieldset className="form-field acervo-fieldset">
@@ -63,33 +74,20 @@ export function SiteSectionsForm({
       </fieldset>
 
       <fieldset className="form-field acervo-fieldset">
-        <legend>Sites</legend>
-        <div className="form-field">
-          <span>Sites da seção</span>
-          {sitesLoading ? (
-            <small className="form-hint">Carregando sites...</small>
-          ) : activeSites.length === 0 ? (
-            <small className="form-hint">Nenhum site ativo disponivel.</small>
-          ) : (
-            <div className="grid max-h-64 gap-2 overflow-y-auto rounded-xl border border-border bg-surface-2/40 p-3 sm:grid-cols-2 lg:grid-cols-3">
-              {activeSites.map((site) => (
-                <label key={site.id} className="flex items-start gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    className="mt-1 accent-primary"
-                    checked={form.siteIds.includes(site.id)}
-                    onChange={() => onToggleSite(site.id)}
-                    disabled={saving}
-                  />
-                  <span>
-                    <span className="font-medium">#{site.id}</span> {decodeHtmlEntities(site.title)}
-                  </span>
-                </label>
-              ))}
-            </div>
-          )}
-          <small className="form-hint">{form.siteIds.length} site(s) selecionado(s)</small>
-        </div>
+        <legend>Sites da seção</legend>
+        {sitesLoading ? (
+          <small className="form-hint">Carregando sites...</small>
+        ) : (
+          <SearchableCheckboxList
+            items={siteItems}
+            selectedIds={form.siteIds}
+            onToggle={onToggleSite}
+            searchPlaceholder="Buscar site por titulo ou ID..."
+            tall
+            disabled={saving}
+            emptyMessage="Nenhum site ativo disponivel."
+          />
+        )}
       </fieldset>
 
       <div className="book-form-actions">
@@ -98,7 +96,7 @@ export function SiteSectionsForm({
           whileTap={{ scale: 0.98 }}
           className="primary-btn"
           type="submit"
-          disabled={saving || isTitleInvalid}
+          disabled={saving}
         >
           {saving ? "Salvando..." : editingId ? "Atualizar seção" : "Criar seção"}
         </motion.button>

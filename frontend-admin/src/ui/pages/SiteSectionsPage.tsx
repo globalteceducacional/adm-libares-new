@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { LayoutList, Pencil, Plus, Trash2 } from "lucide-react";
+import { LayoutList, Pencil, Plus, Power, Trash2 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -23,7 +23,6 @@ import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import type { SiteSectionResponse, UpsertSiteSectionRequest } from "../../types/siteSections";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { useTimedMessage } from "../../hooks/useTimedMessage";
 import { Alert, Button, ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
@@ -51,12 +50,13 @@ export function SiteSectionsPage() {
     : undefined;
 
   const [formError, setFormError] = useState("");
-  const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const [saving, setSaving] = useState(false);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState<UpsertSiteSectionRequest>(EMPTY_FORM);
+  // Erros de campo so apos tentativa de salvar (evita vermelho no form vazio).
+  const [showValidation, setShowValidation] = useState(false);
 
   const canCreate = usePermission("sites.create");
   const canUpdate = usePermission("sites.update");
@@ -68,11 +68,11 @@ export function SiteSectionsPage() {
   function resetForm() {
     setForm(EMPTY_FORM);
     setEditingId(null);
+    setShowValidation(false);
   }
 
   function closeFormModal() {
     resetForm();
-    clearSuccess();
     setFormError("");
     setFormModalOpen(false);
   }
@@ -101,8 +101,12 @@ export function SiteSectionsPage() {
       setFormError("Sem permissao para esta acao.");
       return;
     }
+    setShowValidation(true);
+    if (isTitleInvalid) {
+      setFormError("Preencha os campos obrigatorios antes de salvar.");
+      return;
+    }
     setFormError("");
-    clearSuccess();
     setSaving(true);
     try {
       const payload: UpsertSiteSectionRequest = {
@@ -129,6 +133,7 @@ export function SiteSectionsPage() {
   function handleEdit(section: SiteSectionResponse) {
     setEditingId(section.id);
     setFormError("");
+    setShowValidation(false);
     setForm({
       title: decodeHtmlEntities(section.title),
       siteIds: [...section.siteIds],
@@ -137,20 +142,44 @@ export function SiteSectionsPage() {
     setFormModalOpen(true);
   }
 
+  // Reenvia os valores como vieram da API para trocar apenas o status.
+  async function handleActivate(section: SiteSectionResponse) {
+    if (!canUpdate) {
+      return;
+    }
+    setFormError("");
+    setSaving(true);
+    try {
+      await updateSiteSection(section.id, {
+        title: section.title,
+        siteIds: [...section.siteIds],
+        status: "1"
+      });
+      showToast("Seção do Site ativada com sucesso.", "success");
+      await invalidate.siteSections();
+    } catch (activateError) {
+      const message =
+        activateError instanceof Error ? activateError.message : "Falha ao ativar seção";
+      setFormError(message);
+      showToast(message, "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleConfirmDelete() {
     if (confirmDeleteId === null) {
       return;
     }
     const sectionId = confirmDeleteId;
     setFormError("");
-    clearSuccess();
     setSaving(true);
     try {
       await deleteSiteSection(sectionId);
       if (editingId === sectionId) {
         closeFormModal();
       }
-      showSuccess("Seção do Site desativada com sucesso.");
+      showToast("Seção do Site desativada com sucesso.", "success");
       await invalidate.siteSections();
     } catch (deleteError) {
       const message =
@@ -208,7 +237,20 @@ export function SiteSectionsPage() {
                 Editar
               </motion.button>
             ) : null}
-            {canDelete ? (
+            {canUpdate && section.status !== "1" ? (
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.98 }}
+                className="table-btn icon"
+                type="button"
+                onClick={() => handleActivate(section)}
+                disabled={saving}
+              >
+                <Power size={14} />
+                Ativar
+              </motion.button>
+            ) : null}
+            {canDelete && section.status === "1" ? (
               <motion.button
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.98 }}
@@ -258,11 +300,6 @@ export function SiteSectionsPage() {
       }
       stats={<ListingMiniStats items={listStats} />}
     >
-      {success ? (
-        <Alert tone="success" className="mb-3">
-          {success}
-        </Alert>
-      ) : null}
       {formError && !formModalOpen ? (
         <Alert tone="danger" className="mb-3">
           {formError}
@@ -299,7 +336,7 @@ export function SiteSectionsPage() {
         open={formModalOpen}
         editingId={editingId}
         form={form}
-        isTitleInvalid={isTitleInvalid}
+        isTitleInvalid={showValidation && isTitleInvalid}
         sitesLoading={sitesQuery.isLoading}
         activeSites={activeSites}
         saving={saving}

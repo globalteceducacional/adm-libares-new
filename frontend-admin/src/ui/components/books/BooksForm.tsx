@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import type { ChangeEvent, FormEvent } from "react";
+import { useMemo, type ChangeEvent, type FormEvent } from "react";
 import type { AcervoOptionResponse } from "../../../types/acervos";
 import type {
   CategoryOptionResponse,
@@ -8,6 +8,8 @@ import type {
 } from "../../../types/books";
 import type { AuthorOptionResponse } from "../../../types/authors";
 import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
+import { SearchableCheckboxList } from "../form/SearchableCheckboxList";
+import { SearchableSelect } from "../form/SearchableSelect";
 import { LegacyImage } from "../LegacyImage";
 
 type BooksFormProps = {
@@ -24,7 +26,6 @@ type BooksFormProps = {
   isDescriptionInvalid: boolean;
   isCoverInvalid: boolean;
   isFileInvalid: boolean;
-  isFormInvalid: boolean;
   editingId: number | null;
   saving: boolean;
   uploadingCover: boolean;
@@ -56,7 +57,6 @@ export function BooksForm({
   isDescriptionInvalid,
   isCoverInvalid,
   isFileInvalid,
-  isFormInvalid,
   editingId,
   saving,
   uploadingCover,
@@ -69,6 +69,39 @@ export function BooksForm({
   onCoverSelected,
   onBookFileSelected
 }: BooksFormProps) {
+  const categoryItems = useMemo(
+    () =>
+      categoryOptions.map((category) => ({
+        id: category.id,
+        label: decodeHtmlEntities(category.name)
+      })),
+    [categoryOptions]
+  );
+  const acervoItems = useMemo(
+    () =>
+      acervoOptions.map((acervo) => ({
+        id: acervo.id,
+        label: decodeHtmlEntities(acervo.name)
+      })),
+    [acervoOptions]
+  );
+  const sectionItems = useMemo(
+    () =>
+      homeSectionOptions.map((section) => ({
+        id: section.id,
+        label: decodeHtmlEntities(section.title)
+      })),
+    [homeSectionOptions]
+  );
+  const authorSelectOptions = useMemo(
+    () =>
+      authorOptions.map((author) => ({
+        value: String(author.id),
+        label: `${decodeHtmlEntities(author.name)} (#${author.id})`
+      })),
+    [authorOptions]
+  );
+
   async function handleCoverChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) {
@@ -89,7 +122,7 @@ export function BooksForm({
 
   return (
     <form className="book-form modern" onSubmit={onSubmit}>
-      <label className="form-field">
+      <label className="form-field form-field--span-2">
         <span>Titulo</span>
         <input
           type="text"
@@ -101,29 +134,28 @@ export function BooksForm({
         {isTitleInvalid ? <small className="warning-text">Informe um titulo valido.</small> : null}
       </label>
 
-      <label className="form-field">
+      <div className="form-field">
         <span>Autor</span>
-        <select
-          value={form.authorId}
-          onChange={(event) => onChange({ ...form, authorId: Number(event.target.value) || 0 })}
+        <SearchableSelect
+          options={authorSelectOptions}
+          value={form.authorId > 0 ? String(form.authorId) : ""}
+          onChange={(next) => onChange({ ...form, authorId: Number(next) || 0 })}
+          placeholder="Selecione um autor"
+          searchPlaceholder="Buscar autor por nome ou ID..."
+          emptyMessage="Nenhum autor ativo cadastrado."
+          allowEmpty
+          emptyLabel="Selecione um autor"
           required
-        >
-          <option value={0}>Selecione um autor</option>
-          {authorOptions.map((author) => (
-            <option key={author.id} value={author.id}>
-              {author.name} (#{author.id})
-            </option>
-          ))}
-        </select>
+        />
         {isAuthorInvalid ? <small className="warning-text">Selecione um autor antes de salvar.</small> : null}
         {form.authorId > 0 && !selectedAuthorExists ? (
           <small className="warning-text">
             Autor atual nao esta ativo na lista. O vinculo sera preservado se voce salvar sem alterar este campo.
           </small>
         ) : null}
-      </label>
+      </div>
 
-      <div className="form-field">
+      <div className="form-field form-field--full">
         <span>Capa do livro {editingId ? "(enviar nova para substituir)" : "(obrigatoria)"}</span>
         <input
           type="file"
@@ -154,27 +186,19 @@ export function BooksForm({
 
       <fieldset className="form-field acervo-fieldset">
         <legend>Categorias</legend>
-        {categoryOptions.length === 0 ? (
-          <small className="warning-text">Nenhuma categoria cadastrada no legado.</small>
-        ) : (
-          <div className="acervo-checkbox-grid">
-            {categoryOptions.map((category) => (
-              <label key={category.id} className="acervo-checkbox-item">
-                <input
-                  type="checkbox"
-                  checked={form.categoryIds.includes(category.id)}
-                  onChange={() =>
-                    onChange({
-                      ...form,
-                      categoryIds: toggleId(form.categoryIds, category.id)
-                    })
-                  }
-                />
-                <span>{decodeHtmlEntities(category.name)}</span>
-              </label>
-            ))}
-          </div>
-        )}
+        <SearchableCheckboxList
+          items={categoryItems}
+          selectedIds={form.categoryIds}
+          onToggle={(id) =>
+            onChange({
+              ...form,
+              categoryIds: toggleId(form.categoryIds, id)
+            })
+          }
+          searchPlaceholder="Buscar categoria..."
+          tall
+          emptyMessage="Nenhuma categoria cadastrada no legado."
+        />
         {isCategoriesInvalid ? (
           <small className="warning-text">Selecione ao menos uma categoria.</small>
         ) : null}
@@ -182,29 +206,18 @@ export function BooksForm({
 
       <fieldset className="form-field acervo-fieldset">
         <legend>Acervos</legend>
-        {acervoOptions.length === 0 ? (
-          <small className="warning-text">
-            Nenhum acervo ativo cadastrado. Crie um acervo antes de publicar livros.
-          </small>
-        ) : (
-          <div className="acervo-checkbox-grid">
-            {acervoOptions.map((acervo) => (
-              <label key={acervo.id} className="acervo-checkbox-item">
-                <input
-                  type="checkbox"
-                  checked={form.acervoIds.includes(acervo.id)}
-                  onChange={() =>
-                    onChange({
-                      ...form,
-                      acervoIds: toggleId(form.acervoIds, acervo.id)
-                    })
-                  }
-                />
-                <span>{decodeHtmlEntities(acervo.name)}</span>
-              </label>
-            ))}
-          </div>
-        )}
+        <SearchableCheckboxList
+          items={acervoItems}
+          selectedIds={form.acervoIds}
+          onToggle={(id) =>
+            onChange({
+              ...form,
+              acervoIds: toggleId(form.acervoIds, id)
+            })
+          }
+          searchPlaceholder="Buscar acervo..."
+          emptyMessage="Nenhum acervo ativo cadastrado. Crie um acervo antes de publicar livros."
+        />
         <small className="form-hint">
           Selecione em quais acervos o livro ficara disponivel. Sem acervo, o livro nao aparece no app.
         </small>
@@ -213,7 +226,7 @@ export function BooksForm({
         ) : null}
       </fieldset>
 
-      <label className="form-field">
+      <label className="form-field form-field--full">
         <span>Descricao</span>
         <textarea
           rows={6}
@@ -245,7 +258,7 @@ export function BooksForm({
       </label>
 
       {form.fileType === "server_url" ? (
-        <label className="form-field">
+        <label className="form-field form-field--span-2">
           <span>URL do arquivo</span>
           <input
             type="url"
@@ -255,7 +268,7 @@ export function BooksForm({
           />
         </label>
       ) : (
-        <div className="form-field">
+        <div className="form-field form-field--span-2">
           <span>Arquivo do livro (PDF ou EPUB)</span>
           <input
             type="file"
@@ -269,7 +282,7 @@ export function BooksForm({
       )}
 
       {isFileInvalid ? (
-        <small className="warning-text">
+        <small className="warning-text form-field--full">
           {form.fileType === "server_url"
             ? "Informe a URL do arquivo do livro."
             : "Envie o arquivo PDF ou EPUB do livro."}
@@ -278,30 +291,21 @@ export function BooksForm({
 
       <fieldset className="form-field acervo-fieldset">
         <legend>Seções da home (opcional)</legend>
-        {homeSectionOptions.length === 0 ? (
-          <small className="form-hint">Nenhuma seção ativa cadastrada.</small>
-        ) : (
-          <div className="acervo-checkbox-grid">
-            {homeSectionOptions.map((section) => (
-              <label key={section.id} className="acervo-checkbox-item">
-                <input
-                  type="checkbox"
-                  checked={form.sectionIds.includes(section.id)}
-                  onChange={() =>
-                    onChange({
-                      ...form,
-                      sectionIds: toggleId(form.sectionIds, section.id)
-                    })
-                  }
-                />
-                <span>{decodeHtmlEntities(section.title)}</span>
-              </label>
-            ))}
-          </div>
-        )}
+        <SearchableCheckboxList
+          items={sectionItems}
+          selectedIds={form.sectionIds}
+          onToggle={(id) =>
+            onChange({
+              ...form,
+              sectionIds: toggleId(form.sectionIds, id)
+            })
+          }
+          searchPlaceholder="Buscar seção..."
+          emptyMessage="Nenhuma seção ativa cadastrada."
+        />
       </fieldset>
 
-      <label className="form-field acervo-checkbox-item">
+      <label className="form-field form-field--full acervo-checkbox-item">
         <input
           type="checkbox"
           checked={form.featured}
@@ -318,7 +322,7 @@ export function BooksForm({
         </select>
       </label>
 
-      {uploadError ? <p className="error-text">{uploadError}</p> : null}
+      {uploadError ? <p className="error-text form-field--full">{uploadError}</p> : null}
 
       <div className="book-form-actions">
         <motion.button
@@ -326,7 +330,7 @@ export function BooksForm({
           whileTap={{ scale: 0.98 }}
           className="primary-btn"
           type="submit"
-          disabled={saving || uploadingCover || uploadingFile || isFormInvalid}
+          disabled={saving || uploadingCover || uploadingFile}
         >
           {saving ? "Salvando..." : editingId ? "Atualizar livro" : "Criar livro"}
         </motion.button>

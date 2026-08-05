@@ -11,6 +11,7 @@ type CategoryDetailModalProps = {
   canDelete?: boolean;
   onClose: () => void;
   onEdit?: (category: CategoryResponse) => void;
+  onActivate?: (category: CategoryResponse) => void;
   onDelete?: (category: CategoryResponse) => void;
 };
 
@@ -22,6 +23,7 @@ export function CategoryDetailModal({
   canDelete = false,
   onClose,
   onEdit,
+  onActivate,
   onDelete
 }: CategoryDetailModalProps) {
   if (!category) {
@@ -54,7 +56,18 @@ export function CategoryDetailModal({
               Editar
             </Button>
           ) : null}
-          {canDelete && onDelete ? (
+          {canUpdate && onActivate && category.status !== "1" ? (
+            <Button
+              onClick={() => {
+                onActivate(category);
+                onClose();
+              }}
+              disabled={saving}
+            >
+              Ativar
+            </Button>
+          ) : null}
+          {canDelete && onDelete && category.status === "1" ? (
             <Button
               variant="danger"
               onClick={() => {

@@ -12,6 +12,7 @@ type AuthorDetailModalProps = {
   canDelete?: boolean;
   onClose: () => void;
   onEdit?: (author: AuthorResponse) => void;
+  onActivate?: (author: AuthorResponse) => void;
   onDelete?: (author: AuthorResponse) => void;
 };
 
@@ -23,6 +24,7 @@ export function AuthorDetailModal({
   canDelete = false,
   onClose,
   onEdit,
+  onActivate,
   onDelete
 }: AuthorDetailModalProps) {
   if (!author) {
@@ -56,7 +58,18 @@ export function AuthorDetailModal({
               Editar
             </Button>
           ) : null}
-          {canDelete && onDelete ? (
+          {canUpdate && onActivate && author.status !== "1" ? (
+            <Button
+              onClick={() => {
+                onActivate(author);
+                onClose();
+              }}
+              disabled={saving}
+            >
+              Ativar
+            </Button>
+          ) : null}
+          {canDelete && onDelete && author.status === "1" ? (
             <Button
               variant="danger"
               onClick={() => {

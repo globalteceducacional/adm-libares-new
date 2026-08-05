@@ -17,7 +17,6 @@ type SiteFormModalProps = {
   isDescriptionInvalid: boolean;
   isCoverInvalid: boolean;
   isFileInvalid: boolean;
-  isFormInvalid: boolean;
   saving: boolean;
   uploadingCover: boolean;
   uploadingFile: boolean;
@@ -43,7 +42,6 @@ export function SiteFormModal({
   isDescriptionInvalid,
   isCoverInvalid,
   isFileInvalid,
-  isFormInvalid,
   saving,
   uploadingCover,
   uploadingFile,
@@ -83,7 +81,6 @@ export function SiteFormModal({
           isDescriptionInvalid={isDescriptionInvalid}
           isCoverInvalid={isCoverInvalid}
           isFileInvalid={isFileInvalid}
-          isFormInvalid={isFormInvalid}
           editingId={editingId}
           saving={saving}
           uploadingCover={uploadingCover}
