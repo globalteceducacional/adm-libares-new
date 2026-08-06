@@ -158,7 +158,6 @@ export function DashboardPage() {
         label: "Sem categoria",
         value: summary.totals.booksWithoutCategory,
         hint: "Livros ativos sem categoria",
-        to: "/livros?status=1",
         icon: "uncategorized" as const
       }
     ];
