@@ -19,7 +19,8 @@ import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import type { SchoolResponse, UpsertSchoolRequest } from "../../types/schools";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { Alert, Button, ConfirmDialog, Field, Input, StatusBadge, useToast } from "../../shared/ui";
+import { useAdminMutation } from "../../hooks/useAdminMutation";
+import { Alert, Button, ConfirmDialog, Field, Input, StatusBadge } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
@@ -30,9 +31,13 @@ const EMPTY_SCHOOL_FORM: UpsertSchoolRequest = {
   status: "1"
 };
 
+type SaveSchoolVariables = {
+  editingId: number | null;
+  payload: UpsertSchoolRequest;
+};
+
 export function SchoolsPage() {
   const location = useLocation();
-  const { showToast } = useToast();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const schoolsQuery = useSchoolsQuery();
   const invalidate = useInvalidateAdminQueries();
@@ -43,7 +48,6 @@ export function SchoolsPage() {
     : undefined;
 
   const [formError, setFormError] = useState("");
-  const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState<UpsertSchoolRequest>(EMPTY_SCHOOL_FORM);
@@ -55,6 +59,63 @@ export function SchoolsPage() {
   const canDelete = usePermission("schools.delete");
 
   const isNameInvalid = form.name.trim().length === 0;
+
+  async function invalidateSchoolQueries() {
+    await invalidate.schools();
+  }
+
+  const saveMutation = useAdminMutation<SchoolResponse, SaveSchoolVariables>({
+    mutationFn: async ({ editingId: id, payload }) =>
+      id ? updateSchool(id, payload) : createSchool(payload),
+    successMessage: (_data, { editingId: id }) =>
+      id ? "Escola atualizada com sucesso." : "Escola criada com sucesso.",
+    errorFallback: "Falha ao salvar escola",
+    toastError: false,
+    invalidate: invalidateSchoolQueries,
+    onSuccess: (_data, { editingId: id }) => {
+      if (!id) {
+        resetForm();
+      }
+    },
+    onError: (error) => {
+      setFormError(error.message);
+    }
+  });
+
+  const activateMutation = useAdminMutation<SchoolResponse, SchoolResponse>({
+    mutationFn: (school) =>
+      updateSchool(school.id, {
+        name: school.name,
+        slug: school.slug,
+        status: "1"
+      }),
+    successMessage: "Escola ativada com sucesso.",
+    errorFallback: "Falha ao ativar escola",
+    invalidate: invalidateSchoolQueries,
+    onError: (error) => {
+      setFormError(error.message);
+    }
+  });
+
+  const deleteMutation = useAdminMutation<void, number>({
+    mutationFn: (schoolId) => deleteSchool(schoolId),
+    successMessage: "Escola desativada com sucesso.",
+    errorFallback: "Falha ao desativar escola",
+    invalidate: invalidateSchoolQueries,
+    onSuccess: (_data, schoolId) => {
+      if (editingId === schoolId) {
+        resetForm();
+      }
+      setConfirmDeleteId(null);
+    },
+    onError: (error) => {
+      setFormError(error.message);
+      setConfirmDeleteId(null);
+    }
+  });
+
+  const saving =
+    saveMutation.isPending || activateMutation.isPending || deleteMutation.isPending;
 
   function resetForm() {
     setForm(EMPTY_SCHOOL_FORM);
@@ -71,29 +132,17 @@ export function SchoolsPage() {
       return;
     }
     setFormError("");
-    setSaving(true);
-
     try {
-      const payload: UpsertSchoolRequest = {
-        name: form.name.trim(),
-        slug: form.slug?.trim() || undefined,
-        status: form.status
-      };
-
-      if (editingId) {
-        await updateSchool(editingId, payload);
-        showToast("Escola atualizada com sucesso.", "success");
-      } else {
-        await createSchool(payload);
-        resetForm();
-        showToast("Escola criada com sucesso.", "success");
-      }
-
-      await invalidate.schools();
-    } catch (submitError) {
-      setFormError(submitError instanceof Error ? submitError.message : "Falha ao salvar escola");
-    } finally {
-      setSaving(false);
+      await saveMutation.mutateAsync({
+        editingId,
+        payload: {
+          name: form.name.trim(),
+          slug: form.slug?.trim() || undefined,
+          status: form.status
+        }
+      });
+    } catch {
+      // Erro ja tratado em onError do useAdminMutation (formError).
     }
   }
 
@@ -110,54 +159,20 @@ export function SchoolsPage() {
   }
 
   // Reenvia os valores como vieram da API para trocar apenas o status.
-  async function handleActivate(school: SchoolResponse) {
+  function handleActivate(school: SchoolResponse) {
     if (!canUpdate) {
       return;
     }
     setFormError("");
-    setSaving(true);
-    try {
-      await updateSchool(school.id, {
-        name: school.name,
-        slug: school.slug,
-        status: "1"
-      });
-      showToast("Escola ativada com sucesso.", "success");
-      await invalidate.schools();
-    } catch (activateError) {
-      const message =
-        activateError instanceof Error ? activateError.message : "Falha ao ativar escola";
-      setFormError(message);
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
-    }
+    activateMutation.mutate(school);
   }
 
-  async function handleConfirmDelete() {
+  function handleConfirmDelete() {
     if (confirmDeleteId === null) {
       return;
     }
-    const schoolId = confirmDeleteId;
     setFormError("");
-    setSaving(true);
-    try {
-      await deleteSchool(schoolId);
-      if (editingId === schoolId) {
-        resetForm();
-      }
-      showToast("Escola desativada com sucesso.", "success");
-      await invalidate.schools();
-    } catch (deleteError) {
-      setFormError(deleteError instanceof Error ? deleteError.message : "Falha ao desativar escola");
-      showToast(
-        deleteError instanceof Error ? deleteError.message : "Falha ao desativar escola",
-        "error"
-      );
-    } finally {
-      setSaving(false);
-      setConfirmDeleteId(null);
-    }
+    deleteMutation.mutate(confirmDeleteId);
   }
 
   const filteredSchools = useMemo(() => {

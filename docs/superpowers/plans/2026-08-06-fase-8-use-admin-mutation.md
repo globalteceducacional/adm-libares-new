@@ -26,6 +26,12 @@
 - [x] Refatorar `SiteAuthorsPage` (save / activate / delete)
 - [x] Refatorar `SiteCategoriesPage` (save / activate / delete)
 
+### Task 2c: HomeSections / SiteSections / Schools
+
+- [x] Refatorar `HomeSectionsPage` (save / activate / delete + `useSelectedEntity`)
+- [x] Refatorar `SiteSectionsPage` (save / activate / delete + `useSelectedEntity`)
+- [x] Refatorar `SchoolsPage` (save / activate / delete; sem `useSelectedEntity`; create reseta form, update mantém edição)
+
 ### Task 3: Verificação
 
 - [x] `npx tsc --noEmit`

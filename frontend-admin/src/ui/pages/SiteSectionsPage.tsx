@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { LayoutList, Pencil, Plus, Power, Trash2 } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   createSiteSection,
@@ -24,7 +24,9 @@ import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import type { SiteSectionResponse, UpsertSiteSectionRequest } from "../../types/siteSections";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { Alert, Button, ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
+import { useAdminMutation } from "../../hooks/useAdminMutation";
+import { useSelectedEntity } from "../../hooks/useSelectedEntity";
+import { Alert, Button, ConfirmDialog, StatusBadge } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
@@ -35,9 +37,13 @@ const EMPTY_FORM: UpsertSiteSectionRequest = {
   status: "1"
 };
 
+type SaveSiteSectionVariables = {
+  editingId: number | null;
+  payload: UpsertSiteSectionRequest;
+};
+
 export function SiteSectionsPage() {
   const location = useLocation();
-  const { showToast } = useToast();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const sectionsQuery = useSiteSectionsQuery();
   const sitesQuery = useSitesQuery();
@@ -51,11 +57,10 @@ export function SiteSectionsPage() {
     : undefined;
 
   const [formError, setFormError] = useState("");
-  const [saving, setSaving] = useState(false);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
-  const [selectedSection, setSelectedSection] = useState<SiteSectionResponse | null>(null);
+  const [selectedSection, setSelectedSection] = useSelectedEntity(sections);
   const [form, setForm] = useState<UpsertSiteSectionRequest>(EMPTY_FORM);
   // Erros de campo so apos tentativa de salvar (evita vermelho no form vazio).
   const [showValidation, setShowValidation] = useState(false);
@@ -66,6 +71,64 @@ export function SiteSectionsPage() {
   const isTitleInvalid = form.title.trim().length === 0;
 
   const activeSites = useMemo(() => sites.filter((site) => site.status === "1"), [sites]);
+
+  async function invalidateSiteSectionQueries() {
+    await invalidate.siteSections();
+  }
+
+  const saveMutation = useAdminMutation<SiteSectionResponse, SaveSiteSectionVariables>({
+    mutationFn: async ({ editingId: id, payload }) =>
+      id ? updateSiteSection(id, payload) : createSiteSection(payload),
+    successMessage: (_data, { editingId: id }) =>
+      id ? "Seção do Site atualizada com sucesso." : "Seção do Site criada com sucesso.",
+    errorFallback: "Falha ao salvar seção",
+    toastError: false,
+    invalidate: invalidateSiteSectionQueries,
+    onSuccess: () => {
+      closeFormModal();
+    },
+    onError: (error) => {
+      setFormError(error.message);
+    }
+  });
+
+  const activateMutation = useAdminMutation<SiteSectionResponse, SiteSectionResponse>({
+    mutationFn: (section) =>
+      updateSiteSection(section.id, {
+        title: section.title,
+        siteIds: [...section.siteIds],
+        status: "1"
+      }),
+    successMessage: "Seção do Site ativada com sucesso.",
+    errorFallback: "Falha ao ativar seção",
+    invalidate: invalidateSiteSectionQueries,
+    onError: (error) => {
+      setFormError(error.message);
+    }
+  });
+
+  const deleteMutation = useAdminMutation<void, number>({
+    mutationFn: (sectionId) => deleteSiteSection(sectionId),
+    successMessage: "Seção do Site desativada com sucesso.",
+    errorFallback: "Falha ao desativar seção",
+    invalidate: invalidateSiteSectionQueries,
+    onSuccess: (_data, sectionId) => {
+      if (editingId === sectionId) {
+        closeFormModal();
+      }
+      if (selectedSection?.id === sectionId) {
+        setSelectedSection(null);
+      }
+      setConfirmDeleteId(null);
+    },
+    onError: (error) => {
+      setFormError(error.message);
+      setConfirmDeleteId(null);
+    }
+  });
+
+  const saving =
+    saveMutation.isPending || activateMutation.isPending || deleteMutation.isPending;
 
   function resetForm() {
     setForm(EMPTY_FORM);
@@ -84,15 +147,6 @@ export function SiteSectionsPage() {
     setFormError("");
     setFormModalOpen(true);
   }
-
-  useEffect(() => {
-    setSelectedSection((current) => {
-      if (!current) {
-        return null;
-      }
-      return sections.find((item) => item.id === current.id) ?? null;
-    });
-  }, [sections]);
 
   function toggleSite(siteId: number) {
     setForm((current) => {
@@ -118,26 +172,17 @@ export function SiteSectionsPage() {
       return;
     }
     setFormError("");
-    setSaving(true);
     try {
-      const payload: UpsertSiteSectionRequest = {
-        title: form.title.trim(),
-        siteIds: [...form.siteIds],
-        status: form.status
-      };
-      if (editingId) {
-        await updateSiteSection(editingId, payload);
-        showToast("Seção do Site atualizada com sucesso.", "success");
-      } else {
-        await createSiteSection(payload);
-        showToast("Seção do Site criada com sucesso.", "success");
-      }
-      closeFormModal();
-      await invalidate.siteSections();
-    } catch (submitError) {
-      setFormError(submitError instanceof Error ? submitError.message : "Falha ao salvar seção");
-    } finally {
-      setSaving(false);
+      await saveMutation.mutateAsync({
+        editingId,
+        payload: {
+          title: form.title.trim(),
+          siteIds: [...form.siteIds],
+          status: form.status
+        }
+      });
+    } catch {
+      // Erro ja tratado em onError do useAdminMutation (formError).
     }
   }
 
@@ -155,56 +200,20 @@ export function SiteSectionsPage() {
   }
 
   // Reenvia os valores como vieram da API para trocar apenas o status.
-  async function handleActivate(section: SiteSectionResponse) {
+  function handleActivate(section: SiteSectionResponse) {
     if (!canUpdate) {
       return;
     }
     setFormError("");
-    setSaving(true);
-    try {
-      await updateSiteSection(section.id, {
-        title: section.title,
-        siteIds: [...section.siteIds],
-        status: "1"
-      });
-      showToast("Seção do Site ativada com sucesso.", "success");
-      await invalidate.siteSections();
-    } catch (activateError) {
-      const message =
-        activateError instanceof Error ? activateError.message : "Falha ao ativar seção";
-      setFormError(message);
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
-    }
+    activateMutation.mutate(section);
   }
 
-  async function handleConfirmDelete() {
+  function handleConfirmDelete() {
     if (confirmDeleteId === null) {
       return;
     }
-    const sectionId = confirmDeleteId;
     setFormError("");
-    setSaving(true);
-    try {
-      await deleteSiteSection(sectionId);
-      if (editingId === sectionId) {
-        closeFormModal();
-      }
-      if (selectedSection?.id === sectionId) {
-        setSelectedSection(null);
-      }
-      showToast("Seção do Site desativada com sucesso.", "success");
-      await invalidate.siteSections();
-    } catch (deleteError) {
-      const message =
-        deleteError instanceof Error ? deleteError.message : "Falha ao desativar seção";
-      setFormError(message);
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
-      setConfirmDeleteId(null);
-    }
+    deleteMutation.mutate(confirmDeleteId);
   }
 
   const filteredSections = useMemo(() => {

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { LayoutList, Pencil, Plus, Power, Trash2 } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   createHomeSection,
@@ -25,7 +25,9 @@ import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import type { HomeSectionResponse, UpsertHomeSectionRequest } from "../../types/homeSections";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { Alert, Button, ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
+import { useAdminMutation } from "../../hooks/useAdminMutation";
+import { useSelectedEntity } from "../../hooks/useSelectedEntity";
+import { Alert, Button, ConfirmDialog, StatusBadge } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
@@ -36,9 +38,13 @@ const EMPTY_FORM: UpsertHomeSectionRequest = {
   status: "1"
 };
 
+type SaveHomeSectionVariables = {
+  editingId: number | null;
+  payload: UpsertHomeSectionRequest;
+};
+
 export function HomeSectionsPage() {
   const location = useLocation();
-  const { showToast } = useToast();
   const { requiresSchoolContext, schoolContextId } = useAuth();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const sectionsQuery = useHomeSectionsQuery();
@@ -53,11 +59,10 @@ export function HomeSectionsPage() {
     : undefined;
 
   const [formError, setFormError] = useState("");
-  const [saving, setSaving] = useState(false);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
-  const [selectedSection, setSelectedSection] = useState<HomeSectionResponse | null>(null);
+  const [selectedSection, setSelectedSection] = useSelectedEntity(sections);
   const [form, setForm] = useState<UpsertHomeSectionRequest>(EMPTY_FORM);
   // Erros de campo so apos tentativa de salvar (evita vermelho no form vazio).
   const [showValidation, setShowValidation] = useState(false);
@@ -72,6 +77,70 @@ export function HomeSectionsPage() {
     () => books.filter((book) => book.status === "1"),
     [books]
   );
+
+  async function invalidateHomeSectionQueries() {
+    await invalidate.homeSections();
+    await invalidate.homeSectionOptions();
+  }
+
+  async function invalidateHomeSectionSaveQueries() {
+    await invalidateHomeSectionQueries();
+    await invalidate.books();
+  }
+
+  const saveMutation = useAdminMutation<HomeSectionResponse, SaveHomeSectionVariables>({
+    mutationFn: async ({ editingId: id, payload }) =>
+      id ? updateHomeSection(id, payload) : createHomeSection(payload),
+    successMessage: (_data, { editingId: id }) =>
+      id ? "Seção atualizada com sucesso." : "Seção criada com sucesso.",
+    errorFallback: "Falha ao salvar seção",
+    toastError: false,
+    invalidate: invalidateHomeSectionSaveQueries,
+    onSuccess: () => {
+      closeFormModal();
+    },
+    onError: (error) => {
+      setFormError(error.message);
+    }
+  });
+
+  const activateMutation = useAdminMutation<HomeSectionResponse, HomeSectionResponse>({
+    mutationFn: (section) =>
+      updateHomeSection(section.id, {
+        title: section.title,
+        bookIds: [...section.bookIds],
+        status: "1"
+      }),
+    successMessage: "Seção ativada com sucesso.",
+    errorFallback: "Falha ao ativar seção",
+    invalidate: invalidateHomeSectionQueries,
+    onError: (error) => {
+      setFormError(error.message);
+    }
+  });
+
+  const deleteMutation = useAdminMutation<void, number>({
+    mutationFn: (sectionId) => deleteHomeSection(sectionId),
+    successMessage: "Seção desativada com sucesso.",
+    errorFallback: "Falha ao desativar seção",
+    invalidate: invalidateHomeSectionQueries,
+    onSuccess: (_data, sectionId) => {
+      if (editingId === sectionId) {
+        closeFormModal();
+      }
+      if (selectedSection?.id === sectionId) {
+        setSelectedSection(null);
+      }
+      setConfirmDeleteId(null);
+    },
+    onError: (error) => {
+      setFormError(error.message);
+      setConfirmDeleteId(null);
+    }
+  });
+
+  const saving =
+    saveMutation.isPending || activateMutation.isPending || deleteMutation.isPending;
 
   function resetForm() {
     setForm(EMPTY_FORM);
@@ -90,15 +159,6 @@ export function HomeSectionsPage() {
     setFormError("");
     setFormModalOpen(true);
   }
-
-  useEffect(() => {
-    setSelectedSection((current) => {
-      if (!current) {
-        return null;
-      }
-      return sections.find((item) => item.id === current.id) ?? null;
-    });
-  }, [sections]);
 
   function toggleBook(bookId: number) {
     setForm((current) => {
@@ -127,29 +187,17 @@ export function HomeSectionsPage() {
       return;
     }
     setFormError("");
-    setSaving(true);
-
     try {
-      const payload: UpsertHomeSectionRequest = {
-        title: form.title.trim(),
-        bookIds: [...form.bookIds],
-        status: form.status
-      };
-      if (editingId) {
-        await updateHomeSection(editingId, payload);
-        showToast("Seção atualizada com sucesso.", "success");
-      } else {
-        await createHomeSection(payload);
-        showToast("Seção criada com sucesso.", "success");
-      }
-      closeFormModal();
-      await invalidate.homeSections();
-      await invalidate.homeSectionOptions();
-      await invalidate.books();
-    } catch (submitError) {
-      setFormError(submitError instanceof Error ? submitError.message : "Falha ao salvar seção");
-    } finally {
-      setSaving(false);
+      await saveMutation.mutateAsync({
+        editingId,
+        payload: {
+          title: form.title.trim(),
+          bookIds: [...form.bookIds],
+          status: form.status
+        }
+      });
+    } catch {
+      // Erro ja tratado em onError do useAdminMutation (formError).
     }
   }
 
@@ -167,58 +215,20 @@ export function HomeSectionsPage() {
   }
 
   // Reenvia os valores como vieram da API para trocar apenas o status.
-  async function handleActivate(section: HomeSectionResponse) {
+  function handleActivate(section: HomeSectionResponse) {
     if (!canUpdate) {
       return;
     }
     setFormError("");
-    setSaving(true);
-    try {
-      await updateHomeSection(section.id, {
-        title: section.title,
-        bookIds: [...section.bookIds],
-        status: "1"
-      });
-      showToast("Seção ativada com sucesso.", "success");
-      await invalidate.homeSections();
-      await invalidate.homeSectionOptions();
-    } catch (activateError) {
-      const message =
-        activateError instanceof Error ? activateError.message : "Falha ao ativar seção";
-      setFormError(message);
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
-    }
+    activateMutation.mutate(section);
   }
 
-  async function handleConfirmDelete() {
+  function handleConfirmDelete() {
     if (confirmDeleteId === null) {
       return;
     }
-    const sectionId = confirmDeleteId;
     setFormError("");
-    setSaving(true);
-    try {
-      await deleteHomeSection(sectionId);
-      if (editingId === sectionId) {
-        closeFormModal();
-      }
-      if (selectedSection?.id === sectionId) {
-        setSelectedSection(null);
-      }
-      showToast("Seção desativada com sucesso.", "success");
-      await invalidate.homeSections();
-      await invalidate.homeSectionOptions();
-    } catch (deleteError) {
-      const message =
-        deleteError instanceof Error ? deleteError.message : "Falha ao desativar seção";
-      setFormError(message);
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
-      setConfirmDeleteId(null);
-    }
+    deleteMutation.mutate(confirmDeleteId);
   }
 
   const filteredSections = useMemo(() => {
