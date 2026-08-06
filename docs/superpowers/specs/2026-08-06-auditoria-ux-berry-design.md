@@ -1,7 +1,7 @@
 # Auditoria — UX Berry (layout A)
 
 **Data:** 2026-08-06  
-**Status:** aprovado; plano em `docs/superpowers/plans/2026-08-06-auditoria-ux-berry.md`  
+**Status:** implementado; plano em `docs/superpowers/plans/2026-08-06-auditoria-ux-berry.md`  
 **Escopo:** `frontend-admin` — página `/auditoria` (somente UI; API `/api/v1/audit/overview` inalterada)
 
 ## Problema
@@ -65,11 +65,11 @@ A tela de Auditoria usa cards legados (`page-card`), sem hero/stats Berry, e nã
 
 ## Critérios de pronto
 
-- [ ] Página usa `ListingPageShell` + hero + mini-stats
-- [ ] Quatro blocos de dados preservados na ordem do layout A
-- [ ] Botão Atualizar dispara refetch
-- [ ] Estados loading / erro / `ok:false` cobertos
-- [ ] `npx tsc --noEmit` passa
+- [x] Página usa `ListingPageShell` + hero + mini-stats
+- [x] Quatro blocos de dados preservados na ordem do layout A
+- [x] Botão Atualizar dispara refetch
+- [x] Estados loading / erro / `ok:false` cobertos
+- [x] `npx tsc --noEmit` passa
 
 ## Fora de escopo
 
