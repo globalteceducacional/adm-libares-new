@@ -13,6 +13,7 @@ type UserDetailModalProps = {
   saving?: boolean;
   acervoOptions: AcervoOptionResponse[];
   onClose: () => void;
+  onEdit?: (user: UserResponse) => void;
   onToggleStatus: (user: UserResponse) => void;
   onDelete: (user: UserResponse) => void;
   onSaveAcervo: (user: UserResponse, acervoId: number) => Promise<void>;
@@ -24,6 +25,7 @@ export function UserDetailModal({
   saving = false,
   acervoOptions,
   onClose,
+  onEdit,
   onToggleStatus,
   onDelete,
   onSaveAcervo
@@ -82,6 +84,17 @@ export function UserDetailModal({
           <Button variant="secondary" onClick={onClose} disabled={saving}>
             Fechar
           </Button>
+          {onEdit ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                onEdit(currentUser);
+              }}
+              disabled={saving}
+            >
+              Editar
+            </Button>
+          ) : null}
           <Button
             variant="secondary"
             onClick={() => {

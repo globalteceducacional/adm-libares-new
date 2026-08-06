@@ -1,8 +1,14 @@
 import { motion } from "framer-motion";
-import { Trash2, UserCheck, UserPlus, Users, UserX } from "lucide-react";
+import { Pencil, Plus, Trash2, UserCheck, Users, UserX } from "lucide-react";
 import { FormEvent, useMemo, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { createUser, deleteUser, updateUserAcervo, updateUserStatus } from "../../services/usersService";
+import {
+  createUser,
+  deleteUser,
+  updateUserAcervo,
+  updateUserProfile,
+  updateUserStatus
+} from "../../services/usersService";
 import {
   getQueryErrorMessage,
   useAcervoOptionsQuery,
@@ -17,25 +23,25 @@ import { usePermission } from "../../features/auth/usePermission";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
 import { useTimedMessage } from "../../hooks/useTimedMessage";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
-import { BerryFormPanel } from "../components/layout/BerryFormPanel";
 import { SearchableSelect } from "../components/form/SearchableSelect";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
 import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import {
-  CreateUserForm,
   type CreateUserFormState,
-  toCreateUserRequest
-} from "../components/users/CreateUserForm";
+  toCreateUserRequest,
+  toUpdateUserProfileRequest
+} from "../components/users/UsersForm";
 import { UserDetailModal } from "../components/users/UserDetailModal";
+import { UserFormModal } from "../components/users/UserFormModal";
 import { LegacyImage } from "../components/LegacyImage";
 import type { UserResponse } from "../../types/users";
-import { Alert, ConfirmDialog, StatusBadge } from "../../shared/ui";
+import { Alert, Button, ConfirmDialog, StatusBadge } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
 
-const EMPTY_CREATE_FORM: CreateUserFormState = {
+const EMPTY_FORM: CreateUserFormState = {
   name: "",
   email: "",
   password: "",
@@ -67,9 +73,11 @@ export function UsersPage() {
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState("");
   const [formError, setFormError] = useState("");
+  const [formModalOpen, setFormModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
-  const [createForm, setCreateForm] = useState<CreateUserFormState>(EMPTY_CREATE_FORM);
+  const [form, setForm] = useState<CreateUserFormState>(EMPTY_FORM);
   const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const canCreateUser = usePermission("users.create");
   const canUpdateUser = usePermission("users.update");
@@ -97,16 +105,49 @@ export function UsersPage() {
     [acervoOptions]
   );
 
-  const isCreateFormInvalid =
-    createForm.name.trim().length === 0 ||
-    createForm.email.trim().length === 0 ||
-    createForm.password.length < 6 ||
-    createForm.phone.trim().length === 0 ||
-    !createForm.acervoId ||
-    Number.isNaN(Number(createForm.acervoId));
+  const isFormInvalid = editingId
+    ? form.name.trim().length === 0 ||
+      form.email.trim().length === 0 ||
+      form.phone.trim().length === 0
+    : form.name.trim().length === 0 ||
+      form.email.trim().length === 0 ||
+      form.password.length < 6 ||
+      form.phone.trim().length === 0 ||
+      !form.acervoId ||
+      Number.isNaN(Number(form.acervoId));
 
-  function resetCreateForm() {
-    setCreateForm(EMPTY_CREATE_FORM);
+  function resetForm() {
+    setForm(EMPTY_FORM);
+    setEditingId(null);
+  }
+
+  function closeFormModal() {
+    resetForm();
+    setFormError("");
+    setFormModalOpen(false);
+  }
+
+  function openCreateForm() {
+    resetForm();
+    setFormError("");
+    clearSuccess();
+    setFormModalOpen(true);
+  }
+
+  function handleEdit(user: UserResponse) {
+    setSelectedUser(null);
+    setEditingId(user.id);
+    setFormError("");
+    clearSuccess();
+    setForm({
+      name: decodeHtmlEntities(user.name),
+      email: user.email,
+      password: "",
+      phone: user.phone ?? "",
+      acervoId: user.acervoId ? String(user.acervoId) : "",
+      status: user.status || "1"
+    });
+    setFormModalOpen(true);
   }
 
   useEffect(() => {
@@ -118,9 +159,13 @@ export function UsersPage() {
     });
   }, [users]);
 
-  async function handleCreateUser(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!canCreateUser || needsSchoolContext || isCreateFormInvalid) {
+    if (editingId) {
+      if (!canUpdateUser || isFormInvalid) {
+        return;
+      }
+    } else if (!canCreateUser || needsSchoolContext || isFormInvalid) {
       return;
     }
     setFormError("");
@@ -128,12 +173,23 @@ export function UsersPage() {
     clearSuccess();
     setSaving(true);
     try {
-      await createUser(toCreateUserRequest(createForm));
-      resetCreateForm();
-      showSuccess("Usuario criado com sucesso.");
+      if (editingId) {
+        await updateUserProfile(editingId, toUpdateUserProfileRequest(form));
+        showSuccess("Perfil do usuario atualizado com sucesso.");
+      } else {
+        await createUser(toCreateUserRequest(form));
+        showSuccess("Usuario criado com sucesso.");
+      }
+      closeFormModal();
       await invalidate.users();
     } catch (requestError) {
-      setFormError(requestError instanceof Error ? requestError.message : "Falha ao criar usuario");
+      setFormError(
+        requestError instanceof Error
+          ? requestError.message
+          : editingId
+            ? "Falha ao atualizar perfil"
+            : "Falha ao criar usuario"
+      );
     } finally {
       setSaving(false);
     }
@@ -189,6 +245,9 @@ export function UsersPage() {
       if (selectedUser?.id === userId) {
         setSelectedUser(null);
       }
+      if (editingId === userId) {
+        closeFormModal();
+      }
       showSuccess("Usuario excluido com sucesso.");
       await invalidate.users();
     } catch (requestError) {
@@ -243,6 +302,19 @@ export function UsersPage() {
         stopRowClick: true,
         render: (user) => (
           <TableRowActions>
+            {canUpdateUser ? (
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.98 }}
+                className="table-btn icon"
+                type="button"
+                onClick={() => handleEdit(user)}
+                disabled={saving}
+              >
+                <Pencil size={14} />
+                Editar
+              </motion.button>
+            ) : null}
             {(user.status === "1" ? canBlockUser : canUpdateUser) ? (
               <motion.button
                 whileHover={{ scale: 1.04 }}
@@ -321,6 +393,16 @@ export function UsersPage() {
           title="Usuarios do app"
           description="Gerencie leitores do aplicativo, status de acesso e vinculo com acervos."
           tone="info"
+          actions={
+            canCreateUser ? (
+              <PermissionGate permission="users.create">
+                <Button type="button" onClick={openCreateForm} disabled={saving}>
+                  <Plus size={16} />
+                  Novo usuario
+                </Button>
+              </PermissionGate>
+            ) : null
+          }
         />
       }
       stats={<ListingMiniStats items={listStats} />}
@@ -330,41 +412,6 @@ export function UsersPage() {
           Selecione uma escola no topo do painel para criar usuarios.
         </Alert>
       ) : null}
-
-      <PermissionGate permission="users.create">
-        <BerryFormPanel
-          id="user-create-form-section"
-          icon={UserPlus}
-          title="Criar leitor"
-          description="Cadastre um leitor do aplicativo com email, senha e acervo vinculado."
-        >
-          <CreateUserForm
-            form={createForm}
-            saving={saving}
-            needsSchoolContext={needsSchoolContext}
-            isFormInvalid={isCreateFormInvalid}
-            schoolLabel={schoolLabel}
-            acervoOptions={acervoOptions}
-            onSubmit={handleCreateUser}
-            onReset={() => {
-              resetCreateForm();
-              clearSuccess();
-              setFormError("");
-            }}
-            onChange={setCreateForm}
-          />
-          {success ? (
-            <Alert tone="success" className="mt-3">
-              {success}
-            </Alert>
-          ) : null}
-          {formError ? (
-            <Alert tone="danger" className="mt-3">
-              {formError}
-            </Alert>
-          ) : null}
-        </BerryFormPanel>
-      </PermissionGate>
 
       <AdminListingSection<UserResponse>
         title="Lista de leitores"
@@ -392,7 +439,7 @@ export function UsersPage() {
         emptyMessage={emptyMessage}
         countLabel={`${filteredUsers.length} usuario(s) com o filtro atual`}
         error={error}
-        success={canCreateUser ? undefined : success}
+        success={success}
         onRowClick={setSelectedUser}
         renderMobileCard={(user) => (
           <article className="book-card">
@@ -421,33 +468,66 @@ export function UsersPage() {
               onKeyDown={(event) => event.stopPropagation()}
             >
               <TableRowActions>
-                <motion.button
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.98 }}
-                className="table-btn icon"
-                type="button"
-                onClick={() => handleToggleStatus(user)}
-                disabled={saving}
-              >
-                {user.status === "1" ? <UserX size={14} /> : <UserCheck size={14} />}
-                {user.status === "1" ? "Desativar" : "Ativar"}
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.98 }}
-                className="table-btn danger icon"
-                type="button"
-                onClick={() => setConfirmDeleteId(user.id)}
-                disabled={saving}
-                aria-label={`Excluir o usuario ${decodeHtmlEntities(user.name)}`}
-              >
-                <Trash2 size={14} />
-                Excluir
-              </motion.button>
+                {canUpdateUser ? (
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="table-btn icon"
+                    type="button"
+                    onClick={() => handleEdit(user)}
+                    disabled={saving}
+                  >
+                    <Pencil size={14} />
+                    Editar
+                  </motion.button>
+                ) : null}
+                {(user.status === "1" ? canBlockUser : canUpdateUser) ? (
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="table-btn icon"
+                    type="button"
+                    onClick={() => handleToggleStatus(user)}
+                    disabled={saving}
+                  >
+                    {user.status === "1" ? <UserX size={14} /> : <UserCheck size={14} />}
+                    {user.status === "1" ? "Desativar" : "Ativar"}
+                  </motion.button>
+                ) : null}
+                {canDeleteUser ? (
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="table-btn danger icon"
+                    type="button"
+                    onClick={() => setConfirmDeleteId(user.id)}
+                    disabled={saving}
+                    aria-label={`Excluir o usuario ${decodeHtmlEntities(user.name)}`}
+                  >
+                    <Trash2 size={14} />
+                    Excluir
+                  </motion.button>
+                ) : null}
               </TableRowActions>
             </div>
           </article>
         )}
+      />
+
+      <UserFormModal
+        open={formModalOpen}
+        editingId={editingId}
+        form={form}
+        saving={saving}
+        error={formError}
+        needsSchoolContext={needsSchoolContext}
+        isFormInvalid={isFormInvalid}
+        schoolLabel={schoolLabel}
+        acervoOptions={acervoOptions}
+        onClose={closeFormModal}
+        onSubmit={handleSubmit}
+        onReset={closeFormModal}
+        onFormChange={setForm}
       />
 
       <UserDetailModal
@@ -456,6 +536,7 @@ export function UsersPage() {
         saving={saving}
         acervoOptions={acervoOptions}
         onClose={() => setSelectedUser(null)}
+        onEdit={canUpdateUser ? handleEdit : undefined}
         onToggleStatus={handleToggleStatus}
         onDelete={(user) => setConfirmDeleteId(user.id)}
         onSaveAcervo={handleSaveAcervo}
