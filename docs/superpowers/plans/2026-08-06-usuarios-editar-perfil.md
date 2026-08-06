@@ -40,7 +40,7 @@
 - Modify: `UserJpaRepository.kt`, `UserController.kt`
 - Test: `UpdateUserProfileIT.kt`
 
-- [ ] **Step 1: Adicionar query de email excluindo id**
+- [x] **Step 1: Adicionar query de email excluindo id**
 
 Em `UserJpaRepository.kt`:
 
@@ -61,7 +61,7 @@ fun countByEmailIgnoreCaseExcludingId(
 ): Long
 ```
 
-- [ ] **Step 2: Criar `UpdateUserProfileRequest.kt`**
+- [x] **Step 2: Criar `UpdateUserProfileRequest.kt`**
 
 ```kotlin
 package com.libare.adm.modules.users.api.dto
@@ -87,7 +87,7 @@ data class UpdateUserProfileRequest(
 )
 ```
 
-- [ ] **Step 3: Criar `UpdateUserProfileUseCase.kt`**
+- [x] **Step 3: Criar `UpdateUserProfileUseCase.kt`**
 
 Espelhar `UpdateUserAcervoUseCase`: audit actor, `userPolicy.requireUpdate()`, findById → NotFound, `assertCanModify`, validar email único com `countByEmailIgnoreCaseExcludingId`, save `UserEntity` copiando password/image/acervo/status/etc. e atualizando name/email/phone trimados.
 
@@ -136,7 +136,7 @@ class UpdateUserProfileUseCase(
 }
 ```
 
-- [ ] **Step 4: Expor no `UserController`**
+- [x] **Step 4: Expor no `UserController`**
 
 Injetar `UpdateUserProfileUseCase`. Adicionar:
 
@@ -155,7 +155,7 @@ fun updateProfile(
 
 **Atenção:** path `PUT /{userId}` não conflita com `PUT /{userId}/status` e `PUT /{userId}/acervo` (mais específicos).
 
-- [ ] **Step 5: IT `UpdateUserProfileIT.kt`**
+- [x] **Step 5: IT `UpdateUserProfileIT.kt`**
 
 Baseado em `CreateUserIT` (login, acervo, cleanup por email). Testes mínimos:
 
@@ -180,7 +180,7 @@ Se IT não puder rodar no CI local sem DB, ainda assim escrever o teste; validar
 .\gradlew.bat compileKotlin compileTestKotlin --no-daemon
 ```
 
-- [ ] **Step 6: Commit backend**
+- [x] **Step 6: Commit backend**
 
 ```powershell
 git add backend/src/main/kotlin/com/libare/adm/modules/users/api/dto/UpdateUserProfileRequest.kt `
@@ -199,7 +199,7 @@ git commit -m "feat(users): PUT perfil (nome, email, telefone)"
 - Modify: `types/users.ts`, `services/usersService.ts`
 - Create: `UsersForm.tsx`, `UserFormModal.tsx`
 
-- [ ] **Step 1: Types + service**
+- [x] **Step 1: Types + service**
 
 ```ts
 // types/users.ts
@@ -223,7 +223,7 @@ export function updateUserProfile(
 }
 ```
 
-- [ ] **Step 2: `UsersForm.tsx`**
+- [x] **Step 2: `UsersForm.tsx`**
 
 Form unificado create/edit:
 
@@ -238,7 +238,7 @@ No **create**: campos atuais de `CreateUserForm` (pode mover JSX de `CreateUserF
 
 Botões: submit label "Criar usuario" / "Salvar perfil"; secundário Cancelar se `inModal`.
 
-- [ ] **Step 3: `UserFormModal.tsx`**
+- [x] **Step 3: `UserFormModal.tsx`**
 
 ```tsx
 <Modal
@@ -257,7 +257,7 @@ Botões: submit label "Criar usuario" / "Salvar perfil"; secundário Cancelar se
 </Modal>
 ```
 
-- [ ] **Step 4: Commit front components**
+- [x] **Step 4: Commit front components**
 
 ```powershell
 git add frontend-admin/src/types/users.ts frontend-admin/src/services/usersService.ts `
@@ -274,7 +274,7 @@ git commit -m "feat(admin): FormModal e service de perfil de usuario"
 - Modify: `UsersPage.tsx`, `UserDetailModal.tsx`
 - Possibly delete or thin `CreateUserForm.tsx` if fully replaced
 
-- [ ] **Step 1: UserDetailModal — botão Editar**
+- [x] **Step 1: UserDetailModal — botão Editar**
 
 Adicionar prop `onEdit?: (user: UserResponse) => void` e no footer (antes de Ativar), se `onEdit`:
 
@@ -286,7 +286,7 @@ Adicionar prop `onEdit?: (user: UserResponse) => void` e no footer (antes de Ati
 
 (Não fechar detalhe automaticamente se a page preferir fechar detalhe ao abrir form — page decide: tipicamente `setSelectedUser(null); openEdit(user)`.)
 
-- [ ] **Step 2: UsersPage**
+- [x] **Step 2: UsersPage**
 
 Estado:
 - `formModalOpen`, `editingId: number | null`
@@ -302,7 +302,7 @@ Funções:
 
 Invalidação: `invalidate.users()` + toast/success message.
 
-- [ ] **Step 3: Typecheck**
+- [x] **Step 3: Typecheck**
 
 ```powershell
 cd frontend-admin ; npx tsc --noEmit
@@ -310,7 +310,7 @@ cd frontend-admin ; npx tsc --noEmit
 
 Expected: exit 0
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```powershell
 git add frontend-admin/src/ui/pages/UsersPage.tsx `
@@ -323,9 +323,9 @@ git commit -m "feat(admin): editar perfil de usuario na listagem"
 
 ### Task 4: Verificação + spec
 
-- [ ] **Step 1:** `tsc` + `compileKotlin` (e IT se DB disponível)
-- [ ] **Step 2:** Atualizar spec status → `implementado` e critérios `[x]`
-- [ ] **Step 3:** Commit docs
+- [x] **Step 1:** `tsc` + `compileKotlin` (e IT se DB disponível)
+- [x] **Step 2:** Atualizar spec status → `implementado` e critérios `[x]`
+- [x] **Step 3:** Commit docs
 
 ```powershell
 git add docs/superpowers/specs/2026-08-06-usuarios-editar-perfil-design.md

@@ -1,7 +1,7 @@
 # Usuários — editar perfil (nome, email, telefone)
 
 **Data:** 2026-08-06  
-**Status:** aprovado; plano em `docs/superpowers/plans/2026-08-06-usuarios-editar-perfil.md`  
+**Status:** implementado  
 **Escopo:** backend + `frontend-admin` — leitores (`tbl_users` / `/usuarios`)
 
 ## Problema
@@ -53,11 +53,11 @@ Tipos: `UpdateUserProfileRequest`; service `updateUserProfile(userId, payload)`.
 
 ## Critérios de pronto
 
-- [ ] `PUT /api/v1/users/{id}` implementado e coberto por teste de use case (ou IT existente do módulo, se houver padrão)
-- [ ] UI permite editar nome/email/telefone via FormModal
-- [ ] Email duplicado de outro usuário rejeitado
-- [ ] Acervo/status/delete inalterados em comportamento
-- [ ] `npx tsc --noEmit` no frontend-admin; backend compila
+- [x] `PUT /api/v1/users/{id}` implementado e coberto por teste de use case (ou IT existente do módulo, se houver padrão)
+- [x] UI permite editar nome/email/telefone via FormModal
+- [x] Email duplicado de outro usuário rejeitado
+- [x] Acervo/status/delete inalterados em comportamento
+- [x] `npx tsc --noEmit` no frontend-admin; backend compila
 
 ## Fora de escopo
 
