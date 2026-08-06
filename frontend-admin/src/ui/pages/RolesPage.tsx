@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Pencil, Power, Shield, Trash2 } from "lucide-react";
+import { Pencil, Plus, Power, Shield, Trash2 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { createRole, deleteRole, updateRole } from "../../services/rolesService";
@@ -14,16 +14,15 @@ import { useAuth } from "../../features/auth/AuthContext";
 import { PermissionGate } from "../../features/auth/PermissionGate";
 import { useAnyPermission, usePermission } from "../../features/auth/usePermission";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
-import { BerryFormPanel } from "../components/layout/BerryFormPanel";
-import { BerrySelect } from "../components/layout/BerrySelect";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
 import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
+import { RoleFormModal } from "../components/roles/RoleFormModal";
 import type { RoleResponse, UpsertRoleRequest } from "../../types/roles";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { Alert, Badge, Button, ConfirmDialog, Field, Input, StatusBadge, useToast } from "../../shared/ui";
+import { useAdminMutation } from "../../hooks/useAdminMutation";
+import { Alert, Badge, Button, ConfirmDialog, StatusBadge } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
-import { SearchableCheckboxList } from "../components/form/SearchableCheckboxList";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
 
@@ -31,6 +30,11 @@ const EMPTY_ROLE_FORM: UpsertRoleRequest = {
   name: "",
   status: "1",
   permissionCodes: []
+};
+
+type SaveRoleVariables = {
+  editingId: number | null;
+  payload: UpsertRoleRequest;
 };
 
 export function RolesPage() {
@@ -51,8 +55,7 @@ export function RolesPage() {
       : undefined;
 
   const [formError, setFormError] = useState("");
-  const { showToast } = useToast();
-  const [saving, setSaving] = useState(false);
+  const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState<UpsertRoleRequest>(EMPTY_ROLE_FORM);
@@ -70,6 +73,7 @@ export function RolesPage() {
   const isNameInvalid = form.name.trim().length === 0;
   const isPermissionsInvalid = form.permissionCodes.length === 0;
   const isFormInvalid = isNameInvalid || isPermissionsInvalid;
+  const canSubmit = !isEditingSystemRole && (editingId ? canUpdate : canCreate);
 
   const permissionItems = useMemo(
     () =>
@@ -89,11 +93,77 @@ export function RolesPage() {
     [permissions]
   );
 
+  async function invalidateRoleQueries() {
+    await invalidate.roles();
+  }
+
+  const saveMutation = useAdminMutation<RoleResponse, SaveRoleVariables>({
+    mutationFn: async ({ editingId: id, payload }) =>
+      id ? updateRole(id, payload) : createRole(payload),
+    successMessage: (_data, { editingId: id }) =>
+      id ? "Perfil atualizado com sucesso." : "Perfil criado com sucesso.",
+    errorFallback: "Falha ao salvar perfil",
+    toastError: false,
+    invalidate: invalidateRoleQueries,
+    onSuccess: () => {
+      closeFormModal();
+    },
+    onError: (error) => {
+      setFormError(error.message);
+    }
+  });
+
+  const activateMutation = useAdminMutation<RoleResponse, RoleResponse>({
+    mutationFn: (role) =>
+      updateRole(role.id, {
+        name: role.name,
+        status: "1",
+        permissionCodes: [...role.permissionCodes]
+      }),
+    successMessage: "Perfil ativado com sucesso.",
+    errorFallback: "Falha ao ativar perfil",
+    invalidate: invalidateRoleQueries,
+    onError: (error) => {
+      setFormError(error.message);
+    }
+  });
+
+  const deleteMutation = useAdminMutation<void, number>({
+    mutationFn: (roleId) => deleteRole(roleId),
+    successMessage: "Perfil desativado com sucesso.",
+    errorFallback: "Falha ao desativar perfil",
+    invalidate: invalidateRoleQueries,
+    onSuccess: (_data, roleId) => {
+      if (editingId === roleId) {
+        closeFormModal();
+      }
+      setConfirmDeleteId(null);
+    },
+    onError: (error) => {
+      setFormError(error.message);
+      setConfirmDeleteId(null);
+    }
+  });
+
+  const saving =
+    saveMutation.isPending || activateMutation.isPending || deleteMutation.isPending;
+
   function resetForm() {
     setForm(EMPTY_ROLE_FORM);
     setEditingId(null);
     setShowValidation(false);
+  }
+
+  function closeFormModal() {
+    resetForm();
     setFormError("");
+    setFormModalOpen(false);
+  }
+
+  function openCreateForm() {
+    resetForm();
+    setFormError("");
+    setFormModalOpen(true);
   }
 
   function togglePermission(code: string) {
@@ -120,30 +190,17 @@ export function RolesPage() {
     }
 
     setFormError("");
-    setSaving(true);
-
     try {
-      const payload: UpsertRoleRequest = {
-        name: form.name.trim(),
-        status: form.status,
-        permissionCodes: form.permissionCodes
-      };
-
-      if (editingId) {
-        await updateRole(editingId, payload);
-        resetForm();
-        showToast("Perfil atualizado com sucesso.", "success");
-      } else {
-        await createRole(payload);
-        resetForm();
-        showToast("Perfil criado com sucesso.", "success");
-      }
-
-      await invalidate.roles();
-    } catch (submitError) {
-      setFormError(submitError instanceof Error ? submitError.message : "Falha ao salvar perfil");
-    } finally {
-      setSaving(false);
+      await saveMutation.mutateAsync({
+        editingId,
+        payload: {
+          name: form.name.trim(),
+          status: form.status,
+          permissionCodes: form.permissionCodes
+        }
+      });
+    } catch {
+      // Erro ja tratado em onError do useAdminMutation (formError).
     }
   }
 
@@ -156,58 +213,24 @@ export function RolesPage() {
       status: role.status,
       permissionCodes: [...role.permissionCodes]
     });
-    document.getElementById("role-form-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setFormModalOpen(true);
   }
 
   // Reenvia os valores como vieram da API para trocar apenas o status.
-  async function handleActivate(role: RoleResponse) {
+  function handleActivate(role: RoleResponse) {
     if (!canUpdate || role.isSystem) {
       return;
     }
     setFormError("");
-    setSaving(true);
-    try {
-      await updateRole(role.id, {
-        name: role.name,
-        status: "1",
-        permissionCodes: [...role.permissionCodes]
-      });
-      showToast("Perfil ativado com sucesso.", "success");
-      await invalidate.roles();
-    } catch (activateError) {
-      const message =
-        activateError instanceof Error ? activateError.message : "Falha ao ativar perfil";
-      setFormError(message);
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
-    }
+    activateMutation.mutate(role);
   }
 
-  async function handleConfirmDelete() {
+  function handleConfirmDelete() {
     if (confirmDeleteId === null) {
       return;
     }
-    const roleId = confirmDeleteId;
     setFormError("");
-    setSaving(true);
-    try {
-      await deleteRole(roleId);
-      if (editingId === roleId) {
-        resetForm();
-      }
-      showToast("Perfil desativado com sucesso.", "success");
-      await invalidate.roles();
-    } catch (deleteError) {
-      setFormError(deleteError instanceof Error ? deleteError.message : "Falha ao desativar perfil");
-      showToast(
-        deleteError instanceof Error ? deleteError.message : "Falha ao desativar perfil",
-        "error"
-      );
-    } finally {
-      setSaving(false);
-      setConfirmDeleteId(null);
-    }
+    deleteMutation.mutate(confirmDeleteId);
   }
 
   const filteredRoles = useMemo(() => {
@@ -321,108 +344,67 @@ export function RolesPage() {
           title="Perfis e permissoes"
           description="Gerencie perfis de acesso da escola com permissoes granulares."
           tone="primary"
+          actions={
+            canCreate ? (
+              <PermissionGate anyOf={["roles.create"]}>
+                <Button type="button" onClick={openCreateForm} disabled={saving}>
+                  <Plus size={16} />
+                  Novo perfil
+                </Button>
+              </PermissionGate>
+            ) : null
+          }
         />
       }
       stats={<ListingMiniStats items={listStats} />}
     >
-        {needsSchoolContext ? (
-          <Alert tone="warning">
-            Selecione uma escola no topo do painel para gerenciar perfis como Super Admin.
-          </Alert>
-        ) : null}
+      {needsSchoolContext ? (
+        <Alert tone="warning">
+          Selecione uma escola no topo do painel para gerenciar perfis como Super Admin.
+        </Alert>
+      ) : null}
 
-        <PermissionGate anyOf={["roles.create", "roles.update"]}>
-          <BerryFormPanel
-            id="role-form-section"
-            icon={Shield}
-            title={
-              isEditingSystemRole
-                ? "Perfil de sistema (somente leitura)"
-                : editingId
-                  ? "Editar perfil"
-                  : "Cadastrar novo perfil"
-            }
-            description="Combine permissoes por modulo para controlar o acesso dos usuarios."
-          >
-              <form className="space-y-4" onSubmit={handleSubmit} noValidate>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Field
-                    label="Nome"
-                    required
-                    error={showValidation && isNameInvalid ? "Informe um nome valido." : undefined}
-                  >
-                    <Input
-                      value={form.name}
-                      onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                      disabled={isEditingSystemRole || needsSchoolContext}
-                      required
-                      invalid={showValidation && isNameInvalid}
-                    />
-                  </Field>
-                  <BerrySelect
-                    label="Status"
-                    value={form.status}
-                    onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}
-                    disabled={isEditingSystemRole || needsSchoolContext}
-                  >
-                    <option value="1">Ativo</option>
-                    <option value="0">Inativo</option>
-                  </BerrySelect>
-                </div>
+      {formError && !formModalOpen ? (
+        <Alert tone="danger" className="mb-3">
+          {formError}
+        </Alert>
+      ) : null}
 
-                <fieldset className="form-field acervo-fieldset">
-                  <legend>Permissoes</legend>
-                  <SearchableCheckboxList
-                    items={permissionItems}
-                    selectedIds={form.permissionCodes}
-                    onToggle={togglePermission}
-                    searchPlaceholder="Buscar permissao por codigo ou modulo..."
-                    tall
-                    disabled={isEditingSystemRole || needsSchoolContext || !canManageRoles}
-                    emptyMessage="Nenhuma permissao disponivel."
-                  />
-                  {showValidation && isPermissionsInvalid ? (
-                    <small className="warning-text">Selecione ao menos uma permissao.</small>
-                  ) : null}
-                </fieldset>
+      <AdminListingSection<RoleResponse>
+        title="Listagem de perfis"
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Buscar por nome ou ID"
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        columns={columns}
+        data={filteredRoles}
+        loading={loading}
+        keyExtractor={(role) => role.id}
+        emptyMessage="Nenhum perfil encontrado."
+        countLabel={`${filteredRoles.length} perfil(is) com o filtro atual`}
+        error={listingError}
+      />
 
-                <div className="flex gap-2">
-                  {!isEditingSystemRole && (editingId ? canUpdate : canCreate) ? (
-                    <Button type="submit" disabled={saving || needsSchoolContext}>
-                      {editingId ? "Salvar perfil" : "Criar perfil"}
-                    </Button>
-                  ) : null}
-                  {editingId ? (
-                    <Button type="button" variant="secondary" onClick={resetForm} disabled={saving}>
-                      {isEditingSystemRole ? "Fechar" : "Cancelar edicao"}
-                    </Button>
-                  ) : null}
-                </div>
-              </form>
-
-              {formError ? (
-                <Alert tone="danger" className="mt-3">
-                  {formError}
-                </Alert>
-              ) : null}
-          </BerryFormPanel>
-        </PermissionGate>
-
-        <AdminListingSection<RoleResponse>
-          title="Listagem de perfis"
-          search={search}
-          onSearchChange={setSearch}
-          searchPlaceholder="Buscar por nome ou ID"
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-          columns={columns}
-          data={filteredRoles}
-          loading={loading}
-          keyExtractor={(role) => role.id}
-          emptyMessage="Nenhum perfil encontrado."
-          countLabel={`${filteredRoles.length} perfil(is) com o filtro atual`}
-          error={listingError}
-        />
+      <RoleFormModal
+        open={formModalOpen}
+        editingId={editingId}
+        form={form}
+        isNameInvalid={showValidation && isNameInvalid}
+        isPermissionsInvalid={showValidation && isPermissionsInvalid}
+        isEditingSystemRole={isEditingSystemRole}
+        needsSchoolContext={needsSchoolContext}
+        canSubmit={canSubmit}
+        canManageRoles={canManageRoles}
+        permissionItems={permissionItems}
+        saving={saving}
+        error={formError}
+        onClose={closeFormModal}
+        onSubmit={handleSubmit}
+        onReset={closeFormModal}
+        onFormChange={setForm}
+        onTogglePermission={togglePermission}
+      />
 
       <ConfirmDialog
         open={confirmDeleteId !== null}
