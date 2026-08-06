@@ -20,6 +20,12 @@ export type CreateUserRequest = {
   status?: string;
 };
 
+export type UpdateUserProfileRequest = {
+  name: string;
+  email: string;
+  phone: string;
+};
+
 export type UpdateUserStatusRequest = {
   status: string;
 };
