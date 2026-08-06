@@ -1,7 +1,7 @@
 # Dashboard enxuto — redesign
 
 **Data:** 2026-08-06  
-**Status:** aprovado em conversa; aguardando revisão do arquivo  
+**Status:** aprovado; plano em `docs/superpowers/plans/2026-08-06-dashboard-enxuto.md`  
 **Escopo:** `frontend-admin` — página `/dashboard` (somente UI; API existente)
 
 ## Problema
