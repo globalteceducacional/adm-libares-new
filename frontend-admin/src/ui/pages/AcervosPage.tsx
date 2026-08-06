@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Library, Pencil, Plus, Power, Trash2 } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { createAcervo, deleteAcervo, updateAcervo } from "../../services/acervosService";
 import {
@@ -19,7 +19,9 @@ import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import type { AcervoResponse, UpsertAcervoRequest } from "../../types/acervos";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { Alert, Button, ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
+import { useAdminMutation } from "../../hooks/useAdminMutation";
+import { useSelectedEntity } from "../../hooks/useSelectedEntity";
+import { Alert, Button, ConfirmDialog, StatusBadge } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { stripHtml } from "../../shared/lib/stripHtml";
 import { type DataTableColumn } from "../components/table/DataTable";
@@ -31,9 +33,13 @@ const EMPTY_FORM: UpsertAcervoRequest = {
   status: "1"
 };
 
+type SaveAcervoVariables = {
+  editingId: number | null;
+  payload: UpsertAcervoRequest;
+};
+
 export function AcervosPage() {
   const location = useLocation();
-  const { showToast } = useToast();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const acervosQuery = useAcervosQuery();
   const invalidate = useInvalidateAdminQueries();
@@ -44,11 +50,10 @@ export function AcervosPage() {
     : undefined;
 
   const [formError, setFormError] = useState("");
-  const [saving, setSaving] = useState(false);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
-  const [selectedAcervo, setSelectedAcervo] = useState<AcervoResponse | null>(null);
+  const [selectedAcervo, setSelectedAcervo] = useSelectedEntity(acervos);
   const [form, setForm] = useState<UpsertAcervoRequest>(EMPTY_FORM);
   // Erros de campo so apos tentativa de salvar (evita vermelho no form vazio).
   const [showValidation, setShowValidation] = useState(false);
@@ -58,6 +63,65 @@ export function AcervosPage() {
   const canCreateAcervo = useAnyPermission(["acervos.create"]);
   const canUpdateAcervo = useAnyPermission(["acervos.update"]);
   const canDeleteAcervo = useAnyPermission(["acervos.delete"]);
+
+  async function invalidateAcervoQueries() {
+    await invalidate.acervos();
+    await invalidate.acervoOptions();
+  }
+
+  const saveMutation = useAdminMutation<AcervoResponse, SaveAcervoVariables>({
+    mutationFn: async ({ editingId: id, payload }) =>
+      id ? updateAcervo(id, payload) : createAcervo(payload),
+    successMessage: (_data, { editingId: id }) =>
+      id ? "Acervo atualizado com sucesso." : "Acervo criado com sucesso.",
+    errorFallback: "Falha ao salvar acervo",
+    toastError: false,
+    invalidate: invalidateAcervoQueries,
+    onSuccess: () => {
+      closeFormModal();
+    },
+    onError: (error) => {
+      setFormError(error.message);
+    }
+  });
+
+  const activateMutation = useAdminMutation<AcervoResponse, AcervoResponse>({
+    mutationFn: (acervo) =>
+      updateAcervo(acervo.id, {
+        name: acervo.name,
+        description: acervo.description ?? undefined,
+        status: "1"
+      }),
+    successMessage: "Acervo ativado com sucesso.",
+    errorFallback: "Falha ao ativar acervo",
+    invalidate: invalidateAcervoQueries,
+    onError: (error) => {
+      setFormError(error.message);
+    }
+  });
+
+  const deleteMutation = useAdminMutation<void, number>({
+    mutationFn: (acervoId) => deleteAcervo(acervoId),
+    successMessage: "Acervo desativado com sucesso.",
+    errorFallback: "Falha ao desativar acervo",
+    invalidate: invalidateAcervoQueries,
+    onSuccess: (_data, acervoId) => {
+      if (editingId === acervoId) {
+        closeFormModal();
+      }
+      if (selectedAcervo?.id === acervoId) {
+        setSelectedAcervo(null);
+      }
+      setConfirmDeleteId(null);
+    },
+    onError: (error) => {
+      setFormError(error.message);
+      setConfirmDeleteId(null);
+    }
+  });
+
+  const saving =
+    saveMutation.isPending || activateMutation.isPending || deleteMutation.isPending;
 
   function resetForm() {
     setForm(EMPTY_FORM);
@@ -77,15 +141,6 @@ export function AcervosPage() {
     setFormModalOpen(true);
   }
 
-  useEffect(() => {
-    setSelectedAcervo((current) => {
-      if (!current) {
-        return null;
-      }
-      return acervos.find((item) => item.id === current.id) ?? null;
-    });
-  }, [acervos]);
-
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setShowValidation(true);
@@ -94,28 +149,17 @@ export function AcervosPage() {
       return;
     }
     setFormError("");
-    setSaving(true);
-
     try {
-      const payload: UpsertAcervoRequest = {
-        name: form.name.trim(),
-        description: form.description?.trim() || undefined,
-        status: form.status
-      };
-      if (editingId) {
-        await updateAcervo(editingId, payload);
-        showToast("Acervo atualizado com sucesso.", "success");
-      } else {
-        await createAcervo(payload);
-        showToast("Acervo criado com sucesso.", "success");
-      }
-      closeFormModal();
-      await invalidate.acervos();
-      await invalidate.acervoOptions();
-    } catch (submitError) {
-      setFormError(submitError instanceof Error ? submitError.message : "Falha ao salvar acervo");
-    } finally {
-      setSaving(false);
+      await saveMutation.mutateAsync({
+        editingId,
+        payload: {
+          name: form.name.trim(),
+          description: form.description?.trim() || undefined,
+          status: form.status
+        }
+      });
+    } catch {
+      // Erro ja tratado em onError do useAdminMutation (formError).
     }
   }
 
@@ -132,59 +176,20 @@ export function AcervosPage() {
     setFormModalOpen(true);
   }
 
-  // Reenvia os valores como vieram da API para trocar apenas o status.
-  async function handleActivate(acervo: AcervoResponse) {
+  function handleActivate(acervo: AcervoResponse) {
     if (!canUpdateAcervo) {
       return;
     }
     setFormError("");
-    setSaving(true);
-    try {
-      await updateAcervo(acervo.id, {
-        name: acervo.name,
-        description: acervo.description ?? undefined,
-        status: "1"
-      });
-      showToast("Acervo ativado com sucesso.", "success");
-      await invalidate.acervos();
-      await invalidate.acervoOptions();
-    } catch (activateError) {
-      const message =
-        activateError instanceof Error ? activateError.message : "Falha ao ativar acervo";
-      setFormError(message);
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
-    }
+    activateMutation.mutate(acervo);
   }
 
-  async function handleConfirmDelete() {
+  function handleConfirmDelete() {
     if (confirmDeleteId === null) {
       return;
     }
-    const acervoId = confirmDeleteId;
     setFormError("");
-    setSaving(true);
-    try {
-      await deleteAcervo(acervoId);
-      if (editingId === acervoId) {
-        closeFormModal();
-      }
-      if (selectedAcervo?.id === acervoId) {
-        setSelectedAcervo(null);
-      }
-      showToast("Acervo desativado com sucesso.", "success");
-      await invalidate.acervos();
-      await invalidate.acervoOptions();
-    } catch (deleteError) {
-      const message =
-        deleteError instanceof Error ? deleteError.message : "Falha ao desativar acervo";
-      setFormError(message);
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
-      setConfirmDeleteId(null);
-    }
+    deleteMutation.mutate(confirmDeleteId);
   }
 
   const filteredAcervos = useMemo(() => {
