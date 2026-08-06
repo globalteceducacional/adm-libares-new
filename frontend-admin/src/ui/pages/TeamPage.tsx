@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { UserCog, UserPlus } from "lucide-react";
+import { Plus, UserCog } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { createTeamMember, toggleTeamMemberStatus } from "../../services/teamService";
@@ -14,19 +14,19 @@ import { useAuth } from "../../features/auth/AuthContext";
 import { PermissionGate } from "../../features/auth/PermissionGate";
 import { usePermission } from "../../features/auth/usePermission";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
+import { useAdminMutation } from "../../hooks/useAdminMutation";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
-import { BerryFormPanel } from "../components/layout/BerryFormPanel";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
 import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import {
   buildInitialTeamMemberForm,
-  CreateTeamMemberForm,
   type CreateTeamMemberFormState,
   toCreateTeamMemberRequest
 } from "../components/team/CreateTeamMemberForm";
+import { TeamFormModal } from "../components/team/TeamFormModal";
 import type { TeamMemberResponse } from "../../types/team";
-import { Alert, StatusBadge, useToast } from "../../shared/ui";
+import { Alert, Button, StatusBadge } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
@@ -41,9 +41,12 @@ function formatRoleLabel(roleCode: string): string {
   return roleCode;
 }
 
+type ToggleTeamMemberVariables = {
+  member: TeamMemberResponse;
+};
+
 export function TeamPage() {
   const location = useLocation();
-  const { showToast } = useToast();
   const { user, isSuperAdmin, requiresSchoolContext, schoolContextId } = useAuth();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const teamQuery = useTeamMembersQuery();
@@ -80,8 +83,8 @@ export function TeamPage() {
   const [createForm, setCreateForm] = useState<CreateTeamMemberFormState>(() =>
     buildInitialTeamMemberForm(isSuperAdmin, defaultSchoolId)
   );
-  const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  const [formModalOpen, setFormModalOpen] = useState(false);
   // Erros de campo so apos tentativa de salvar.
   const [showValidation, setShowValidation] = useState(false);
   const canCreate = usePermission("team.create");
@@ -112,10 +115,57 @@ export function TeamPage() {
     !createForm.schoolId ||
     Number.isNaN(Number(createForm.schoolId));
 
+  async function invalidateTeamQueries() {
+    await invalidate.team();
+  }
+
+  const createMutation = useAdminMutation<TeamMemberResponse, CreateTeamMemberFormState>({
+    mutationFn: (form) => createTeamMember(toCreateTeamMemberRequest(form)),
+    successMessage: "Membro da equipe criado com sucesso.",
+    errorFallback: "Falha ao criar membro da equipe",
+    toastError: false,
+    invalidate: invalidateTeamQueries,
+    onSuccess: () => {
+      closeFormModal();
+    },
+    onError: (error) => {
+      setFormError(error.message);
+    }
+  });
+
+  const toggleMutation = useAdminMutation<TeamMemberResponse, ToggleTeamMemberVariables>({
+    mutationFn: ({ member }) => {
+      const nextStatus: "0" | "1" = member.status === "1" ? "0" : "1";
+      return toggleTeamMemberStatus(member.id, nextStatus);
+    },
+    successMessage: (_data, { member }) => {
+      const nextStatus = member.status === "1" ? "0" : "1";
+      const label = nextStatus === "1" ? "ativado" : "desativado";
+      return `Membro ${label} com sucesso.`;
+    },
+    errorFallback: "Falha ao alterar status",
+    invalidate: invalidateTeamQueries
+  });
+
+  const saving = createMutation.isPending || toggleMutation.isPending;
+
   function resetCreateForm() {
     setCreateForm(buildInitialTeamMemberForm(isSuperAdmin, defaultSchoolId));
     setShowValidation(false);
     setFormError("");
+  }
+
+  function closeFormModal() {
+    resetCreateForm();
+    setFormModalOpen(false);
+  }
+
+  function openCreateForm() {
+    if (needsSchoolContext) {
+      return;
+    }
+    resetCreateForm();
+    setFormModalOpen(true);
   }
 
   async function handleCreateMember(event: FormEvent) {
@@ -130,40 +180,18 @@ export function TeamPage() {
     }
 
     setFormError("");
-    setSaving(true);
     try {
-      await createTeamMember(toCreateTeamMemberRequest(createForm));
-      resetCreateForm();
-      showToast("Membro da equipe criado com sucesso.", "success");
-      await invalidate.team();
-    } catch (requestError) {
-      const message =
-        requestError instanceof Error ? requestError.message : "Falha ao criar membro da equipe";
-      setFormError(message);
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
+      await createMutation.mutateAsync(createForm);
+    } catch {
+      // Erro ja tratado em onError do useAdminMutation (formError).
     }
   }
 
-  async function handleToggleStatus(member: TeamMemberResponse) {
+  function handleToggleStatus(member: TeamMemberResponse) {
     if (!canToggle || currentUserId === member.id) {
       return;
     }
-    const nextStatus: "0" | "1" = member.status === "1" ? "0" : "1";
-    setSaving(true);
-    try {
-      await toggleTeamMemberStatus(member.id, nextStatus);
-      const label = nextStatus === "1" ? "ativado" : "desativado";
-      showToast(`Membro ${label} com sucesso.`, "success");
-      await invalidate.team();
-    } catch (toggleError) {
-      const message =
-        toggleError instanceof Error ? toggleError.message : "Falha ao alterar status";
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
-    }
+    toggleMutation.mutate({ member });
   }
 
   const columns = useMemo<DataTableColumn<TeamMemberResponse>[]>(
@@ -270,6 +298,20 @@ export function TeamPage() {
           title="Equipe do painel"
           description="Gerencie administradores e professores com acesso ao painel admin."
           tone="info"
+          actions={
+            canCreate ? (
+              <PermissionGate permission="team.create">
+                <Button
+                  type="button"
+                  onClick={openCreateForm}
+                  disabled={saving || needsSchoolContext}
+                >
+                  <Plus size={16} />
+                  Novo membro
+                </Button>
+              </PermissionGate>
+            ) : null
+          }
         />
       }
       stats={<ListingMiniStats items={listStats} />}
@@ -280,31 +322,11 @@ export function TeamPage() {
         </Alert>
       ) : null}
 
-      <PermissionGate permission="team.create">
-        <BerryFormPanel
-          id="team-create-form-section"
-          icon={UserPlus}
-          title="Cadastrar membro da equipe"
-          description="Crie contas de admin da escola ou professor para acesso ao painel."
-        >
-          <CreateTeamMemberForm
-            form={createForm}
-            saving={saving}
-            isSuperAdmin={isSuperAdmin}
-            needsSchoolContext={needsSchoolContext}
-            isFormInvalid={showValidation && isCreateFormInvalid}
-            schoolOptions={schoolOptions}
-            onSubmit={handleCreateMember}
-            onReset={resetCreateForm}
-            onChange={setCreateForm}
-          />
-          {formError ? (
-            <Alert tone="danger" className="mt-3">
-              {formError}
-            </Alert>
-          ) : null}
-        </BerryFormPanel>
-      </PermissionGate>
+      {formError && !formModalOpen ? (
+        <Alert tone="danger" className="mb-3">
+          {formError}
+        </Alert>
+      ) : null}
 
       <AdminListingSection<TeamMemberResponse>
         title="Lista da equipe"
@@ -352,6 +374,21 @@ export function TeamPage() {
             </article>
           );
         }}
+      />
+
+      <TeamFormModal
+        open={formModalOpen}
+        form={createForm}
+        saving={saving}
+        isSuperAdmin={isSuperAdmin}
+        needsSchoolContext={needsSchoolContext}
+        isFormInvalid={showValidation && isCreateFormInvalid}
+        schoolOptions={schoolOptions}
+        error={formError}
+        onClose={closeFormModal}
+        onSubmit={handleCreateMember}
+        onReset={closeFormModal}
+        onFormChange={setCreateForm}
       />
     </ListingPageShell>
   );

@@ -22,6 +22,7 @@ type CreateTeamMemberFormProps = {
   needsSchoolContext: boolean;
   isFormInvalid: boolean;
   schoolOptions: SchoolResponse[];
+  inModal?: boolean;
   onSubmit: (event: FormEvent) => Promise<void>;
   onReset: () => void;
   onChange: (next: CreateTeamMemberFormState) => void;
@@ -34,6 +35,7 @@ export function CreateTeamMemberForm({
   needsSchoolContext,
   isFormInvalid,
   schoolOptions,
+  inModal = false,
   onSubmit,
   onReset,
   onChange
@@ -132,7 +134,7 @@ export function CreateTeamMemberForm({
           {saving ? "Salvando..." : "Criar membro da equipe"}
         </motion.button>
         <button className="secondary-btn" type="button" onClick={onReset} disabled={saving}>
-          Limpar formulario
+          {inModal ? "Cancelar" : "Limpar formulario"}
         </button>
       </div>
       {isFormInvalid ? (
