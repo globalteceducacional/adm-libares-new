@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import { UsersForm } from "./UsersForm";
 
 export type { CreateUserFormState } from "./UsersForm";
-export { toCreateUserRequest, toUpdateUserProfileRequest } from "./UsersForm";
+export { toCreateUserRequest } from "./UsersForm";
 
 type CreateUserFormProps = Omit<ComponentProps<typeof UsersForm>, "mode">;
 

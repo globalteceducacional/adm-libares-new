@@ -158,7 +158,7 @@ export function UsersForm({
           {saving ? "Salvando..." : isCreate ? "Criar usuario" : "Salvar perfil"}
         </motion.button>
         <button className="secondary-btn" type="button" onClick={onReset} disabled={saving}>
-          {inModal ? "Cancelar" : "Limpar"}
+          {inModal ? "Cancelar" : "Limpar formulario"}
         </button>
       </div>
     </form>
