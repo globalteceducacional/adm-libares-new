@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Building2, Pencil, Power, Trash2 } from "lucide-react";
+import { Building2, Pencil, Plus, Power, Trash2 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { createSchool, deleteSchool, updateSchool } from "../../services/schoolsService";
@@ -12,15 +12,14 @@ import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { PermissionGate } from "../../features/auth/PermissionGate";
 import { usePermission } from "../../features/auth/usePermission";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
-import { BerryFormPanel } from "../components/layout/BerryFormPanel";
-import { BerrySelect } from "../components/layout/BerrySelect";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
 import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
+import { SchoolFormModal } from "../components/schools/SchoolFormModal";
 import type { SchoolResponse, UpsertSchoolRequest } from "../../types/schools";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
 import { useAdminMutation } from "../../hooks/useAdminMutation";
-import { Alert, Button, ConfirmDialog, Field, Input, StatusBadge } from "../../shared/ui";
+import { Alert, Button, ConfirmDialog, StatusBadge } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
@@ -48,6 +47,7 @@ export function SchoolsPage() {
     : undefined;
 
   const [formError, setFormError] = useState("");
+  const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [form, setForm] = useState<UpsertSchoolRequest>(EMPTY_SCHOOL_FORM);
@@ -72,10 +72,8 @@ export function SchoolsPage() {
     errorFallback: "Falha ao salvar escola",
     toastError: false,
     invalidate: invalidateSchoolQueries,
-    onSuccess: (_data, { editingId: id }) => {
-      if (!id) {
-        resetForm();
-      }
+    onSuccess: () => {
+      closeFormModal();
     },
     onError: (error) => {
       setFormError(error.message);
@@ -104,7 +102,7 @@ export function SchoolsPage() {
     invalidate: invalidateSchoolQueries,
     onSuccess: (_data, schoolId) => {
       if (editingId === schoolId) {
-        resetForm();
+        closeFormModal();
       }
       setConfirmDeleteId(null);
     },
@@ -121,7 +119,18 @@ export function SchoolsPage() {
     setForm(EMPTY_SCHOOL_FORM);
     setEditingId(null);
     setShowValidation(false);
+  }
+
+  function closeFormModal() {
+    resetForm();
     setFormError("");
+    setFormModalOpen(false);
+  }
+
+  function openCreateForm() {
+    resetForm();
+    setFormError("");
+    setFormModalOpen(true);
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -155,7 +164,7 @@ export function SchoolsPage() {
       slug: school.slug,
       status: school.status
     });
-    document.getElementById("school-form-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setFormModalOpen(true);
   }
 
   // Reenvia os valores como vieram da API para trocar apenas o status.
@@ -273,65 +282,25 @@ export function SchoolsPage() {
           title="Escolas"
           description="Gerencie tenants da plataforma."
           tone="warning"
+          actions={
+            canCreate ? (
+              <PermissionGate anyOf={["schools.create"]}>
+                <Button type="button" onClick={openCreateForm} disabled={saving}>
+                  <Plus size={16} />
+                  Nova escola
+                </Button>
+              </PermissionGate>
+            ) : null
+          }
         />
       }
       stats={<ListingMiniStats items={listStats} />}
     >
-      <PermissionGate anyOf={["schools.create", "schools.update"]}>
-        <BerryFormPanel
-          id="school-form-section"
-          icon={Building2}
-          title={editingId ? "Editar escola" : "Cadastrar nova escola"}
-          description="Defina nome, slug e status para isolar dados por tenant."
-        >
-          <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit} noValidate>
-            <Field
-              label="Nome"
-              required
-              error={showValidation && isNameInvalid ? "Informe um nome valido." : undefined}
-            >
-              <Input
-                value={form.name}
-                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                required
-                invalid={showValidation && isNameInvalid}
-              />
-            </Field>
-            <Field label="Slug" hint="Opcional — gerado automaticamente se vazio">
-              <Input
-                value={form.slug ?? ""}
-                onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))}
-              />
-            </Field>
-            <BerrySelect
-              label="Status"
-              value={form.status}
-              onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}
-            >
-              <option value="1">Ativa</option>
-              <option value="0">Inativa</option>
-            </BerrySelect>
-            <div className="flex items-end gap-2 md:col-span-2">
-              {(editingId ? canUpdate : canCreate) ? (
-                <Button type="submit" disabled={saving}>
-                  {editingId ? "Salvar escola" : "Criar escola"}
-                </Button>
-              ) : null}
-              {editingId ? (
-                <Button type="button" variant="secondary" onClick={resetForm} disabled={saving}>
-                  Cancelar edicao
-                </Button>
-              ) : null}
-            </div>
-          </form>
-
-          {formError ? (
-            <Alert tone="danger" className="mt-3">
-              {formError}
-            </Alert>
-          ) : null}
-        </BerryFormPanel>
-      </PermissionGate>
+      {formError && !formModalOpen ? (
+        <Alert tone="danger" className="mb-3">
+          {formError}
+        </Alert>
+      ) : null}
 
       <AdminListingSection<SchoolResponse>
         title="Listagem de escolas"
@@ -347,6 +316,19 @@ export function SchoolsPage() {
         emptyMessage="Nenhuma escola encontrada."
         countLabel={`${filteredSchools.length} escola(s) com o filtro atual`}
         error={listingError}
+      />
+
+      <SchoolFormModal
+        open={formModalOpen}
+        editingId={editingId}
+        form={form}
+        isNameInvalid={showValidation && isNameInvalid}
+        saving={saving}
+        error={formError}
+        onClose={closeFormModal}
+        onSubmit={handleSubmit}
+        onReset={closeFormModal}
+        onFormChange={setForm}
       />
 
       <ConfirmDialog
