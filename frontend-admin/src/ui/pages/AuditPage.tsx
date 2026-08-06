@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { ClipboardList, RefreshCw } from "lucide-react";
 import { useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { getQueryErrorMessage, useAuditQuery } from "../../features/shared/api/queries";
@@ -7,11 +8,13 @@ import type {
   AuditActorActivityRow,
   AuditConsistencyRow,
   AuditModuleSummaryRow,
-  AuditOverviewResponse,
   AuditSoftDeleteRow
 } from "../../types/audit";
+import { ListingMiniStats } from "../components/layout/ListingMiniStats";
+import { ListingPageShell } from "../components/layout/ListingPageShell";
+import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import { DataTable, type DataTableColumn } from "../components/table/DataTable";
-import { Alert, PageShell, Skeleton, TableSkeleton } from "../../shared/ui";
+import { Alert, Button, Card, CardHeader, Skeleton, TableSkeleton } from "../../shared/ui";
 
 function auditReasonMessage(reason: string | undefined | null): string {
   switch (reason) {
@@ -34,6 +37,25 @@ export function AuditPage() {
   const error = auditQuery.error
     ? getQueryErrorMessage(auditQuery.error, "Falha ao carregar auditoria")
     : "";
+
+  const listStats = useMemo(() => {
+    if (!data?.ok) {
+      return [
+        { label: "Modulos", value: 0 },
+        { label: "Registos totais", value: 0 },
+        { label: "Soft-deletes", value: 0 },
+        { label: "Exclusoes listadas", value: 0 }
+      ];
+    }
+    const totalRows = data.moduleSummary.reduce((sum, row) => sum + row.totalRows, 0);
+    const softDeleted = data.moduleSummary.reduce((sum, row) => sum + row.softDeletedRows, 0);
+    return [
+      { label: "Modulos", value: data.moduleSummary.length },
+      { label: "Registos totais", value: totalRows },
+      { label: "Soft-deletes", value: softDeleted },
+      { label: "Exclusoes listadas", value: data.recentSoftDeletes.length }
+    ];
+  }, [data]);
 
   const moduleColumns = useMemo<DataTableColumn<AuditModuleSummaryRow>[]>(
     () => [
@@ -107,42 +129,54 @@ export function AuditPage() {
     []
   );
 
-  const auditShell = {
-    title: "Auditoria",
-    description: "Exclusoes logicas recentes, atividade por ator e consistencia dos dados.",
-    breadcrumbs: buildBreadcrumbs(location.pathname)
-  };
+  const hero = (
+    <PageHeroStrip
+      icon={ClipboardList}
+      title="Auditoria"
+      description="Exclusoes logicas recentes, atividade por ator e consistencia dos dados."
+      tone="info"
+      actions={
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={auditQuery.isLoading || auditQuery.isFetching}
+          onClick={() => {
+            void auditQuery.refetch();
+          }}
+        >
+          <RefreshCw size={16} />
+          Atualizar
+        </Button>
+      }
+    />
+  );
 
   if (loading) {
     return (
-      <PageShell {...auditShell}>
-        <motion.div
-          className="books-page-stack"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.24 }}
-          aria-busy="true"
-          aria-label="Carregando auditoria"
-        >
-          <article className="card page-card elevated">
-            <Skeleton className="h-4 w-64" />
-          </article>
-          <article className="card page-card elevated">
-            <TableSkeleton rows={4} />
-          </article>
-          <article className="card page-card elevated">
-            <TableSkeleton rows={6} />
-          </article>
-        </motion.div>
-      </PageShell>
+      <ListingPageShell
+        breadcrumbs={buildBreadcrumbs(location.pathname)}
+        hero={hero}
+        stats={<ListingMiniStats items={listStats} />}
+      >
+        <div className="space-y-4" aria-busy="true" aria-label="Carregando auditoria">
+          <Skeleton className="h-40 w-full rounded-2xl" />
+          <TableSkeleton rows={5} />
+          <TableSkeleton rows={5} />
+        </div>
+      </ListingPageShell>
     );
   }
 
   if (error) {
     return (
-      <PageShell {...auditShell}>
+      <ListingPageShell
+        breadcrumbs={buildBreadcrumbs(location.pathname)}
+        hero={hero}
+        stats={<ListingMiniStats items={listStats} />}
+      >
         <Alert tone="danger">{error}</Alert>
-      </PageShell>
+      </ListingPageShell>
     );
   }
 
@@ -152,74 +186,77 @@ export function AuditPage() {
 
   if (!data.ok) {
     return (
-      <PageShell {...auditShell}>
+      <ListingPageShell
+        breadcrumbs={buildBreadcrumbs(location.pathname)}
+        hero={hero}
+        stats={<ListingMiniStats items={listStats} />}
+      >
         <Alert tone="warning">
           Base adm_libare_core, modo core e views de auditoria sao necessarios para esta pagina.
         </Alert>
-        <p className="error-text">{auditReasonMessage(data.reason)}</p>
-      </PageShell>
+        <p className="mt-2 text-sm text-muted">{auditReasonMessage(data.reason)}</p>
+      </ListingPageShell>
     );
   }
 
   return (
-    <PageShell {...auditShell}>
+    <ListingPageShell
+      breadcrumbs={buildBreadcrumbs(location.pathname)}
+      hero={hero}
+      stats={<ListingMiniStats items={listStats} />}
+    >
       <motion.div
-        className="books-page-stack"
+        className="space-y-4 md:space-y-6"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.24 }}
       >
-      <article className="card page-card elevated">
-        <div className="card-header">
-          <h2>Resumo por modulo</h2>
-        </div>
-        <DataTable<AuditModuleSummaryRow>
-          columns={moduleColumns}
-          data={data.moduleSummary}
-          keyExtractor={(row) => row.moduleName}
-          emptyMessage="Nenhum registo nas views de resumo."
-        />
-      </article>
-
-      <article className="card page-card elevated">
-        <div className="card-header">
-          <h2>Ultimas exclusoes logicas (ate 100)</h2>
-        </div>
-        <DataTable<AuditSoftDeleteRow>
-          columns={softDeleteColumns}
-          data={data.recentSoftDeletes}
-          keyExtractor={(row) => `${row.moduleName}|${row.entityId}|${row.deletedAt ?? ""}`}
-          emptyMessage="Nenhuma exclusao logica encontrada."
-        />
-      </article>
-
-      <div className="chart-grid">
-        <article className="card page-card elevated">
-          <div className="card-header">
-            <h2>Atividade por ator (updated_by)</h2>
-          </div>
-          <DataTable<AuditActorActivityRow>
-            columns={actorColumns}
-            data={data.actorActivity}
-            keyExtractor={(row) => String(row.actorId)}
-            emptyMessage="Nenhum historico de updated_by."
+        <Card elevated padding="lg">
+          <CardHeader title="Resumo por modulo" />
+          <DataTable<AuditModuleSummaryRow>
+            columns={moduleColumns}
+            data={data.moduleSummary}
+            keyExtractor={(row) => row.moduleName}
+            emptyMessage="Nenhum registo nas views de resumo."
           />
-        </article>
+        </Card>
 
-        <article className="card page-card elevated">
-          <div className="card-header">
-            <h2>Consistencia de soft delete</h2>
-          </div>
-          <DataTable<AuditConsistencyRow>
-            columns={consistencyColumns}
-            data={data.softDeleteConsistency}
-            keyExtractor={(row) => row.checkName}
-            emptyMessage="Sem checagens."
+        <Card elevated padding="lg">
+          <CardHeader
+            title="Ultimas exclusoes logicas"
+            description="Ate 100 registos mais recentes"
           />
-        </article>
-      </div>
+          <DataTable<AuditSoftDeleteRow>
+            columns={softDeleteColumns}
+            data={data.recentSoftDeletes}
+            keyExtractor={(row) => `${row.moduleName}|${row.entityId}|${row.deletedAt ?? ""}`}
+            emptyMessage="Nenhuma exclusao logica encontrada."
+          />
+        </Card>
+
+        <div className="grid gap-4 xl:grid-cols-2">
+          <Card elevated padding="lg" className="min-w-0">
+            <CardHeader title="Atividade por ator" description="Contagem via updated_by" />
+            <DataTable<AuditActorActivityRow>
+              columns={actorColumns}
+              data={data.actorActivity}
+              keyExtractor={(row) => String(row.actorId)}
+              emptyMessage="Nenhum historico de updated_by."
+            />
+          </Card>
+
+          <Card elevated padding="lg" className="min-w-0">
+            <CardHeader title="Consistencia de soft delete" />
+            <DataTable<AuditConsistencyRow>
+              columns={consistencyColumns}
+              data={data.softDeleteConsistency}
+              keyExtractor={(row) => row.checkName}
+              emptyMessage="Sem checagens."
+            />
+          </Card>
+        </div>
       </motion.div>
-    </PageShell>
+    </ListingPageShell>
   );
 }
 
