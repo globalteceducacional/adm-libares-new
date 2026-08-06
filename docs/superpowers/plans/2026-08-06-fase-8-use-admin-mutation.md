@@ -20,6 +20,12 @@
 - [x] Refatorar `CategoriesPage` (save / activate / delete)
 - [x] Refatorar `AcervosPage` (save / activate / delete)
 
+### Task 2b: Authors / SiteAuthors / SiteCategories
+
+- [x] Refatorar `AuthorsPage` (save / activate / delete)
+- [x] Refatorar `SiteAuthorsPage` (save / activate / delete)
+- [x] Refatorar `SiteCategoriesPage` (save / activate / delete)
+
 ### Task 3: Verificação
 
 - [x] `npx tsc --noEmit`

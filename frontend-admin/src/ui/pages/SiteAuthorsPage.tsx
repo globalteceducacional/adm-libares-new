@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Pencil, Plus, Power, Trash2, UserRound } from "lucide-react";
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   createSiteAuthor,
@@ -25,7 +25,9 @@ import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import { LegacyImage } from "../components/LegacyImage";
 import type { SiteAuthorResponse, UpsertSiteAuthorRequest } from "../../types/siteAuthors";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { Alert, Button, ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
+import { useAdminMutation } from "../../hooks/useAdminMutation";
+import { useSelectedEntity } from "../../hooks/useSelectedEntity";
+import { Alert, Button, ConfirmDialog, StatusBadge } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { stripHtml } from "../../shared/lib/stripHtml";
 import { type DataTableColumn } from "../components/table/DataTable";
@@ -38,9 +40,13 @@ const EMPTY_FORM: UpsertSiteAuthorRequest = {
   status: "1"
 };
 
+type SaveSiteAuthorVariables = {
+  editingId: number | null;
+  payload: UpsertSiteAuthorRequest;
+};
+
 export function SiteAuthorsPage() {
   const location = useLocation();
-  const { showToast } = useToast();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const authorsQuery = useSiteAuthorsQuery();
   const invalidate = useInvalidateAdminQueries();
@@ -51,12 +57,11 @@ export function SiteAuthorsPage() {
     : undefined;
 
   const [formError, setFormError] = useState("");
-  const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
-  const [selectedAuthor, setSelectedAuthor] = useState<SiteAuthorResponse | null>(null);
+  const [selectedAuthor, setSelectedAuthor] = useSelectedEntity(authors);
   const [form, setForm] = useState<UpsertSiteAuthorRequest>(EMPTY_FORM);
   // Erros de campo so apos tentativa de salvar (evita vermelho no form vazio).
   const [showValidation, setShowValidation] = useState(false);
@@ -65,6 +70,65 @@ export function SiteAuthorsPage() {
   const canCreate = usePermission("sites.create");
   const canUpdate = usePermission("sites.update");
   const canDelete = usePermission("sites.delete");
+
+  async function invalidateSiteAuthorQueries() {
+    await invalidate.siteAuthors();
+  }
+
+  const saveMutation = useAdminMutation<SiteAuthorResponse, SaveSiteAuthorVariables>({
+    mutationFn: async ({ editingId: id, payload }) =>
+      id ? updateSiteAuthor(id, payload) : createSiteAuthor(payload),
+    successMessage: (_data, { editingId: id }) =>
+      id ? "Autor do Site atualizado com sucesso." : "Autor do Site criado com sucesso.",
+    errorFallback: "Falha ao salvar autor",
+    toastError: false,
+    invalidate: invalidateSiteAuthorQueries,
+    onSuccess: () => {
+      closeFormModal();
+    },
+    onError: (error) => {
+      setFormError(error.message);
+    }
+  });
+
+  const activateMutation = useAdminMutation<SiteAuthorResponse, SiteAuthorResponse>({
+    mutationFn: (author) =>
+      updateSiteAuthor(author.id, {
+        name: author.name,
+        description: author.description ?? undefined,
+        image: author.image ?? undefined,
+        status: "1"
+      }),
+    successMessage: "Autor do Site ativado com sucesso.",
+    errorFallback: "Falha ao ativar autor",
+    invalidate: invalidateSiteAuthorQueries,
+    onError: (error) => {
+      setFormError(error.message);
+    }
+  });
+
+  const deleteMutation = useAdminMutation<void, number>({
+    mutationFn: (authorId) => deleteSiteAuthor(authorId),
+    successMessage: "Autor do Site desativado com sucesso.",
+    errorFallback: "Falha ao desativar autor",
+    invalidate: invalidateSiteAuthorQueries,
+    onSuccess: (_data, authorId) => {
+      if (editingId === authorId) {
+        closeFormModal();
+      }
+      if (selectedAuthor?.id === authorId) {
+        setSelectedAuthor(null);
+      }
+      setConfirmDeleteId(null);
+    },
+    onError: (error) => {
+      setFormError(error.message);
+      setConfirmDeleteId(null);
+    }
+  });
+
+  const saving =
+    saveMutation.isPending || activateMutation.isPending || deleteMutation.isPending;
 
   function resetForm() {
     setForm(EMPTY_FORM);
@@ -83,15 +147,6 @@ export function SiteAuthorsPage() {
     setFormError("");
     setFormModalOpen(true);
   }
-
-  useEffect(() => {
-    setSelectedAuthor((current) => {
-      if (!current) {
-        return null;
-      }
-      return authors.find((item) => item.id === current.id) ?? null;
-    });
-  }, [authors]);
 
   async function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -123,27 +178,18 @@ export function SiteAuthorsPage() {
       return;
     }
     setFormError("");
-    setSaving(true);
     try {
-      const payload: UpsertSiteAuthorRequest = {
-        name: form.name.trim(),
-        description: form.description?.trim() || undefined,
-        image: form.image?.trim() || undefined,
-        status: form.status
-      };
-      if (editingId) {
-        await updateSiteAuthor(editingId, payload);
-        showToast("Autor do Site atualizado com sucesso.", "success");
-      } else {
-        await createSiteAuthor(payload);
-        showToast("Autor do Site criado com sucesso.", "success");
-      }
-      closeFormModal();
-      await invalidate.siteAuthors();
-    } catch (submitError) {
-      setFormError(submitError instanceof Error ? submitError.message : "Falha ao salvar autor");
-    } finally {
-      setSaving(false);
+      await saveMutation.mutateAsync({
+        editingId,
+        payload: {
+          name: form.name.trim(),
+          description: form.description?.trim() || undefined,
+          image: form.image?.trim() || undefined,
+          status: form.status
+        }
+      });
+    } catch {
+      // Erro ja tratado em onError do useAdminMutation (formError).
     }
   }
 
@@ -161,58 +207,20 @@ export function SiteAuthorsPage() {
     setFormModalOpen(true);
   }
 
-  // Reenvia os valores como vieram da API para trocar apenas o status.
-  async function handleActivate(author: SiteAuthorResponse) {
+  function handleActivate(author: SiteAuthorResponse) {
     if (!canUpdate) {
       return;
     }
     setFormError("");
-    setSaving(true);
-    try {
-      await updateSiteAuthor(author.id, {
-        name: author.name,
-        description: author.description ?? undefined,
-        image: author.image ?? undefined,
-        status: "1"
-      });
-      showToast("Autor do Site ativado com sucesso.", "success");
-      await invalidate.siteAuthors();
-    } catch (activateError) {
-      const message =
-        activateError instanceof Error ? activateError.message : "Falha ao ativar autor";
-      setFormError(message);
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
-    }
+    activateMutation.mutate(author);
   }
 
-  async function handleConfirmDelete() {
+  function handleConfirmDelete() {
     if (confirmDeleteId === null) {
       return;
     }
-    const authorId = confirmDeleteId;
     setFormError("");
-    setSaving(true);
-    try {
-      await deleteSiteAuthor(authorId);
-      if (editingId === authorId) {
-        closeFormModal();
-      }
-      if (selectedAuthor?.id === authorId) {
-        setSelectedAuthor(null);
-      }
-      showToast("Autor do Site desativado com sucesso.", "success");
-      await invalidate.siteAuthors();
-    } catch (deleteError) {
-      const message =
-        deleteError instanceof Error ? deleteError.message : "Falha ao desativar autor";
-      setFormError(message);
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
-      setConfirmDeleteId(null);
-    }
+    deleteMutation.mutate(confirmDeleteId);
   }
 
   const filteredAuthors = useMemo(() => {

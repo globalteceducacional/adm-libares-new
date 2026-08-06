@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Pencil, Plus, Power, Tags, Trash2 } from "lucide-react";
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   createSiteCategory,
@@ -25,7 +25,9 @@ import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import { LegacyImage } from "../components/LegacyImage";
 import type { SiteCategoryResponse, UpsertSiteCategoryRequest } from "../../types/siteCategories";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { Alert, Button, ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
+import { useAdminMutation } from "../../hooks/useAdminMutation";
+import { useSelectedEntity } from "../../hooks/useSelectedEntity";
+import { Alert, Button, ConfirmDialog, StatusBadge } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
@@ -36,9 +38,13 @@ const EMPTY_FORM: UpsertSiteCategoryRequest = {
   status: "1"
 };
 
+type SaveSiteCategoryVariables = {
+  editingId: number | null;
+  payload: UpsertSiteCategoryRequest;
+};
+
 export function SiteCategoriesPage() {
   const location = useLocation();
-  const { showToast } = useToast();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const categoriesQuery = useSiteCategoriesQuery();
   const invalidate = useInvalidateAdminQueries();
@@ -49,12 +55,11 @@ export function SiteCategoriesPage() {
     : undefined;
 
   const [formError, setFormError] = useState("");
-  const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<SiteCategoryResponse | null>(null);
+  const [selectedCategory, setSelectedCategory] = useSelectedEntity(categories);
   const [form, setForm] = useState<UpsertSiteCategoryRequest>(EMPTY_FORM);
   // Erros de campo so apos tentativa de salvar (evita vermelho no form vazio).
   const [showValidation, setShowValidation] = useState(false);
@@ -63,6 +68,64 @@ export function SiteCategoriesPage() {
   const canCreate = usePermission("sites.create");
   const canUpdate = usePermission("sites.update");
   const canDelete = usePermission("sites.delete");
+
+  async function invalidateSiteCategoryQueries() {
+    await invalidate.siteCategories();
+  }
+
+  const saveMutation = useAdminMutation<SiteCategoryResponse, SaveSiteCategoryVariables>({
+    mutationFn: async ({ editingId: id, payload }) =>
+      id ? updateSiteCategory(id, payload) : createSiteCategory(payload),
+    successMessage: (_data, { editingId: id }) =>
+      id ? "Categoria do Site atualizada com sucesso." : "Categoria do Site criada com sucesso.",
+    errorFallback: "Falha ao salvar categoria",
+    toastError: false,
+    invalidate: invalidateSiteCategoryQueries,
+    onSuccess: () => {
+      closeFormModal();
+    },
+    onError: (error) => {
+      setFormError(error.message);
+    }
+  });
+
+  const activateMutation = useAdminMutation<SiteCategoryResponse, SiteCategoryResponse>({
+    mutationFn: (category) =>
+      updateSiteCategory(category.id, {
+        name: category.name,
+        image: category.image ?? undefined,
+        status: "1"
+      }),
+    successMessage: "Categoria do Site ativada com sucesso.",
+    errorFallback: "Falha ao ativar categoria",
+    invalidate: invalidateSiteCategoryQueries,
+    onError: (error) => {
+      setFormError(error.message);
+    }
+  });
+
+  const deleteMutation = useAdminMutation<void, number>({
+    mutationFn: (categoryId) => deleteSiteCategory(categoryId),
+    successMessage: "Categoria do Site desativada com sucesso.",
+    errorFallback: "Falha ao desativar categoria",
+    invalidate: invalidateSiteCategoryQueries,
+    onSuccess: (_data, categoryId) => {
+      if (editingId === categoryId) {
+        closeFormModal();
+      }
+      if (selectedCategory?.id === categoryId) {
+        setSelectedCategory(null);
+      }
+      setConfirmDeleteId(null);
+    },
+    onError: (error) => {
+      setFormError(error.message);
+      setConfirmDeleteId(null);
+    }
+  });
+
+  const saving =
+    saveMutation.isPending || activateMutation.isPending || deleteMutation.isPending;
 
   function resetForm() {
     setForm(EMPTY_FORM);
@@ -81,15 +144,6 @@ export function SiteCategoriesPage() {
     setFormError("");
     setFormModalOpen(true);
   }
-
-  useEffect(() => {
-    setSelectedCategory((current) => {
-      if (!current) {
-        return null;
-      }
-      return categories.find((item) => item.id === current.id) ?? null;
-    });
-  }, [categories]);
 
   async function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -121,26 +175,17 @@ export function SiteCategoriesPage() {
       return;
     }
     setFormError("");
-    setSaving(true);
     try {
-      const payload: UpsertSiteCategoryRequest = {
-        name: form.name.trim(),
-        image: form.image?.trim() || undefined,
-        status: form.status
-      };
-      if (editingId) {
-        await updateSiteCategory(editingId, payload);
-        showToast("Categoria do Site atualizada com sucesso.", "success");
-      } else {
-        await createSiteCategory(payload);
-        showToast("Categoria do Site criada com sucesso.", "success");
-      }
-      closeFormModal();
-      await invalidate.siteCategories();
-    } catch (submitError) {
-      setFormError(submitError instanceof Error ? submitError.message : "Falha ao salvar categoria");
-    } finally {
-      setSaving(false);
+      await saveMutation.mutateAsync({
+        editingId,
+        payload: {
+          name: form.name.trim(),
+          image: form.image?.trim() || undefined,
+          status: form.status
+        }
+      });
+    } catch {
+      // Erro ja tratado em onError do useAdminMutation (formError).
     }
   }
 
@@ -157,57 +202,20 @@ export function SiteCategoriesPage() {
     setFormModalOpen(true);
   }
 
-  // Reenvia os valores como vieram da API para trocar apenas o status.
-  async function handleActivate(category: SiteCategoryResponse) {
+  function handleActivate(category: SiteCategoryResponse) {
     if (!canUpdate) {
       return;
     }
     setFormError("");
-    setSaving(true);
-    try {
-      await updateSiteCategory(category.id, {
-        name: category.name,
-        image: category.image ?? undefined,
-        status: "1"
-      });
-      showToast("Categoria do Site ativada com sucesso.", "success");
-      await invalidate.siteCategories();
-    } catch (activateError) {
-      const message =
-        activateError instanceof Error ? activateError.message : "Falha ao ativar categoria";
-      setFormError(message);
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
-    }
+    activateMutation.mutate(category);
   }
 
-  async function handleConfirmDelete() {
+  function handleConfirmDelete() {
     if (confirmDeleteId === null) {
       return;
     }
-    const categoryId = confirmDeleteId;
     setFormError("");
-    setSaving(true);
-    try {
-      await deleteSiteCategory(categoryId);
-      if (editingId === categoryId) {
-        closeFormModal();
-      }
-      if (selectedCategory?.id === categoryId) {
-        setSelectedCategory(null);
-      }
-      showToast("Categoria do Site desativada com sucesso.", "success");
-      await invalidate.siteCategories();
-    } catch (deleteError) {
-      const message =
-        deleteError instanceof Error ? deleteError.message : "Falha ao desativar categoria";
-      setFormError(message);
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
-      setConfirmDeleteId(null);
-    }
+    deleteMutation.mutate(confirmDeleteId);
   }
 
   const filteredCategories = useMemo(() => {
