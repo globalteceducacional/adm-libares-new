@@ -1,7 +1,7 @@
 # Auditoria — UX Berry (layout A)
 
 **Data:** 2026-08-06  
-**Status:** aprovado em conversa; aguardando revisão do arquivo  
+**Status:** aprovado; plano em `docs/superpowers/plans/2026-08-06-auditoria-ux-berry.md`  
 **Escopo:** `frontend-admin` — página `/auditoria` (somente UI; API `/api/v1/audit/overview` inalterada)
 
 ## Problema
