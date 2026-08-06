@@ -104,13 +104,7 @@ export function RolesForm({
           </motion.button>
         ) : null}
         <button className="secondary-btn" type="button" onClick={onReset} disabled={saving}>
-          {inModal
-            ? isEditingSystemRole
-              ? "Fechar"
-              : "Cancelar"
-            : isEditingSystemRole
-              ? "Fechar"
-              : "Limpar formulario"}
+          {isEditingSystemRole ? "Fechar" : inModal ? "Cancelar" : "Limpar formulario"}
         </button>
       </div>
     </form>

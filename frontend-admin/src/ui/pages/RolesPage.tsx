@@ -161,6 +161,9 @@ export function RolesPage() {
   }
 
   function openCreateForm() {
+    if (needsSchoolContext) {
+      return;
+    }
     resetForm();
     setFormError("");
     setFormModalOpen(true);
@@ -180,7 +183,7 @@ export function RolesPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (needsSchoolContext || isEditingSystemRole) {
+    if (!canSubmit || needsSchoolContext || isEditingSystemRole) {
       return;
     }
     setShowValidation(true);
@@ -347,7 +350,16 @@ export function RolesPage() {
           actions={
             canCreate ? (
               <PermissionGate anyOf={["roles.create"]}>
-                <Button type="button" onClick={openCreateForm} disabled={saving}>
+                <Button
+                  type="button"
+                  onClick={openCreateForm}
+                  disabled={saving || needsSchoolContext}
+                  title={
+                    needsSchoolContext
+                      ? "Selecione uma escola no topo do painel"
+                      : undefined
+                  }
+                >
                   <Plus size={16} />
                   Novo perfil
                 </Button>
