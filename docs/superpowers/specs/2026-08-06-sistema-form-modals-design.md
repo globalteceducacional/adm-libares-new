@@ -1,7 +1,7 @@
 # Sistema — cadastros em FormModal
 
 **Data:** 2026-08-06  
-**Status:** aprovado; plano em `docs/superpowers/plans/2026-08-06-sistema-form-modals.md`  
+**Status:** implementado (branch `feat/sistema-form-modals`)  
 **Escopo:** frontend-admin — seção Sistema (Escolas, Equipe, Perfis)
 
 ## Problema
@@ -45,10 +45,10 @@ Páginas: `SchoolsPage`, `TeamPage`, `RolesPage` — orquestram estado e mutatio
 
 ## Critérios de pronto
 
-- [ ] Nas três rotas, não há formulário de cadastro/edição inline
-- [ ] Novo e Editar (onde existir) abrem FormModal
-- [ ] Layout alinhado às outras listagens (sem coluna de form)
-- [ ] `npx tsc --noEmit` no frontend-admin passa
+- [x] Nas três rotas, não há formulário de cadastro/edição inline
+- [x] Novo e Editar (onde existir) abrem FormModal
+- [x] Layout alinhado às outras listagens (sem coluna de form)
+- [x] `npx tsc --noEmit` no frontend-admin passa
 
 ## Abordagem descartada
 
