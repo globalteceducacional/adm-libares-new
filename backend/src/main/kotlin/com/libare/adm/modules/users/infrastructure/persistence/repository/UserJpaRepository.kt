@@ -35,6 +35,21 @@ interface UserJpaRepository : JpaRepository<UserEntity, Long> {
 
     @Query(
         value = """
+            SELECT COUNT(*)
+            FROM tbl_users
+            WHERE LOWER(email) = LOWER(:email)
+              AND id <> :excludeId
+              AND (is_deleted = 0 OR is_deleted IS NULL)
+        """,
+        nativeQuery = true
+    )
+    fun countByEmailIgnoreCaseExcludingId(
+        @Param("email") email: String,
+        @Param("excludeId") excludeId: Long
+    ): Long
+
+    @Query(
+        value = """
             SELECT
                 u.id AS id,
                 u.name AS name,

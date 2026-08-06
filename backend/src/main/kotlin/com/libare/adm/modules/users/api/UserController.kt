@@ -2,12 +2,14 @@ package com.libare.adm.modules.users.api
 
 import com.libare.adm.modules.users.api.dto.CreateUserRequest
 import com.libare.adm.modules.users.api.dto.UpdateUserAcervoRequest
+import com.libare.adm.modules.users.api.dto.UpdateUserProfileRequest
 import com.libare.adm.modules.users.api.dto.UpdateUserStatusRequest
 import com.libare.adm.modules.users.api.dto.UserResponse
 import com.libare.adm.modules.users.application.CreateUserUseCase
 import com.libare.adm.modules.users.application.DeleteUserUseCase
 import com.libare.adm.modules.users.application.ListUsersUseCase
 import com.libare.adm.modules.users.application.UpdateUserAcervoUseCase
+import com.libare.adm.modules.users.application.UpdateUserProfileUseCase
 import com.libare.adm.modules.users.application.UpdateUserStatusUseCase
 import com.libare.adm.shared.openapi.AdminSecured
 import com.libare.adm.shared.openapi.AdminWriteResponses
@@ -45,6 +47,7 @@ import org.springframework.web.bind.annotation.RestController
 class UserController(
     private val listUsersUseCase: ListUsersUseCase,
     private val createUserUseCase: CreateUserUseCase,
+    private val updateUserProfileUseCase: UpdateUserProfileUseCase,
     private val updateUserStatusUseCase: UpdateUserStatusUseCase,
     private val updateUserAcervoUseCase: UpdateUserAcervoUseCase,
     private val deleteUserUseCase: DeleteUserUseCase
@@ -102,6 +105,28 @@ class UserController(
     @PostMapping
     fun create(@Valid @RequestBody request: CreateUserRequest): ResponseEntity<UserResponse> =
         ResponseEntity.status(HttpStatus.CREATED).body(createUserUseCase.execute(request))
+
+    @Operation(
+        summary = "Atualizar perfil do leitor",
+        description = "Altera nome, email e telefone. Nao altera senha, foto, acervo nem status."
+    )
+    @AdminSecured
+    @AdminWriteResponses
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Perfil atualizado",
+                content = [Content(schema = Schema(implementation = UserResponse::class))]
+            )
+        ]
+    )
+    @PutMapping("/{userId}")
+    fun updateProfile(
+        @Parameter(description = "ID do leitor") @PathVariable userId: Long,
+        @Valid @RequestBody request: UpdateUserProfileRequest
+    ): ResponseEntity<UserResponse> =
+        ResponseEntity.ok(updateUserProfileUseCase.execute(userId, request))
 
     @Operation(summary = "Atualizar status do leitor", description = "Ativa (1) ou inativa (0) o leitor.")
     @AdminSecured
