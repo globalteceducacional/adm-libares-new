@@ -14,8 +14,8 @@ type UserDetailModalProps = {
   acervoOptions: AcervoOptionResponse[];
   onClose: () => void;
   onEdit?: (user: UserResponse) => void;
-  onToggleStatus: (user: UserResponse) => void;
-  onDelete: (user: UserResponse) => void;
+  onToggleStatus?: (user: UserResponse) => void;
+  onDelete?: (user: UserResponse) => void;
   onSaveAcervo: (user: UserResponse, acervoId: number) => Promise<void>;
 };
 
@@ -95,28 +95,32 @@ export function UserDetailModal({
               Editar
             </Button>
           ) : null}
-          <Button
-            variant="secondary"
-            onClick={() => {
-              onToggleStatus(currentUser);
-              onClose();
-            }}
-            disabled={saving}
-          >
-            {isActive ? <UserX size={16} /> : <UserCheck size={16} />}
-            {isActive ? "Desativar" : "Ativar"}
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => {
-              onDelete(currentUser);
-              onClose();
-            }}
-            disabled={saving}
-          >
-            <Trash2 size={16} />
-            Excluir
-          </Button>
+          {onToggleStatus ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                onToggleStatus(currentUser);
+                onClose();
+              }}
+              disabled={saving}
+            >
+              {isActive ? <UserX size={16} /> : <UserCheck size={16} />}
+              {isActive ? "Desativar" : "Ativar"}
+            </Button>
+          ) : null}
+          {onDelete ? (
+            <Button
+              variant="danger"
+              onClick={() => {
+                onDelete(currentUser);
+                onClose();
+              }}
+              disabled={saving}
+            >
+              <Trash2 size={16} />
+              Excluir
+            </Button>
+          ) : null}
         </>
       }
     >

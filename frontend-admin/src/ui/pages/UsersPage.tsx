@@ -21,7 +21,7 @@ import { useAuth } from "../../features/auth/AuthContext";
 import { PermissionGate } from "../../features/auth/PermissionGate";
 import { usePermission } from "../../features/auth/usePermission";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { useTimedMessage } from "../../hooks/useTimedMessage";
+import { useAdminMutation } from "../../hooks/useAdminMutation";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
 import { SearchableSelect } from "../components/form/SearchableSelect";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
@@ -50,6 +50,16 @@ const EMPTY_FORM: CreateUserFormState = {
   status: "1"
 };
 
+type SaveUserVariables = {
+  editingId: number | null;
+  form: CreateUserFormState;
+};
+
+type SaveAcervoVariables = {
+  user: UserResponse;
+  acervoId: number;
+};
+
 export function UsersPage() {
   const location = useLocation();
   const { requiresSchoolContext, schoolContextId } = useAuth();
@@ -63,28 +73,24 @@ export function UsersPage() {
   const users = usersQuery.data ?? [];
   const acervoOptions = acervosQuery.data ?? [];
   const loading = usersQuery.isLoading;
-  const queryError = usersQuery.error
+  const listingError = usersQuery.error
     ? getQueryErrorMessage(usersQuery.error, "Falha ao carregar usuarios")
     : acervosQuery.error
       ? getQueryErrorMessage(acervosQuery.error, "Falha ao carregar acervos")
       : schoolsQuery.error
         ? getQueryErrorMessage(schoolsQuery.error, "Falha ao carregar escolas")
         : undefined;
-  const [saving, setSaving] = useState(false);
-  const [actionError, setActionError] = useState("");
   const [formError, setFormError] = useState("");
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
   const [form, setForm] = useState<CreateUserFormState>(EMPTY_FORM);
-  const { message: success, showMessage: showSuccess, clearMessage: clearSuccess } = useTimedMessage();
   const canCreateUser = usePermission("users.create");
   const canUpdateUser = usePermission("users.update");
   const canBlockUser = usePermission("users.block");
   const canDeleteUser = usePermission("users.delete");
   const needsSchoolContext = requiresSchoolContext && !schoolContextId;
-  const error = actionError || queryError;
 
   const schoolLabel = useMemo(() => {
     if (!schoolContextId) {
@@ -116,6 +122,75 @@ export function UsersPage() {
       !form.acervoId ||
       Number.isNaN(Number(form.acervoId));
 
+  async function invalidateUserQueries() {
+    await invalidate.users();
+  }
+
+  const saveMutation = useAdminMutation<UserResponse, SaveUserVariables>({
+    mutationFn: async ({ editingId: id, form: formState }) =>
+      id
+        ? updateUserProfile(id, toUpdateUserProfileRequest(formState))
+        : createUser(toCreateUserRequest(formState)),
+    successMessage: (_data, { editingId: id }) =>
+      id ? "Perfil do usuario atualizado com sucesso." : "Usuario criado com sucesso.",
+    errorFallback: "Falha ao salvar usuario",
+    toastError: false,
+    invalidate: invalidateUserQueries,
+    onSuccess: () => {
+      closeFormModal();
+    },
+    onError: (error) => {
+      setFormError(error.message);
+    }
+  });
+
+  const statusMutation = useAdminMutation<UserResponse, UserResponse>({
+    mutationFn: (user) => {
+      const nextStatus = user.status === "0" ? "1" : "0";
+      return updateUserStatus(user.id, { status: nextStatus });
+    },
+    successMessage: (_data, user) =>
+      user.status === "0" ? "Usuario ativado com sucesso." : "Usuario desativado com sucesso.",
+    errorFallback: "Falha ao atualizar status",
+    invalidate: invalidateUserQueries
+  });
+
+  const deleteMutation = useAdminMutation<void, number>({
+    mutationFn: (userId) => deleteUser(userId),
+    successMessage: "Usuario excluido com sucesso.",
+    errorFallback: "Falha ao excluir usuario",
+    invalidate: invalidateUserQueries,
+    onSuccess: (_data, userId) => {
+      if (selectedUser?.id === userId) {
+        setSelectedUser(null);
+      }
+      if (editingId === userId) {
+        closeFormModal();
+      }
+      setConfirmDeleteId(null);
+    },
+    onError: () => {
+      setConfirmDeleteId(null);
+    }
+  });
+
+  const acervoMutation = useAdminMutation<UserResponse, SaveAcervoVariables>({
+    mutationFn: ({ user, acervoId }) => updateUserAcervo(user.id, { acervoId }),
+    successMessage: "Acervo do usuario atualizado com sucesso.",
+    errorFallback: "Falha ao atualizar acervo",
+    toastError: false,
+    invalidate: async () => {
+      await invalidate.users();
+      await invalidate.acervos();
+    }
+  });
+
+  const saving =
+    saveMutation.isPending ||
+    statusMutation.isPending ||
+    deleteMutation.isPending ||
+    acervoMutation.isPending;
+
   function resetForm() {
     setForm(EMPTY_FORM);
     setEditingId(null);
@@ -130,7 +205,6 @@ export function UsersPage() {
   function openCreateForm() {
     resetForm();
     setFormError("");
-    clearSuccess();
     setFormModalOpen(true);
   }
 
@@ -138,7 +212,6 @@ export function UsersPage() {
     setSelectedUser(null);
     setEditingId(user.id);
     setFormError("");
-    clearSuccess();
     setForm({
       name: decodeHtmlEntities(user.name),
       email: user.email,
@@ -162,102 +235,37 @@ export function UsersPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (editingId) {
-      if (!canUpdateUser || isFormInvalid) {
+      if (!canUpdateUser) {
         return;
       }
-    } else if (!canCreateUser || needsSchoolContext || isFormInvalid) {
+    } else if (!canCreateUser || needsSchoolContext) {
+      return;
+    }
+    if (isFormInvalid) {
+      setFormError("Preencha os campos obrigatorios antes de salvar.");
       return;
     }
     setFormError("");
-    setActionError("");
-    clearSuccess();
-    setSaving(true);
     try {
-      if (editingId) {
-        await updateUserProfile(editingId, toUpdateUserProfileRequest(form));
-        showSuccess("Perfil do usuario atualizado com sucesso.");
-      } else {
-        await createUser(toCreateUserRequest(form));
-        showSuccess("Usuario criado com sucesso.");
-      }
-      closeFormModal();
-      await invalidate.users();
-    } catch (requestError) {
-      setFormError(
-        requestError instanceof Error
-          ? requestError.message
-          : editingId
-            ? "Falha ao atualizar perfil"
-            : "Falha ao criar usuario"
-      );
-    } finally {
-      setSaving(false);
+      await saveMutation.mutateAsync({ editingId, form });
+    } catch {
+      // Erro ja tratado em onError do useAdminMutation (formError).
     }
   }
 
   async function handleSaveAcervo(user: UserResponse, acervoId: number) {
-    setActionError("");
-    clearSuccess();
-    setSaving(true);
-    try {
-      await updateUserAcervo(user.id, { acervoId });
-      showSuccess("Acervo do usuario atualizado com sucesso.");
-      await invalidate.users();
-      await invalidate.acervos();
-    } catch (requestError) {
-      const message =
-        requestError instanceof Error ? requestError.message : "Falha ao atualizar acervo";
-      setActionError(message);
-      throw requestError;
-    } finally {
-      setSaving(false);
-    }
+    await acervoMutation.mutateAsync({ user, acervoId });
   }
 
-  async function handleToggleStatus(user: UserResponse) {
-    setActionError("");
-    clearSuccess();
-    setSaving(true);
-    try {
-      const nextStatus = user.status === "0" ? "1" : "0";
-      await updateUserStatus(user.id, { status: nextStatus });
-      showSuccess(nextStatus === "1" ? "Usuario ativado com sucesso." : "Usuario desativado com sucesso.");
-      await invalidate.users();
-    } catch (requestError) {
-      const message =
-        requestError instanceof Error ? requestError.message : "Falha ao atualizar status";
-      setActionError(message);
-    } finally {
-      setSaving(false);
-    }
+  function handleToggleStatus(user: UserResponse) {
+    statusMutation.mutate(user);
   }
 
-  async function handleConfirmDelete() {
+  function handleConfirmDelete() {
     if (confirmDeleteId === null) {
       return;
     }
-    const userId = confirmDeleteId;
-    setActionError("");
-    clearSuccess();
-    setSaving(true);
-    try {
-      await deleteUser(userId);
-      if (selectedUser?.id === userId) {
-        setSelectedUser(null);
-      }
-      if (editingId === userId) {
-        closeFormModal();
-      }
-      showSuccess("Usuario excluido com sucesso.");
-      await invalidate.users();
-    } catch (requestError) {
-      const message =
-        requestError instanceof Error ? requestError.message : "Falha ao excluir usuario";
-      setActionError(message);
-    } finally {
-      setSaving(false);
-      setConfirmDeleteId(null);
-    }
+    deleteMutation.mutate(confirmDeleteId);
   }
 
   const columns = useMemo<DataTableColumn<UserResponse>[]>(
@@ -438,8 +446,7 @@ export function UsersPage() {
         keyExtractor={(user) => user.id}
         emptyMessage={emptyMessage}
         countLabel={`${filteredUsers.length} usuario(s) com o filtro atual`}
-        error={error}
-        success={success}
+        error={listingError}
         onRowClick={setSelectedUser}
         renderMobileCard={(user) => (
           <article className="book-card">
@@ -537,8 +544,12 @@ export function UsersPage() {
         acervoOptions={acervoOptions}
         onClose={() => setSelectedUser(null)}
         onEdit={canUpdateUser ? handleEdit : undefined}
-        onToggleStatus={handleToggleStatus}
-        onDelete={(user) => setConfirmDeleteId(user.id)}
+        onToggleStatus={
+          selectedUser && (selectedUser.status === "1" ? canBlockUser : canUpdateUser)
+            ? handleToggleStatus
+            : undefined
+        }
+        onDelete={canDeleteUser ? (user) => setConfirmDeleteId(user.id) : undefined}
         onSaveAcervo={handleSaveAcervo}
       />
 
