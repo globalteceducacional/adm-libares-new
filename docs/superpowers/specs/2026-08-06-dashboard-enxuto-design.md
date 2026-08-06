@@ -1,7 +1,7 @@
 # Dashboard enxuto — redesign
 
 **Data:** 2026-08-06  
-**Status:** aprovado; plano em `docs/superpowers/plans/2026-08-06-dashboard-enxuto.md`  
+**Status:** implementado (branch `feat/dashboard-enxuto`); plano em `docs/superpowers/plans/2026-08-06-dashboard-enxuto.md`  
 **Escopo:** `frontend-admin` — página `/dashboard` (somente UI; API existente)
 
 ## Problema
@@ -64,11 +64,11 @@ O dashboard atual (~600 linhas) empilha welcome, 4 KPIs, 3 mini-cards, 4 gráfic
 
 ## Critérios de pronto
 
-- [ ] Dashboard mostra no máximo: 3 KPIs + 1 gráfico de tendência + 1 top livros + faixa de alertas
-- [ ] Nenhum gráfico/tabela duplicado (comentários ou livros)
-- [ ] Welcome, CSV, top comentaristas e atividade recente removidos
-- [ ] Seletor de período continua funcional
-- [ ] `tsc --noEmit` passa
+- [x] Dashboard mostra no máximo: 3 KPIs + 1 gráfico de tendência + 1 top livros + faixa de alertas
+- [x] Nenhum gráfico/tabela duplicado (comentários ou livros)
+- [x] Welcome, CSV, top comentaristas e atividade recente removidos
+- [x] Seletor de período continua funcional
+- [x] `tsc --noEmit` passa
 
 ## Fora de escopo
 
