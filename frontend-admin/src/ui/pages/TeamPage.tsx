@@ -305,6 +305,11 @@ export function TeamPage() {
                   type="button"
                   onClick={openCreateForm}
                   disabled={saving || needsSchoolContext}
+                  title={
+                    needsSchoolContext
+                      ? "Selecione uma escola no topo do painel"
+                      : undefined
+                  }
                 >
                   <Plus size={16} />
                   Novo membro
