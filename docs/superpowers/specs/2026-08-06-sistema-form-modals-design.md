@@ -1,7 +1,7 @@
 # Sistema — cadastros em FormModal
 
 **Data:** 2026-08-06  
-**Status:** aprovado em conversa (escopo opção 1); aguardando revisão do arquivo  
+**Status:** aprovado; plano em `docs/superpowers/plans/2026-08-06-sistema-form-modals.md`  
 **Escopo:** frontend-admin — seção Sistema (Escolas, Equipe, Perfis)
 
 ## Problema
