@@ -1,7 +1,7 @@
 # Usuários — editar perfil (nome, email, telefone)
 
 **Data:** 2026-08-06  
-**Status:** aprovado em conversa; aguardando revisão do arquivo  
+**Status:** aprovado; plano em `docs/superpowers/plans/2026-08-06-usuarios-editar-perfil.md`  
 **Escopo:** backend + `frontend-admin` — leitores (`tbl_users` / `/usuarios`)
 
 ## Problema
