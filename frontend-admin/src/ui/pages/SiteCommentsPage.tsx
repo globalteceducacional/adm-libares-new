@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { MessageSquare, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { deleteSiteComment } from "../../services/siteCommentsService";
 import {
@@ -11,20 +11,21 @@ import {
 import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { usePermission } from "../../features/auth/usePermission";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
+import { useAdminMutation } from "../../hooks/useAdminMutation";
+import { useSelectedEntity } from "../../hooks/useSelectedEntity";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
 import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import { SiteCommentDetailModal } from "../components/siteComments/SiteCommentDetailModal";
 import type { SiteCommentResponse } from "../../types/siteComments";
-import { ConfirmDialog, useToast } from "../../shared/ui";
+import { ConfirmDialog } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
 
 export function SiteCommentsPage() {
   const location = useLocation();
-  const { showToast } = useToast();
   const { search, setSearch } = useAdminListFilters({ syncStatus: false });
   const commentsQuery = useSiteCommentsQuery();
   const invalidate = useInvalidateAdminQueries();
@@ -33,45 +34,41 @@ export function SiteCommentsPage() {
   const queryError = commentsQuery.error
     ? getQueryErrorMessage(commentsQuery.error, "Falha ao carregar comentarios do Site")
     : undefined;
-  const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
-  const [selectedComment, setSelectedComment] = useState<SiteCommentResponse | null>(null);
+  const [selectedComment, setSelectedComment] = useSelectedEntity(comments);
   const canModerate = usePermission("sites.comments.moderate");
   const error = actionError || queryError;
 
-  useEffect(() => {
-    setSelectedComment((current) => {
-      if (!current) {
-        return null;
-      }
-      return comments.find((comment) => comment.id === current.id) ?? null;
-    });
-  }, [comments]);
+  async function invalidateSiteCommentQueries() {
+    await invalidate.siteComments();
+  }
 
-  async function handleConfirmDelete() {
-    if (confirmDeleteId === null) {
-      return;
-    }
-    const commentId = confirmDeleteId;
-    setActionError("");
-    setSaving(true);
-    try {
-      await deleteSiteComment(commentId);
+  const deleteMutation = useAdminMutation<void, number>({
+    mutationFn: (commentId) => deleteSiteComment(commentId),
+    successMessage: "Comentario excluido com sucesso.",
+    errorFallback: "Falha ao excluir comentario",
+    invalidate: invalidateSiteCommentQueries,
+    onSuccess: (_data, commentId) => {
       if (selectedComment?.id === commentId) {
         setSelectedComment(null);
       }
-      showToast("Comentario excluido com sucesso.", "success");
-      await invalidate.siteComments();
-    } catch (requestError) {
-      const message =
-        requestError instanceof Error ? requestError.message : "Falha ao excluir comentario";
-      setActionError(message);
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
+      setConfirmDeleteId(null);
+    },
+    onError: (error) => {
+      setActionError(error.message);
       setConfirmDeleteId(null);
     }
+  });
+
+  const saving = deleteMutation.isPending;
+
+  function handleConfirmDelete() {
+    if (confirmDeleteId === null) {
+      return;
+    }
+    setActionError("");
+    deleteMutation.mutate(confirmDeleteId);
   }
 
   const columns = useMemo<DataTableColumn<SiteCommentResponse>[]>(

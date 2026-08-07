@@ -46,6 +46,10 @@
 
 - [x] Refatorar `BooksPage` (save / toggle / delete + `useSelectedEntity`; uploads de capa/arquivo continuam locais)
 
+### Task 2g: SiteComments
+
+- [x] Refatorar `SiteCommentsPage` (delete + `useSelectedEntity`)
+
 ### Task 3: Verificação
 
 - [x] `npx tsc --noEmit`
