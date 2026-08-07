@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Eye, EyeOff, MessageSquare, Trash2 } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { deleteComment, updateCommentStatus } from "../../services/commentsService";
 import {
@@ -10,20 +10,21 @@ import {
 } from "../../features/shared/api/queries";
 import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
+import { useAdminMutation } from "../../hooks/useAdminMutation";
+import { useSelectedEntity } from "../../hooks/useSelectedEntity";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
 import { ListingMiniStats } from "../components/layout/ListingMiniStats";
 import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import { CommentDetailModal } from "../components/comments/CommentDetailModal";
 import type { CommentResponse } from "../../types/comments";
-import { ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
+import { ConfirmDialog, StatusBadge } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
 
 export function CommentsPage() {
   const location = useLocation();
-  const { showToast } = useToast();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const commentsQuery = useCommentsQuery();
   const invalidate = useInvalidateAdminQueries();
@@ -32,65 +33,61 @@ export function CommentsPage() {
   const queryError = commentsQuery.error
     ? getQueryErrorMessage(commentsQuery.error, "Falha ao carregar comentarios")
     : undefined;
-  const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
-  const [selectedComment, setSelectedComment] = useState<CommentResponse | null>(null);
+  const [selectedComment, setSelectedComment] = useSelectedEntity(comments);
   const error = actionError || queryError;
 
-  useEffect(() => {
-    setSelectedComment((current) => {
-      if (!current) {
-        return null;
-      }
-      return comments.find((comment) => comment.id === current.id) ?? null;
-    });
-  }, [comments]);
-
-  async function handleToggleStatus(comment: CommentResponse) {
-    setActionError("");
-    setSaving(true);
-    try {
-      const nextStatus = comment.status === "0" ? "1" : "0";
-      await updateCommentStatus(comment.id, { status: nextStatus });
-      showToast(
-        nextStatus === "1" ? "Comentario publicado com sucesso." : "Comentario ocultado com sucesso.",
-        "success"
-      );
-      await invalidate.comments();
-    } catch (requestError) {
-      const message =
-        requestError instanceof Error ? requestError.message : "Falha ao atualizar status";
-      setActionError(message);
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
-    }
+  async function invalidateCommentQueries() {
+    await invalidate.comments();
   }
 
-  async function handleConfirmDelete() {
-    if (confirmDeleteId === null) {
-      return;
+  const toggleStatusMutation = useAdminMutation<CommentResponse, CommentResponse>({
+    mutationFn: (comment) =>
+      updateCommentStatus(comment.id, { status: comment.status === "0" ? "1" : "0" }),
+    successMessage: (_data, comment) => {
+      const nextStatus = comment.status === "0" ? "1" : "0";
+      return nextStatus === "1"
+        ? "Comentario publicado com sucesso."
+        : "Comentario ocultado com sucesso.";
+    },
+    errorFallback: "Falha ao atualizar status",
+    invalidate: invalidateCommentQueries,
+    onError: (error) => {
+      setActionError(error.message);
     }
-    const commentId = confirmDeleteId;
-    setActionError("");
-    setSaving(true);
-    try {
-      await deleteComment(commentId);
+  });
+
+  const deleteMutation = useAdminMutation<void, number>({
+    mutationFn: (commentId) => deleteComment(commentId),
+    successMessage: "Comentario excluido com sucesso.",
+    errorFallback: "Falha ao excluir comentario",
+    invalidate: invalidateCommentQueries,
+    onSuccess: (_data, commentId) => {
       if (selectedComment?.id === commentId) {
         setSelectedComment(null);
       }
-      showToast("Comentario excluido com sucesso.", "success");
-      await invalidate.comments();
-    } catch (requestError) {
-      const message =
-        requestError instanceof Error ? requestError.message : "Falha ao excluir comentario";
-      setActionError(message);
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
+      setConfirmDeleteId(null);
+    },
+    onError: (error) => {
+      setActionError(error.message);
       setConfirmDeleteId(null);
     }
+  });
+
+  const saving = toggleStatusMutation.isPending || deleteMutation.isPending;
+
+  function handleToggleStatus(comment: CommentResponse) {
+    setActionError("");
+    toggleStatusMutation.mutate(comment);
+  }
+
+  function handleConfirmDelete() {
+    if (confirmDeleteId === null) {
+      return;
+    }
+    setActionError("");
+    deleteMutation.mutate(confirmDeleteId);
   }
 
   const columns = useMemo<DataTableColumn<CommentResponse>[]>(

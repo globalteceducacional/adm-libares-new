@@ -32,6 +32,12 @@
 - [x] Refatorar `SiteSectionsPage` (save / activate / delete + `useSelectedEntity`)
 - [x] Refatorar `SchoolsPage` (save / activate / delete; sem `useSelectedEntity`; create reseta form, update mantém edição)
 
+### Task 2d: Roles / Comments / Team
+
+- [x] Refatorar `RolesPage` (save / activate / delete; sem `useSelectedEntity`; create e update resetam form)
+- [x] Refatorar `CommentsPage` (toggleStatus / delete + `useSelectedEntity`)
+- [x] Refatorar `TeamPage` (create / toggle; sem `useSelectedEntity`)
+
 ### Task 3: Verificação
 
 - [x] `npx tsc --noEmit`
