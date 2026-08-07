@@ -1,8 +1,15 @@
 import { motion } from "framer-motion";
 import { BookOpen, Pencil, Plus, Trash2 } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { createBook, deleteBook, toggleBookStatus, updateBook, uploadBookCover, uploadBookFile } from "../../services/booksService";
+import {
+  createBook,
+  deleteBook,
+  toggleBookStatus,
+  updateBook,
+  uploadBookCover,
+  uploadBookFile
+} from "../../services/booksService";
 import {
   getQueryErrorMessage,
   useAuthorOptionsQuery,
@@ -26,10 +33,22 @@ import { LegacyImage } from "../components/LegacyImage";
 import type { BookResponse, UpsertBookRequest } from "../../types/books";
 import { EMPTY_BOOK_FORM } from "../../types/books";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { ConfirmDialog, StatusBadge, Button, useToast } from "../../shared/ui";
+import { useAdminMutation } from "../../hooks/useAdminMutation";
+import { useSelectedEntity } from "../../hooks/useSelectedEntity";
+import { ConfirmDialog, StatusBadge, Button } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
+
+type SaveBookVariables = {
+  editingId: number | null;
+  payload: UpsertBookRequest;
+};
+
+type ToggleBookVariables = {
+  book: BookResponse;
+  nextStatus: "0" | "1";
+};
 
 export function BooksPage() {
   const location = useLocation();
@@ -38,7 +57,6 @@ export function BooksPage() {
   const selectedAcervoId = acervoFilter === "all" ? undefined : Number(acervoFilter);
   const booksQuery = useBooksQuery(selectedAcervoId);
   const invalidate = useInvalidateAdminQueries();
-  const { showToast } = useToast();
   const canCreateBook = usePermission("books.create");
   const canUpdateBook = usePermission("books.update");
   const canToggleBookStatus = usePermission("books.toggle_status");
@@ -59,14 +77,13 @@ export function BooksPage() {
     ? getQueryErrorMessage(booksQuery.error, "Falha ao buscar livros")
     : undefined;
   const [formError, setFormError] = useState("");
-  const [saving, setSaving] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
-  const [selectedBook, setSelectedBook] = useState<BookResponse | null>(null);
+  const [selectedBook, setSelectedBook] = useSelectedEntity(books);
   const [form, setForm] = useState<UpsertBookRequest>(EMPTY_BOOK_FORM);
   // Erros de campo so apos tentativa de salvar (evita vermelho no form vazio).
   const [showValidation, setShowValidation] = useState(false);
@@ -111,6 +128,57 @@ export function BooksPage() {
           : homeSectionsQuery.error
             ? getQueryErrorMessage(homeSectionsQuery.error, "Falha ao carregar seções da home")
             : "");
+
+  async function invalidateBookQueries() {
+    await invalidate.books();
+  }
+
+  const saveMutation = useAdminMutation<BookResponse, SaveBookVariables>({
+    mutationFn: async ({ editingId: id, payload }) =>
+      id ? updateBook(id, payload) : createBook(payload),
+    successMessage: (_data, { editingId: id }) =>
+      id ? "Livro atualizado com sucesso." : "Livro criado com sucesso.",
+    errorFallback: "Falha ao salvar livro",
+    toastError: false,
+    invalidate: invalidateBookQueries,
+    onSuccess: () => {
+      closeFormModal();
+    },
+    onError: (error) => {
+      setFormError(error.message);
+    }
+  });
+
+  const toggleMutation = useAdminMutation<BookResponse, ToggleBookVariables>({
+    mutationFn: ({ book, nextStatus }) => toggleBookStatus(book.id, nextStatus),
+    successMessage: (_data, { nextStatus }) =>
+      nextStatus === "1" ? "Livro ativado com sucesso." : "Livro desativado com sucesso.",
+    errorFallback: "Falha ao alterar status",
+    invalidate: invalidateBookQueries
+  });
+
+  const deleteMutation = useAdminMutation<void, number>({
+    mutationFn: (bookId) => deleteBook(bookId),
+    successMessage: "Livro excluido com sucesso.",
+    errorFallback: "Falha ao excluir livro",
+    invalidate: invalidateBookQueries,
+    onSuccess: (_data, bookId) => {
+      if (editingId === bookId) {
+        closeFormModal();
+      }
+      if (selectedBook?.id === bookId) {
+        setSelectedBook(null);
+      }
+      setConfirmDeleteId(null);
+    },
+    onError: (error) => {
+      setFormError(error.message);
+      setConfirmDeleteId(null);
+    }
+  });
+
+  const saving =
+    saveMutation.isPending || toggleMutation.isPending || deleteMutation.isPending;
 
   function resetForm() {
     setForm(EMPTY_BOOK_FORM);
@@ -169,48 +237,29 @@ export function BooksPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    if (editingId ? !canUpdateBook : !canCreateBook) {
+      setFormError("Sem permissao para esta acao.");
+      return;
+    }
     setShowValidation(true);
     if (isFormInvalid) {
       setFormError("Preencha os campos obrigatorios antes de salvar.");
       return;
     }
     setFormError("");
-    setSaving(true);
-
     try {
-      if (editingId) {
-        await updateBook(editingId, form);
-        showToast("Livro atualizado com sucesso.", "success");
-      } else {
-        await createBook(form);
-        showToast("Livro criado com sucesso.", "success");
-      }
-      closeFormModal();
-      await invalidate.books();
-    } catch (submitError) {
-      const message =
-        submitError instanceof Error ? submitError.message : "Falha ao salvar livro";
-      setFormError(message);
-    } finally {
-      setSaving(false);
+      await saveMutation.mutateAsync({
+        editingId,
+        payload: form
+      });
+    } catch {
+      // Erro ja tratado em onError do useAdminMutation (formError).
     }
   }
 
-  async function handleToggleStatus(book: BookResponse) {
+  function handleToggleStatus(book: BookResponse) {
     const nextStatus: "0" | "1" = book.status === "1" ? "0" : "1";
-    setSaving(true);
-    try {
-      await toggleBookStatus(book.id, nextStatus);
-      const label = nextStatus === "1" ? "ativado" : "desativado";
-      showToast(`Livro ${label} com sucesso.`, "success");
-      await invalidate.books();
-    } catch (toggleError) {
-      const message =
-        toggleError instanceof Error ? toggleError.message : "Falha ao alterar status";
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
-    }
+    toggleMutation.mutate({ book, nextStatus });
   }
 
   function handleEdit(book: BookResponse) {
@@ -235,45 +284,16 @@ export function BooksPage() {
     setFormModalOpen(true);
   }
 
-  useEffect(() => {
-    setSelectedBook((current) => {
-      if (!current) {
-        return null;
-      }
-      return books.find((book) => book.id === current.id) ?? null;
-    });
-  }, [books]);
-
   function handleSelectBook(book: BookResponse) {
     setSelectedBook(book);
   }
 
-  async function handleConfirmDelete() {
+  function handleConfirmDelete() {
     if (confirmDeleteId === null) {
       return;
     }
-    const bookId = confirmDeleteId;
     setFormError("");
-    setSaving(true);
-    try {
-      await deleteBook(bookId);
-      if (editingId === bookId) {
-        closeFormModal();
-      }
-      if (selectedBook?.id === bookId) {
-        setSelectedBook(null);
-      }
-      showToast("Livro excluido com sucesso.", "success");
-      await invalidate.books();
-    } catch (deleteError) {
-      const message =
-        deleteError instanceof Error ? deleteError.message : "Falha ao excluir livro";
-      setFormError(message);
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
-      setConfirmDeleteId(null);
-    }
+    deleteMutation.mutate(confirmDeleteId);
   }
 
   const filteredBooks = useMemo(() => {
