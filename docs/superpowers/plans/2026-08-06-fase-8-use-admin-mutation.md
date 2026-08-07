@@ -38,6 +38,10 @@
 - [x] Refatorar `CommentsPage` (toggleStatus / delete + `useSelectedEntity`)
 - [x] Refatorar `TeamPage` (create / toggle; sem `useSelectedEntity`)
 
+### Task 2e: Sites
+
+- [x] Refatorar `SitesPage` (save / toggle / delete + `useSelectedEntity`; uploads de capa/arquivo continuam locais)
+
 ### Task 3: Verificação
 
 - [x] `npx tsc --noEmit`

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Globe, Pencil, Plus, Trash2 } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   createSite,
@@ -30,18 +30,29 @@ import { LegacyImage } from "../components/LegacyImage";
 import type { UpsertSiteRequest, SiteResponse } from "../../types/sites";
 import { EMPTY_SITE_FORM } from "../../types/sites";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
-import { ConfirmDialog, StatusBadge, useToast } from "../../shared/ui";
+import { useAdminMutation } from "../../hooks/useAdminMutation";
+import { useSelectedEntity } from "../../hooks/useSelectedEntity";
+import { ConfirmDialog, StatusBadge } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { stripHtml } from "../../shared/lib/stripHtml";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
+
+type SaveSiteVariables = {
+  editingId: number | null;
+  payload: UpsertSiteRequest;
+};
+
+type ToggleSiteVariables = {
+  site: SiteResponse;
+  nextStatus: "0" | "1";
+};
 
 export function SitesPage() {
   const location = useLocation();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const sitesQuery = useSitesQuery();
   const invalidate = useInvalidateAdminQueries();
-  const { showToast } = useToast();
 
   const canCreate = usePermission("sites.create");
   const canUpdate = usePermission("sites.update");
@@ -62,14 +73,13 @@ export function SitesPage() {
     : undefined;
 
   const [formError, setFormError] = useState("");
-  const [saving, setSaving] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
-  const [selectedSite, setSelectedSite] = useState<SiteResponse | null>(null);
+  const [selectedSite, setSelectedSite] = useSelectedEntity(sites);
   const [form, setForm] = useState<UpsertSiteRequest>(EMPTY_SITE_FORM);
   // Erros de campo so apos tentativa de salvar (evita vermelho no form vazio).
   const [showValidation, setShowValidation] = useState(false);
@@ -128,14 +138,56 @@ export function SitesPage() {
     return map;
   }, [categories]);
 
-  useEffect(() => {
-    setSelectedSite((current) => {
-      if (!current) {
-        return null;
+  async function invalidateSiteQueries() {
+    await invalidate.sites();
+  }
+
+  const saveMutation = useAdminMutation<SiteResponse, SaveSiteVariables>({
+    mutationFn: async ({ editingId: id, payload }) =>
+      id ? updateSite(id, payload) : createSite(payload),
+    successMessage: (_data, { editingId: id }) =>
+      id ? "Site atualizado com sucesso." : "Site criado com sucesso.",
+    errorFallback: "Falha ao salvar site",
+    toastError: false,
+    invalidate: invalidateSiteQueries,
+    onSuccess: () => {
+      closeFormModal();
+    },
+    onError: (error) => {
+      setFormError(error.message);
+    }
+  });
+
+  const toggleMutation = useAdminMutation<SiteResponse, ToggleSiteVariables>({
+    mutationFn: ({ site, nextStatus }) => toggleSiteStatus(site.id, nextStatus),
+    successMessage: (_data, { nextStatus }) =>
+      nextStatus === "1" ? "Site ativado com sucesso." : "Site desativado com sucesso.",
+    errorFallback: "Falha ao alterar status",
+    invalidate: invalidateSiteQueries
+  });
+
+  const deleteMutation = useAdminMutation<void, number>({
+    mutationFn: (siteId) => deleteSite(siteId),
+    successMessage: "Site excluido com sucesso.",
+    errorFallback: "Falha ao excluir site",
+    invalidate: invalidateSiteQueries,
+    onSuccess: (_data, siteId) => {
+      if (editingId === siteId) {
+        closeFormModal();
       }
-      return sites.find((item) => item.id === current.id) ?? null;
-    });
-  }, [sites]);
+      if (selectedSite?.id === siteId) {
+        setSelectedSite(null);
+      }
+      setConfirmDeleteId(null);
+    },
+    onError: (error) => {
+      setFormError(error.message);
+      setConfirmDeleteId(null);
+    }
+  });
+
+  const saving =
+    saveMutation.isPending || toggleMutation.isPending || deleteMutation.isPending;
 
   function resetForm() {
     setForm(EMPTY_SITE_FORM);
@@ -198,32 +250,23 @@ export function SitesPage() {
       return;
     }
     setFormError("");
-    setSaving(true);
     try {
-      const payload: UpsertSiteRequest = {
-        categoryIds: [...form.categoryIds],
-        authorId: form.authorId,
-        title: form.title.trim(),
-        description: form.description.trim(),
-        coverImage: form.coverImage?.trim() || null,
-        fileType: form.fileType,
-        fileUrl: form.fileUrl?.trim() || null,
-        featured: form.featured,
-        status: form.status
-      };
-      if (editingId) {
-        await updateSite(editingId, payload);
-        showToast("Site atualizado com sucesso.", "success");
-      } else {
-        await createSite(payload);
-        showToast("Site criado com sucesso.", "success");
-      }
-      closeFormModal();
-      await invalidate.sites();
-    } catch (submitError) {
-      setFormError(submitError instanceof Error ? submitError.message : "Falha ao salvar site");
-    } finally {
-      setSaving(false);
+      await saveMutation.mutateAsync({
+        editingId,
+        payload: {
+          categoryIds: [...form.categoryIds],
+          authorId: form.authorId,
+          title: form.title.trim(),
+          description: form.description.trim(),
+          coverImage: form.coverImage?.trim() || null,
+          fileType: form.fileType,
+          fileUrl: form.fileUrl?.trim() || null,
+          featured: form.featured,
+          status: form.status
+        }
+      });
+    } catch {
+      // Erro ja tratado em onError do useAdminMutation (formError).
     }
   }
 
@@ -247,50 +290,17 @@ export function SitesPage() {
     setFormModalOpen(true);
   }
 
-  async function handleToggleStatus(site: SiteResponse) {
+  function handleToggleStatus(site: SiteResponse) {
     const nextStatus: "0" | "1" = site.status === "1" ? "0" : "1";
-    setSaving(true);
-    try {
-      await toggleSiteStatus(site.id, nextStatus);
-      const label = nextStatus === "1" ? "ativado" : "desativado";
-      showToast(`Site ${label} com sucesso.`, "success");
-      await invalidate.sites();
-    } catch (toggleError) {
-      const message =
-        toggleError instanceof Error ? toggleError.message : "Falha ao alterar status";
-      showToast(message, "error");
-    } finally {
-      setSaving(false);
-    }
+    toggleMutation.mutate({ site, nextStatus });
   }
 
-  async function handleConfirmDelete() {
+  function handleConfirmDelete() {
     if (confirmDeleteId === null) {
       return;
     }
-    const siteId = confirmDeleteId;
     setFormError("");
-    setSaving(true);
-    try {
-      await deleteSite(siteId);
-      if (editingId === siteId) {
-        closeFormModal();
-      }
-      if (selectedSite?.id === siteId) {
-        setSelectedSite(null);
-      }
-      showToast("Site excluido com sucesso.", "success");
-      await invalidate.sites();
-    } catch (deleteError) {
-      setFormError(deleteError instanceof Error ? deleteError.message : "Falha ao excluir site");
-      showToast(
-        deleteError instanceof Error ? deleteError.message : "Falha ao excluir site",
-        "error"
-      );
-    } finally {
-      setSaving(false);
-      setConfirmDeleteId(null);
-    }
+    deleteMutation.mutate(confirmDeleteId);
   }
 
   const filteredSites = useMemo(() => {
