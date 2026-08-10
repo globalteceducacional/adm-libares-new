@@ -28,10 +28,13 @@ Invoke-RestMethod "http://localhost:8080/api_sites.php?method_name=home"
 
 ## Produção
 
-- [ ] Merge/PR da branch + deploy VPS (`deploy-vps.sh`)
+- [x] Código reader em `main` (Tasks 1–8)
+- [ ] Deploy VPS com frontend rebuild (`deploy-vps.sh`) — **obrigatório** após proxy nginx dos `.php`
 - [ ] Flyway V20–V22 aplicados (`tbl_active_log`, social, `tbl_settings`)
 - [ ] `LEGACY_PUBLIC_BASE_URL` + `LEGACY_ASSETS_ROOT` (images/uploads)
-- [ ] Homolog Flutter OK só com Kotlin
+- [x] Nginx container (`frontend-admin/nginx.conf`): proxy de `/api.php`, `/api_sites.php`, `/user_*.php` → backend
+- [ ] Smoke HTTPS: `api.php?method_name=home` e `user_login_api.php` retornam JSON (não HTML do SPA)
+- [ ] Homolog Flutter OK só com Kotlin (`EBOOK_SITE_BASE_URL` → admin Kotlin)
 - [ ] DNS/proxy legado → Spring **ou** release do app com novo host
 - [ ] Desligar Apache/PHP ebook + APIs site
 - [ ] Jogos / `api_jogos.php` deliberadamente fora

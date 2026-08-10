@@ -170,11 +170,13 @@ Marcar conforme avançar. Detalhe completo (código, testes, commits) está no p
 - [x] IT: `app_details` tem `app_name`; smoke `api_sites` home/cat_list
 - [x] Commit: `feat(reader): mirror app_details and api_sites.php`
 
-### Task 8 — Regressão + smoke cutover (Onda 6) — **PARCIAL** (2026-08-04)
+### Task 8 — Regressão + smoke cutover (Onda 6) — **PARCIAL** (2026-08-04 / retomado 2026-08-10)
 
 - [x] `.\gradlew.bat test --tests com.libare.adm.reader.*` (+ CreateUserIT)
-- [ ] User criado no admin (BCrypt) loga via `/user_login_api.php` — validar no smoke manual pós-deploy
-- [ ] cURL smoke: home, cat_list, login — ver checklist
+- [x] Proxy nginx do container frontend: `/api.php`, `/api_sites.php`, `/user_*.php` → Spring (antes o SPA engolia as rotas)
+- [ ] Deploy VPS + rebuild **frontend** (nginx.conf embutido na imagem)
+- [ ] User criado no admin (BCrypt) loga via `/user_login_api.php` — smoke pós-deploy
+- [ ] cURL smoke HTTPS: home, cat_list, login — ver checklist
 - [ ] Flutter: apontar base URL para Kotlin; validar ebook (+ Site se usado)
 - [ ] Checklist produção: DNS/proxy → Kotlin; desligar PHP ebook/site; manter `LEGACY_ASSETS_ROOT`
 - [x] Checklist escrito: `docs/superpowers/plans/2026-08-04-reader-api-cutover-checklist.md`
