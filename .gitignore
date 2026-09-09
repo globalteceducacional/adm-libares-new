@@ -53,6 +53,10 @@ my.ini.adm-libare.bak
 
 # ===== Gradle local (worktree) =====
 .gradle-home/
+.gradle-home-local/
+
+# Cache TypeScript do Vite (nao commitar)
+frontend-admin/tsconfig.tsbuildinfo
 
 # ===== PHP legado (repositorio git proprio, fora do escopo deste repo) =====
 adm-libares/
