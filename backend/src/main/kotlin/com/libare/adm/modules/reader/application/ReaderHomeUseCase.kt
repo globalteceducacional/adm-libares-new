@@ -28,19 +28,19 @@ class ReaderHomeUseCase(
             "WHERE tbl_books.featured = 1",
             "ORDER BY tbl_books.id DESC",
             acervoId,
-            catIdAsArray = true
+            catIdAsArray = false
         )
         val latest = queryBooks(
             "WHERE tbl_books.status = 1 OR tbl_books.status = '1'",
             "ORDER BY tbl_books.id DESC LIMIT 3",
             acervoId,
-            catIdAsArray = true
+            catIdAsArray = false
         )
         val popular = queryBooks(
             "",
             "ORDER BY tbl_books.book_views DESC, tbl_books.total_rate DESC LIMIT 3",
             acervoId,
-            catIdAsArray = true
+            catIdAsArray = false
         )
         return EbookAppEnvelope.obj(
             mapOf(
