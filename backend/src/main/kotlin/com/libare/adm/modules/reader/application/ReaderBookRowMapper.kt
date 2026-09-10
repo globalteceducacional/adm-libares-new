@@ -16,8 +16,8 @@ class ReaderBookRowMapper(
         stripDescription: Boolean = false
     ): MutableMap<String, Any?> {
         val catRaw = rs.getString("cat_id").orEmpty()
-        val cover = absolutizeAsset(rs.getString("book_cover_img"))
-        val fileUrl = absolutizeAsset(rs.getString("book_file_url"))
+        val cover = urls.resolve(rs.getString("book_cover_img").orEmpty(), "images")
+        val fileUrl = urls.resolve(rs.getString("book_file_url").orEmpty(), "uploads")
         val catImage = rs.getString("category_image")
         val row = mutableMapOf<String, Any?>(
             "id" to rs.getLong("id"),
@@ -57,11 +57,4 @@ class ReaderBookRowMapper(
 
     private fun splitCsv(raw: String): List<String> =
         if (raw.isBlank()) emptyList() else raw.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-
-    private fun absolutizeAsset(value: String?): String {
-        if (value.isNullOrBlank()) return ""
-        if (value.startsWith("http://") || value.startsWith("https://")) return value
-        // Capa/arquivo no legado ficam em images/ ou uploads/
-        return if (value.contains("/")) urls.uploads(value) else urls.images(value)
-    }
 }

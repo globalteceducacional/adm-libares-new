@@ -1,6 +1,6 @@
 package com.libare.adm.modules.site.reader
 
-import org.springframework.beans.factory.annotation.Value
+import com.libare.adm.modules.reader.application.LegacyAssetUrlBuilder
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import java.sql.ResultSet
@@ -14,7 +14,7 @@ import java.util.Locale
 @Component
 class SiteReaderQueries(
     private val jdbc: JdbcTemplate,
-    @Value("\${app.legacy.public-base-url:http://localhost:8080}") private val publicBaseUrl: String
+    private val urls: LegacyAssetUrlBuilder
 ) {
     private val zone = ZoneId.of("America/Sao_Paulo")
     private val commentDateBookId = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH)
@@ -26,23 +26,11 @@ class SiteReaderQueries(
         LEFT JOIN Autores_site ON Sites.aid = Autores_site.author_id
     """.trimIndent()
 
-    fun imageUrl(filename: String?): String {
-        val name = filename.orEmpty()
-        val base = publicBaseUrl.trim().trimEnd('/')
-        return "$base/legacy/assets/images/$name"
-    }
+    fun imageUrl(filename: String?): String = urls.images(filename)
 
-    fun imageThumbUrl(filename: String?): String {
-        val name = filename.orEmpty()
-        val base = publicBaseUrl.trim().trimEnd('/')
-        return "$base/legacy/assets/images/thumbs/$name"
-    }
+    fun imageThumbUrl(filename: String?): String = urls.imageThumb(filename)
 
-    fun uploadUrl(filename: String?): String {
-        val name = filename.orEmpty()
-        val base = publicBaseUrl.trim().trimEnd('/')
-        return "$base/legacy/assets/uploads/$name"
-    }
+    fun uploadUrl(filename: String?): String = urls.uploads(filename)
 
     fun loadApiSettings(): ApiOrderSettings {
         val rows = jdbc.query(
