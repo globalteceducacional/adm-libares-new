@@ -144,7 +144,7 @@ export function BooksForm({
   return (
     <form className="book-form modern" onSubmit={onSubmit} noValidate>
       <label className="form-field form-field--span-2" htmlFor={titleId}>
-        <span>Titulo</span>
+        <span>Título</span>
         <input
           id={titleId}
           type="text"
@@ -185,7 +185,7 @@ export function BooksForm({
         ) : null}
         {form.authorId > 0 && !selectedAuthorExists ? (
           <small className="warning-text">
-            Autor atual nao esta ativo na lista. O vinculo sera preservado se voce salvar sem alterar este campo.
+            Autor atual não está ativo na lista. O vínculo será preservado se você salvar sem alterar este campo.
           </small>
         ) : null}
       </div>
@@ -215,7 +215,7 @@ export function BooksForm({
               alt="Pre-visualizacao da capa"
               className="book-form-cover"
               fallbackClassName="book-form-cover-placeholder"
-              fallbackText="Capa indisponivel (arquivo nao encontrado no servidor)"
+              fallbackText="Capa indisponível (arquivo não encontrado no servidor)"
             />
             <small className="form-hint">{form.bookCoverImage}</small>
           </div>
@@ -270,7 +270,7 @@ export function BooksForm({
           aria-describedby={isAcervosInvalid ? acervosErrorId : undefined}
         />
         <small className="form-hint">
-          Selecione em quais acervos o livro ficara disponivel. Sem acervo, o livro nao aparece no app.
+          Selecione em quais acervos o livro ficará disponível. Sem acervo, o livro não aparece no app.
         </small>
         {isAcervosInvalid ? (
           <small id={acervosErrorId} role="alert" className="warning-text">
@@ -280,13 +280,13 @@ export function BooksForm({
       </fieldset>
 
       <label className="form-field form-field--full" htmlFor={descriptionId}>
-        <span>Descricao</span>
+        <span>Descrição</span>
         <textarea
           id={descriptionId}
           rows={6}
           value={form.description}
           onChange={(event) => onChange({ ...form, description: event.target.value })}
-          placeholder="Descricao do livro (aceita HTML como no legado)"
+          placeholder="Descrição do livro (aceita HTML como no legado)"
           required
           aria-invalid={isDescriptionInvalid || undefined}
           aria-describedby={isDescriptionInvalid ? descriptionErrorId : undefined}

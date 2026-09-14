@@ -218,7 +218,7 @@ export function AcervosPage() {
       },
       {
         key: "users",
-        label: "Usuarios",
+        label: "Usuários",
         align: "right",
         render: (acervo) => acervo.userCount.toLocaleString("pt-BR")
       },
@@ -229,7 +229,7 @@ export function AcervosPage() {
       },
       {
         key: "actions",
-        label: "Acoes",
+        label: "Ações",
         stopRowClick: true,
         render: (acervo) => (
           <TableRowActions>
@@ -288,7 +288,7 @@ export function AcervosPage() {
       { label: "Ativos", value: active },
       { label: "Livros vinculados", value: totalBooks },
       {
-        label: "Usuarios vinculados",
+        label: "Usuários vinculados",
         value: totalUsers,
         hint: `${filteredAcervos.length} exibidos com filtros`
       }

@@ -95,7 +95,7 @@ export function BooksPage() {
           ...authorOptions,
           {
             id: form.authorId,
-            name: `⚠ Autor vinculado (inativo/indisponivel)`
+            name: `⚠ Autor vinculado (inativo/indisponível)`
           }
         ]
       : authorOptions;
@@ -159,7 +159,7 @@ export function BooksPage() {
 
   const deleteMutation = useAdminMutation<void, number>({
     mutationFn: (bookId) => deleteBook(bookId),
-    successMessage: "Livro excluido com sucesso.",
+    successMessage: "Livro excluído com sucesso.",
     errorFallback: "Falha ao excluir livro",
     invalidate: invalidateBookQueries,
     onSuccess: (_data, bookId) => {
@@ -238,7 +238,7 @@ export function BooksPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (editingId ? !canUpdateBook : !canCreateBook) {
-      setFormError("Sem permissao para esta acao.");
+      setFormError("Sem permissão para esta ação.");
       return;
     }
     setShowValidation(true);
@@ -344,11 +344,11 @@ export function BooksPage() {
             alt={`Capa de ${book.title}`}
             className="table-book-cover"
             fallbackClassName="table-book-cover-placeholder"
-            fallbackText="Imagem indisponivel no legado"
+            fallbackText="Imagem indisponível no legado"
           />
         )
       },
-      { key: "title", label: "Titulo", render: (book) => decodeHtmlEntities(book.title) },
+      { key: "title", label: "Título", render: (book) => decodeHtmlEntities(book.title) },
       {
         key: "author",
         label: "Autor",
@@ -386,7 +386,7 @@ export function BooksPage() {
       },
       {
         key: "actions",
-        label: "Acoes",
+        label: "Ações",
         stopRowClick: true,
         render: (book) => (
           <TableRowActions>
@@ -507,7 +507,7 @@ export function BooksPage() {
                 alt={`Capa de ${book.title}`}
                 className="book-card-cover"
                 fallbackClassName="book-card-cover-placeholder"
-                fallbackText="Imagem indisponivel"
+                fallbackText="Imagem indisponível"
               />
             </div>
             <div className="book-card-body">
@@ -615,7 +615,7 @@ export function BooksPage() {
       <ConfirmDialog
         open={confirmDeleteId !== null}
         title="Excluir livro"
-        description="Esta acao nao pode ser desfeita. Deseja realmente excluir este livro?"
+        description="Esta ação não pode ser desfeita. Deseja realmente excluir este livro?"
         confirmLabel="Excluir"
         loading={saving}
         onConfirm={handleConfirmDelete}

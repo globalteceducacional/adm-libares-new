@@ -27,7 +27,7 @@ export function CommentDetailModal({
   const bookTitle = decodeHtmlEntities(comment.bookTitle) || `Livro #${comment.bookId}`;
   const userName =
     decodeHtmlEntities(comment.userName) ||
-    (comment.userId ? `Usuario #${comment.userId}` : "Usuario anonimo");
+    (comment.userId ? `Usuário #${comment.userId}` : "Usuário anônimo");
   const text = decodeHtmlEntities(comment.commentText);
   const isPublished = comment.status === "1";
 
@@ -35,7 +35,7 @@ export function CommentDetailModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={`Comentario #${comment.id}`}
+      title={`Comentário #${comment.id}`}
       description={bookTitle}
       size="lg"
       className="max-w-xl"
@@ -79,14 +79,14 @@ export function CommentDetailModal({
         />
         <DetailField label="Livro" value={bookTitle} className="sm:col-span-2" />
         <DetailField label="ID do livro" value={`#${comment.bookId}`} />
-        <DetailField label="Usuario" value={userName} />
+        <DetailField label="Usuário" value={userName} />
         {comment.commentOn ? (
           <DetailField label="Data" value={decodeHtmlEntities(comment.commentOn)} className="sm:col-span-2" />
         ) : null}
       </dl>
 
       <div className="mt-5 border-t border-border pt-4">
-        <h3 className="text-xs font-medium uppercase tracking-wide text-muted">Comentario</h3>
+        <h3 className="text-xs font-medium uppercase tracking-wide text-muted">Comentário</h3>
         <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground">{text}</p>
       </div>
     </Modal>

@@ -156,7 +156,7 @@ export function SitesForm({
       </div>
 
       <label className="form-field" htmlFor={titleId}>
-        <span>Titulo</span>
+        <span>Título</span>
         <input
           id={titleId}
           type="text"
@@ -175,7 +175,7 @@ export function SitesForm({
       </label>
 
       <label className="form-field form-field--full" htmlFor={descriptionId}>
-        <span>Descricao</span>
+        <span>Descrição</span>
         <textarea
           id={descriptionId}
           rows={6}
@@ -214,7 +214,7 @@ export function SitesForm({
               alt="Pre-visualizacao da capa"
               className="book-form-cover"
               fallbackClassName="book-form-cover-placeholder"
-              fallbackText="Capa indisponivel"
+              fallbackText="Capa indisponível"
             />
             <small className="form-hint">{form.coverImage}</small>
           </div>

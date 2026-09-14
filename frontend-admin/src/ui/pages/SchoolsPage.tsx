@@ -209,7 +209,7 @@ export function SchoolsPage() {
       },
       {
         key: "actions",
-        label: "Acoes",
+        label: "Ações",
         stopRowClick: true,
         render: (school) => (
           <TableRowActions>

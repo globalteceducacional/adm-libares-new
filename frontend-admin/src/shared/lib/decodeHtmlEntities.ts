@@ -28,8 +28,13 @@ export function decodeHtmlEntities(value: string | null | undefined): string {
       .replace(/&ccedil;/g, "ç")
       .replace(/&Ccedil;/g, "Ç")
       .replace(/&agrave;/g, "à")
+      .replace(/&acirc;/g, "â")
+      .replace(/&Acirc;/g, "Â")
       .replace(/&ocirc;/g, "ô")
-      .replace(/&ecirc;/g, "ê");
+      .replace(/&ecirc;/g, "ê")
+      .replace(/&otilde;/g, "õ")
+      .replace(/&Otilde;/g, "Õ")
+      .replace(/&nbsp;/g, " ");
   }
   const doc = new DOMParser().parseFromString(value, "text/html");
   return doc.documentElement.textContent ?? value;

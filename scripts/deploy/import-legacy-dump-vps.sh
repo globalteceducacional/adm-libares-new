@@ -17,7 +17,10 @@ if [ ! -f "$DUMP" ]; then
 fi
 
 mysql_db() {
-  docker compose exec -T db mysql -uroot -proot --default-character-set=utf8mb4 "$@"
+  docker compose exec -T db mysql -uroot -proot \
+    --default-character-set=utf8mb4 \
+    --max-allowed-packet=64M \
+    "$@"
 }
 
 echo "==> Dump: $DUMP ($(du -h "$DUMP" | awk '{print $1}'))"
@@ -46,6 +49,7 @@ echo "==> Restantes:"
 mysql_db -N -e "SELECT table_name FROM information_schema.tables WHERE table_schema='adm_libare' ORDER BY 1;"
 
 echo "==> Importando dump..."
+mysql_db -e "SET GLOBAL max_allowed_packet=67108864;"
 mysql_db adm_libare < "$DUMP"
 
 echo "==> school_id em acervos/users + status em comments..."

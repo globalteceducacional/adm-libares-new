@@ -85,7 +85,7 @@ export function SiteSectionDetailModal({
     >
       <dl className="grid gap-4">
         <DetailField label="ID" value={`#${section.id}`} />
-        <DetailField label="Titulo" value={title} />
+        <DetailField label="Título" value={title} />
         <DetailField label="Status" value={<StatusBadge active={section.status === "1"} />} />
         <DetailField label="Sites" value={`${section.siteCount} site(s)`} />
       </dl>

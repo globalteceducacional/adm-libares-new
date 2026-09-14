@@ -168,7 +168,7 @@ export function CategoriesPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (editingId ? !canUpdateCategory : !canCreateCategory) {
-      setFormError("Sem permissao para esta acao.");
+      setFormError("Sem permissão para esta ação.");
       return;
     }
     setShowValidation(true);
@@ -257,7 +257,7 @@ export function CategoriesPage() {
       },
       {
         key: "actions",
-        label: "Acoes",
+        label: "Ações",
         stopRowClick: true,
         render: (category) => (
           <TableRowActions>

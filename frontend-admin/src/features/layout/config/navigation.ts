@@ -48,14 +48,14 @@ export type NavGroupConfig = {
 export const NAV_GROUPS: NavGroupConfig[] = [
   {
     id: "overview",
-    label: "Visao Geral",
+    label: "Visão Geral",
     items: [
       {
         id: "dashboard",
         to: "/dashboard",
         label: "Dashboard",
         icon: LayoutDashboard,
-        description: "Metricas e indicadores",
+        description: "Métricas e indicadores",
         permission: "reports.view",
         keywords: ["inicio", "home", "painel"]
       }
@@ -63,7 +63,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
   },
   {
     id: "catalog",
-    label: "Catalogo",
+    label: "Catálogo",
     collapsible: true,
     defaultExpanded: true,
     items: [
@@ -72,7 +72,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         to: "/livros",
         label: "Livros",
         icon: BookOpen,
-        description: "Cadastro e gestao de livros",
+        description: "Cadastro e gestão de livros",
         badgeKey: "books",
         permission: "books.view",
         keywords: ["catalogo", "obras", "titulos"]
@@ -82,7 +82,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         to: "/autores",
         label: "Autores",
         icon: Pencil,
-        description: "Autores do catalogo",
+        description: "Autores do catálogo",
         badgeKey: "authors",
         permission: "books.update",
         keywords: ["escritores", "catalogo"]
@@ -92,7 +92,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         to: "/categorias",
         label: "Categorias",
         icon: Tags,
-        description: "Categorias globais do catalogo",
+        description: "Categorias globais do catálogo",
         badgeKey: "categories",
         permission: "books.update",
         keywords: ["categoria", "catalogo"]
@@ -130,7 +130,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         to: "/sites",
         label: "Sites",
         icon: Globe,
-        description: "Conteudos do catalogo Site",
+        description: "Conteúdos do catálogo Site",
         permission: "sites.view",
         keywords: ["site", "web", "conteudo"]
       },
@@ -139,7 +139,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         to: "/sites/autores",
         label: "Autores",
         icon: Pencil,
-        description: "Autores do catalogo Site",
+        description: "Autores do catálogo Site",
         permission: "sites.update",
         keywords: ["site", "autores"]
       },
@@ -148,7 +148,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         to: "/sites/categorias",
         label: "Categorias",
         icon: Tags,
-        description: "Categorias do catalogo Site",
+        description: "Categorias do catálogo Site",
         permission: "sites.update",
         keywords: ["site", "categorias"]
       },
@@ -166,7 +166,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         to: "/sites/comentarios",
         label: "Comentários",
         icon: MessageSquareText,
-        description: "Moderacao de comentarios do Site",
+        description: "Moderação de comentários do Site",
         permission: "sites.comments.view",
         keywords: ["site", "comentarios", "moderacao"]
       }
@@ -181,7 +181,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
       {
         id: "users",
         to: "/usuarios",
-        label: "Usuarios do app",
+        label: "Usuários do app",
         icon: Users,
         description: "Leitores do app (acervo)",
         badgeKey: "users",
@@ -191,9 +191,9 @@ export const NAV_GROUPS: NavGroupConfig[] = [
       {
         id: "comments",
         to: "/comentarios",
-        label: "Comentarios",
+        label: "Comentários",
         icon: MessageSquareText,
-        description: "Moderacao de comentarios",
+        description: "Moderação de comentários",
         badgeKey: "comments",
         permission: "users.view",
         keywords: ["moderacao", "reviews"]
@@ -229,7 +229,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         to: "/perfis",
         label: "Perfis",
         icon: Shield,
-        description: "Perfis e permissoes da escola",
+        description: "Perfis e permissões da escola",
         permission: "roles.view",
         keywords: ["rbac", "permissoes", "acesso"]
       },
@@ -238,7 +238,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         to: "/auditoria",
         label: "Auditoria",
         icon: ClipboardList,
-        description: "Logs e consistencia de dados",
+        description: "Logs e consistência de dados",
         permission: "reports.view",
         keywords: ["logs", "historico", "rastreio"]
       }

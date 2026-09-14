@@ -264,7 +264,7 @@ export function RolesPage() {
       {
         key: "permissions",
         label: "Permissoes",
-        render: (role) => `${role.permissionCodes.length} permissao(oes)`
+        render: (role) => `${role.permissionCodes.length} permissão(ões)`
       },
       {
         key: "status",
@@ -273,7 +273,7 @@ export function RolesPage() {
       },
       {
         key: "actions",
-        label: "Acoes",
+        label: "Ações",
         stopRowClick: true,
         render: (role) => (
           <TableRowActions>

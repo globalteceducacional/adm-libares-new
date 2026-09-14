@@ -81,13 +81,13 @@ export function RolesForm({
           items={permissionItems}
           selectedIds={form.permissionCodes}
           onToggle={onTogglePermission}
-          searchPlaceholder="Buscar permissao por codigo ou modulo..."
+          searchPlaceholder="Buscar permissão por código ou módulo..."
           tall
           disabled={fieldsDisabled || !canManageRoles}
-          emptyMessage="Nenhuma permissao disponivel."
+          emptyMessage="Nenhuma permissão disponível."
         />
         {isPermissionsInvalid ? (
-          <small className="warning-text">Selecione ao menos uma permissao.</small>
+          <small className="warning-text">Selecione ao menos uma permissão.</small>
         ) : null}
       </fieldset>
 

@@ -81,11 +81,11 @@ export function AcervoDetailModal({
         <DetailField label="ID" value={`#${acervo.id}`} />
         <DetailField label="Status" value={<StatusBadge active={acervo.status === "1"} />} />
         <DetailField label="Livros vinculados" value={acervo.bookCount.toLocaleString("pt-BR")} />
-        <DetailField label="Usuarios vinculados" value={acervo.userCount.toLocaleString("pt-BR")} />
+        <DetailField label="Usuários vinculados" value={acervo.userCount.toLocaleString("pt-BR")} />
       </dl>
       {description ? (
         <div className="mt-5 border-t border-border pt-4">
-          <h3 className="text-xs font-medium uppercase tracking-wide text-muted">Descricao</h3>
+          <h3 className="text-xs font-medium uppercase tracking-wide text-muted">Descrição</h3>
           <p className="mt-2 max-h-48 overflow-y-auto text-sm leading-relaxed text-foreground">{description}</p>
         </div>
       ) : null}

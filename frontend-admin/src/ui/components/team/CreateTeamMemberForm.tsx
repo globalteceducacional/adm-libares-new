@@ -53,7 +53,7 @@ export function CreateTeamMemberForm({
   return (
     <form className="book-form modern" onSubmit={onSubmit} noValidate>
       <label className="form-field">
-        <span>Usuario</span>
+        <span>Usuário</span>
         <input
           type="text"
           value={form.username}

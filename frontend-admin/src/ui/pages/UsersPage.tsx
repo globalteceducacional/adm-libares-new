@@ -132,7 +132,7 @@ export function UsersPage() {
         ? updateUserProfile(id, toUpdateUserProfileRequest(formState))
         : createUser(toCreateUserRequest(formState)),
     successMessage: (_data, { editingId: id }) =>
-      id ? "Perfil do usuario atualizado com sucesso." : "Usuario criado com sucesso.",
+      id ? "Perfil do usuário atualizado com sucesso." : "Usuário criado com sucesso.",
     errorFallback: "Falha ao salvar usuario",
     toastError: false,
     invalidate: invalidateUserQueries,
@@ -150,14 +150,14 @@ export function UsersPage() {
       return updateUserStatus(user.id, { status: nextStatus });
     },
     successMessage: (_data, user) =>
-      user.status === "0" ? "Usuario ativado com sucesso." : "Usuario desativado com sucesso.",
+      user.status === "0" ? "Usuário ativado com sucesso." : "Usuário desativado com sucesso.",
     errorFallback: "Falha ao atualizar status",
     invalidate: invalidateUserQueries
   });
 
   const deleteMutation = useAdminMutation<void, number>({
     mutationFn: (userId) => deleteUser(userId),
-    successMessage: "Usuario excluido com sucesso.",
+    successMessage: "Usuário excluído com sucesso.",
     errorFallback: "Falha ao excluir usuario",
     invalidate: invalidateUserQueries,
     onSuccess: (_data, userId) => {
@@ -306,7 +306,7 @@ export function UsersPage() {
       },
       {
         key: "actions",
-        label: "Acoes",
+        label: "Ações",
         stopRowClick: true,
         render: (user) => (
           <TableRowActions>
@@ -398,8 +398,8 @@ export function UsersPage() {
       hero={
         <PageHeroStrip
           icon={Users}
-          title="Usuarios do app"
-          description="Gerencie leitores do aplicativo, status de acesso e vinculo com acervos."
+          title="Usuários do app"
+          description="Gerencie leitores do aplicativo, status de acesso e vínculo com acervos."
           tone="info"
           actions={
             canCreateUser ? (
@@ -556,7 +556,7 @@ export function UsersPage() {
       <ConfirmDialog
         open={confirmDeleteId !== null}
         title="Excluir usuario"
-        description="Esta acao nao pode ser desfeita. Deseja realmente excluir este usuario?"
+        description="Esta ação não pode ser desfeita. Deseja realmente excluir este usuário?"
         confirmLabel="Excluir"
         loading={saving}
         onConfirm={handleConfirmDelete}

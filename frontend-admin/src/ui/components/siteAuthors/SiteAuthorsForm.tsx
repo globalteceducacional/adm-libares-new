@@ -59,7 +59,7 @@ export function SiteAuthorsForm({
           ) : null}
         </label>
         <label className="form-field" htmlFor={descriptionId}>
-          <span>Descricao</span>
+          <span>Descrição</span>
           <textarea
             id={descriptionId}
             rows={4}

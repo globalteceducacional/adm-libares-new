@@ -25,7 +25,7 @@ function auditReasonMessage(reason: string | undefined | null): string {
     case "AUDIT_QUERY_FAILED":
       return "Nao foi possivel ler as views de auditoria. Verifique logs do backend e o MySQL.";
     default:
-      return reason?.trim() ? reason : "Auditoria indisponivel.";
+      return reason?.trim() ? reason : "Auditoria indisponível.";
   }
 }
 
@@ -59,7 +59,7 @@ export function AuditPage() {
 
   const moduleColumns = useMemo<DataTableColumn<AuditModuleSummaryRow>[]>(
     () => [
-      { key: "module", label: "Modulo", render: (row) => row.moduleName },
+      { key: "module", label: "Módulo", render: (row) => row.moduleName },
       {
         key: "total",
         label: "Total",
@@ -84,9 +84,9 @@ export function AuditPage() {
 
   const softDeleteColumns = useMemo<DataTableColumn<AuditSoftDeleteRow>[]>(
     () => [
-      { key: "mod", label: "Modulo", render: (row) => row.moduleName },
+      { key: "mod", label: "Módulo", render: (row) => row.moduleName },
       { key: "id", label: "ID", render: (row) => row.entityId },
-      { key: "label", label: "Descricao", render: (row) => row.entityLabel ?? "—" },
+      { key: "label", label: "Descrição", render: (row) => row.entityLabel ?? "—" },
       {
         key: "by",
         label: "Excluido por (id)",

@@ -103,7 +103,7 @@ export function AuthorDetailModal({
       </div>
       {description ? (
         <div className="mt-5 border-t border-border pt-4">
-          <h3 className="text-xs font-medium uppercase tracking-wide text-muted">Descricao</h3>
+          <h3 className="text-xs font-medium uppercase tracking-wide text-muted">Descrição</h3>
           <p className="mt-2 max-h-48 overflow-y-auto text-sm leading-relaxed text-foreground">{description}</p>
         </div>
       ) : null}

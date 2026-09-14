@@ -56,7 +56,7 @@ export function SiteSectionsForm({
       <fieldset className="form-field acervo-fieldset">
         <legend>Identificacao</legend>
         <label className="form-field" htmlFor={titleId}>
-          <span>Titulo</span>
+          <span>Título</span>
           <input
             id={titleId}
             type="text"

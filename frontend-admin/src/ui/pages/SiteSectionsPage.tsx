@@ -163,7 +163,7 @@ export function SiteSectionsPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (editingId ? !canUpdate : !canCreate) {
-      setFormError("Sem permissao para esta acao.");
+      setFormError("Sem permissão para esta ação.");
       return;
     }
     setShowValidation(true);
@@ -231,7 +231,7 @@ export function SiteSectionsPage() {
   const columns = useMemo<DataTableColumn<SiteSectionResponse>[]>(
     () => [
       { key: "id", label: "ID", render: (section) => section.id },
-      { key: "title", label: "Titulo", render: (section) => decodeHtmlEntities(section.title) },
+      { key: "title", label: "Título", render: (section) => decodeHtmlEntities(section.title) },
       {
         key: "sites",
         label: "Sites",
@@ -244,7 +244,7 @@ export function SiteSectionsPage() {
       },
       {
         key: "actions",
-        label: "Acoes",
+        label: "Ações",
         stopRowClick: true,
         render: (section) => (
           <TableRowActions>

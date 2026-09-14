@@ -107,7 +107,7 @@ export function DashboardPage() {
         to: "/livros?status=1"
       },
       {
-        title: "Usuarios ativos",
+        title: "Usuários ativos",
         value: totals.activeUsers.toLocaleString("pt-BR"),
         hint: `${totals.activeUsersLast30Days.toLocaleString("pt-BR")} com atividade recente`,
         icon: Users,

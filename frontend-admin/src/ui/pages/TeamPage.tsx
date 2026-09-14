@@ -198,7 +198,7 @@ export function TeamPage() {
     () => [
       { key: "id", label: "ID", render: (member) => member.id },
       { key: "name", label: "Nome", render: (member) => decodeHtmlEntities(member.name) },
-      { key: "username", label: "Usuario", render: (member) => member.username },
+      { key: "username", label: "Usuário", render: (member) => member.username },
       {
         key: "school",
         label: "Escola",
@@ -219,7 +219,7 @@ export function TeamPage() {
         ? [
             {
               key: "actions",
-              label: "Acoes",
+              label: "Ações",
               stopRowClick: true,
               render: (member: TeamMemberResponse) => {
                 const isSelf = currentUserId === member.id;

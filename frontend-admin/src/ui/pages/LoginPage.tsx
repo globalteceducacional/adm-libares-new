@@ -92,7 +92,7 @@ export function LoginPage() {
           </div>
 
           <form className="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-card" onSubmit={handleSubmit} noValidate>
-            <Field label="Usuario" required>
+            <Field label="Usuário" required>
               <Input
                 type="text"
                 value={username}

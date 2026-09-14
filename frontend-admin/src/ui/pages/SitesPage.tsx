@@ -97,7 +97,7 @@ export function SitesPage() {
           ...activeAuthors,
           {
             id: form.authorId,
-            name: "Autor vinculado (inativo/indisponivel)",
+            name: "Autor vinculado (inativo/indisponível)",
             image: "",
             description: null,
             status: "0"
@@ -168,7 +168,7 @@ export function SitesPage() {
 
   const deleteMutation = useAdminMutation<void, number>({
     mutationFn: (siteId) => deleteSite(siteId),
-    successMessage: "Site excluido com sucesso.",
+    successMessage: "Site excluído com sucesso.",
     errorFallback: "Falha ao excluir site",
     invalidate: invalidateSiteQueries,
     onSuccess: (_data, siteId) => {
@@ -241,7 +241,7 @@ export function SitesPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (editingId ? !canUpdate : !canCreate) {
-      setFormError("Sem permissao para esta acao.");
+      setFormError("Sem permissão para esta ação.");
       return;
     }
     setShowValidation(true);
@@ -333,7 +333,7 @@ export function SitesPage() {
           />
         )
       },
-      { key: "title", label: "Titulo", render: (site) => decodeHtmlEntities(site.title) },
+      { key: "title", label: "Título", render: (site) => decodeHtmlEntities(site.title) },
       {
         key: "author",
         label: "Autor",
@@ -353,7 +353,7 @@ export function SitesPage() {
       },
       {
         key: "actions",
-        label: "Acoes",
+        label: "Ações",
         stopRowClick: true,
         render: (site) => (
           <TableRowActions>

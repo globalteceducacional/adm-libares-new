@@ -27,7 +27,7 @@ export function SiteCommentDetailModal({
   const siteLabel = `Site #${comment.siteId}`;
   const userName =
     decodeHtmlEntities(comment.userName) ||
-    (comment.userId ? `Usuario #${comment.userId}` : "Usuario anonimo");
+    (comment.userId ? `Usuário #${comment.userId}` : "Usuário anônimo");
   const text = decodeHtmlEntities(comment.commentText);
   const dateLabel = comment.commentOn || comment.dtRate || null;
 
@@ -35,7 +35,7 @@ export function SiteCommentDetailModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={`Comentario #${comment.id}`}
+      title={`Comentário #${comment.id}`}
       description={siteLabel}
       size="lg"
       className="max-w-xl"
@@ -63,7 +63,7 @@ export function SiteCommentDetailModal({
       <dl className="grid gap-4 sm:grid-cols-2">
         <DetailField label="ID" value={`#${comment.id}`} />
         <DetailField label="Site" value={siteLabel} />
-        <DetailField label="Usuario" value={userName} />
+        <DetailField label="Usuário" value={userName} />
         <DetailField label="Email" value={comment.userEmail || "-"} />
         {dateLabel ? (
           <DetailField
@@ -75,7 +75,7 @@ export function SiteCommentDetailModal({
       </dl>
 
       <div className="mt-5 border-t border-border pt-4">
-        <h3 className="text-xs font-medium uppercase tracking-wide text-muted">Comentario</h3>
+        <h3 className="text-xs font-medium uppercase tracking-wide text-muted">Comentário</h3>
         <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground">{text}</p>
       </div>
     </Modal>

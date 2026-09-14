@@ -48,8 +48,8 @@ export function CommentsPage() {
     successMessage: (_data, comment) => {
       const nextStatus = comment.status === "0" ? "1" : "0";
       return nextStatus === "1"
-        ? "Comentario publicado com sucesso."
-        : "Comentario ocultado com sucesso.";
+        ? "Comentário publicado com sucesso."
+        : "Comentário ocultado com sucesso.";
     },
     errorFallback: "Falha ao atualizar status",
     invalidate: invalidateCommentQueries,
@@ -60,7 +60,7 @@ export function CommentsPage() {
 
   const deleteMutation = useAdminMutation<void, number>({
     mutationFn: (commentId) => deleteComment(commentId),
-    successMessage: "Comentario excluido com sucesso.",
+    successMessage: "Comentário excluído com sucesso.",
     errorFallback: "Falha ao excluir comentario",
     invalidate: invalidateCommentQueries,
     onSuccess: (_data, commentId) => {
@@ -96,12 +96,12 @@ export function CommentsPage() {
       { key: "book", label: "Livro", render: (comment) => decodeHtmlEntities(comment.bookTitle) || `#${comment.bookId}` },
       {
         key: "user",
-        label: "Usuario",
+        label: "Usuário",
         render: (comment) => decodeHtmlEntities(comment.userName) || (comment.userId ? `#${comment.userId}` : "-")
       },
       {
         key: "text",
-        label: "Comentario",
+        label: "Comentário",
         tdClassName: "text-truncate-cell",
         render: (comment) => decodeHtmlEntities(comment.commentText)
       },
@@ -118,7 +118,7 @@ export function CommentsPage() {
       },
       {
         key: "actions",
-        label: "Acoes",
+        label: "Ações",
         stopRowClick: true,
         render: (comment) => (
           <TableRowActions>
@@ -190,7 +190,7 @@ export function CommentsPage() {
       hero={
         <PageHeroStrip
           icon={MessageSquare}
-          title="Comentarios"
+          title="Comentários"
           description="Modere comentarios publicados nos livros e controle a visibilidade."
           tone="primary"
         />
@@ -198,7 +198,7 @@ export function CommentsPage() {
       stats={<ListingMiniStats items={listStats} />}
     >
       <AdminListingSection<CommentResponse>
-        title="Lista de comentarios"
+        title="Lista de comentários"
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Buscar por livro, usuario, texto ou ID"
@@ -223,7 +223,7 @@ export function CommentsPage() {
               <h3>{decodeHtmlEntities(comment.bookTitle) || `Livro #${comment.bookId}`}</h3>
               <p className="book-card-author">
                 {decodeHtmlEntities(comment.userName) ||
-                  (comment.userId ? `Usuario #${comment.userId}` : "Usuario anonimo")}
+                  (comment.userId ? `Usuário #${comment.userId}` : "Usuário anônimo")}
               </p>
               <p className="book-card-author">{decodeHtmlEntities(comment.commentText)}</p>
               <StatusBadge
@@ -278,8 +278,8 @@ export function CommentsPage() {
 
       <ConfirmDialog
         open={confirmDeleteId !== null}
-        title="Excluir comentario"
-        description="Esta acao nao pode ser desfeita. Deseja realmente excluir este comentario?"
+        title="Excluir comentário"
+        description="Esta ação não pode ser desfeita. Deseja realmente excluir este comentário?"
         confirmLabel="Excluir"
         loading={saving}
         onConfirm={handleConfirmDelete}

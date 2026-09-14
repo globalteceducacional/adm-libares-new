@@ -101,7 +101,7 @@ export function BookDetailModal({
         <dl className="grid min-w-0 gap-4 sm:grid-cols-2">
           <DetailField label="ID" value={`#${book.id}`} />
           <DetailField label="Status" value={<StatusBadge active={book.status === "1"} />} />
-          <DetailField label="Titulo" value={title} className="sm:col-span-2" />
+          <DetailField label="Título" value={title} className="sm:col-span-2" />
           <DetailField label="Autor" value={authorLabel} />
           <DetailField
             label="Acervos"
@@ -148,7 +148,7 @@ export function BookDetailModal({
 
       {description ? (
         <div className="mt-5 border-t border-border pt-4">
-          <h3 className="text-xs font-medium uppercase tracking-wide text-muted">Descricao</h3>
+          <h3 className="text-xs font-medium uppercase tracking-wide text-muted">Descrição</h3>
           <p className="mt-2 max-h-48 overflow-y-auto text-sm leading-relaxed text-foreground">{description}</p>
         </div>
       ) : null}

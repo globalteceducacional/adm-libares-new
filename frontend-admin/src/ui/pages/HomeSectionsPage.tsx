@@ -178,7 +178,7 @@ export function HomeSectionsPage() {
       return;
     }
     if (editingId ? !canUpdate : !canCreate) {
-      setFormError("Sem permissao para esta acao.");
+      setFormError("Sem permissão para esta ação.");
       return;
     }
     setShowValidation(true);
@@ -246,7 +246,7 @@ export function HomeSectionsPage() {
   const columns = useMemo<DataTableColumn<HomeSectionResponse>[]>(
     () => [
       { key: "id", label: "ID", render: (section) => section.id },
-      { key: "title", label: "Titulo", render: (section) => decodeHtmlEntities(section.title) },
+      { key: "title", label: "Título", render: (section) => decodeHtmlEntities(section.title) },
       {
         key: "books",
         label: "Livros",
@@ -259,7 +259,7 @@ export function HomeSectionsPage() {
       },
       {
         key: "actions",
-        label: "Acoes",
+        label: "Ações",
         stopRowClick: true,
         render: (section) => (
           <TableRowActions>

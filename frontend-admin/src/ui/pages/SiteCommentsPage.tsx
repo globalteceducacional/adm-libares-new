@@ -46,7 +46,7 @@ export function SiteCommentsPage() {
 
   const deleteMutation = useAdminMutation<void, number>({
     mutationFn: (commentId) => deleteSiteComment(commentId),
-    successMessage: "Comentario excluido com sucesso.",
+    successMessage: "Comentário excluído com sucesso.",
     errorFallback: "Falha ao excluir comentario",
     invalidate: invalidateSiteCommentQueries,
     onSuccess: (_data, commentId) => {
@@ -81,7 +81,7 @@ export function SiteCommentsPage() {
       },
       {
         key: "user",
-        label: "Usuario",
+        label: "Usuário",
         render: (comment) =>
           decodeHtmlEntities(comment.userName) || (comment.userId ? `#${comment.userId}` : "-")
       },
@@ -92,7 +92,7 @@ export function SiteCommentsPage() {
       },
       {
         key: "text",
-        label: "Comentario",
+        label: "Comentário",
         tdClassName: "text-truncate-cell",
         render: (comment) => decodeHtmlEntities(comment.commentText)
       },
@@ -103,7 +103,7 @@ export function SiteCommentsPage() {
       },
       {
         key: "actions",
-        label: "Acoes",
+        label: "Ações",
         stopRowClick: true,
         render: (comment) =>
           canModerate ? (
@@ -163,7 +163,7 @@ export function SiteCommentsPage() {
       stats={<ListingMiniStats items={listStats} />}
     >
       <AdminListingSection<SiteCommentResponse>
-        title="Lista de comentarios"
+        title="Lista de comentários"
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Buscar por site, usuario, texto ou ID"
@@ -182,7 +182,7 @@ export function SiteCommentsPage() {
               <h3>Site #{comment.siteId}</h3>
               <p className="book-card-author">
                 {decodeHtmlEntities(comment.userName) ||
-                  (comment.userId ? `Usuario #${comment.userId}` : "Usuario anonimo")}
+                  (comment.userId ? `Usuário #${comment.userId}` : "Usuário anônimo")}
               </p>
               <p className="book-card-author">{decodeHtmlEntities(comment.commentText)}</p>
             </div>
@@ -223,8 +223,8 @@ export function SiteCommentsPage() {
 
       <ConfirmDialog
         open={confirmDeleteId !== null}
-        title="Excluir comentario"
-        description="Esta acao nao pode ser desfeita. Deseja realmente excluir este comentario?"
+        title="Excluir comentário"
+        description="Esta ação não pode ser desfeita. Deseja realmente excluir este comentário?"
         confirmLabel="Excluir"
         loading={saving}
         onConfirm={handleConfirmDelete}

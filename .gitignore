@@ -60,3 +60,7 @@ frontend-admin/tsconfig.tsbuildinfo
 
 # ===== PHP legado (repositorio git proprio, fora do escopo deste repo) =====
 adm-libares/
+
+# Dump MySQL legado (PII / hashes — nao commitar)
+u778451386_ebook.sql
+u778451386_ebook*.sql
