@@ -21,9 +21,13 @@ class GetAuditOverviewUseCase(
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
+    private companion object {
+        val LEGACY_STATUS_COLUMNS = listOf("status", "cat_status", "a_status")
+    }
+
     fun execute(): AuditOverviewResponse {
         if (dataMode.trim().lowercase() != "core") {
-            return AuditOverviewResponse(ok = false, reason = "CORE_MODE_REQUIRED")
+            return executeLegacy()
         }
         return try {
             AuditOverviewResponse(
@@ -40,6 +44,140 @@ class GetAuditOverviewUseCase(
             logger.warn("Falha ao consultar auditoria", ex)
             AuditOverviewResponse(ok = false, reason = "AUDIT_QUERY_FAILED")
         }
+    }
+
+    /** Contagens sobre tbl_* / dump PHP quando APP_DATA_MODE=legacy. */
+    private fun executeLegacy(): AuditOverviewResponse {
+        return try {
+            AuditOverviewResponse(
+                ok = true,
+                moduleSummary = loadLegacyModuleSummary(),
+                recentSoftDeletes = emptyList(),
+                actorActivity = emptyList(),
+                softDeleteConsistency = loadLegacyConsistency(),
+            )
+        } catch (ex: DataAccessException) {
+            logger.warn("Falha ao consultar auditoria legado", ex)
+            AuditOverviewResponse(ok = false, reason = "AUDIT_QUERY_FAILED")
+        }
+    }
+
+    /**
+     * O dump PHP usa nomes de status diferentes por tabela (`status`, `cat_status`, `a_status`)
+     * e `tbl_comments` nao tem status. A coluna e resolvida no schema para a pagina nunca
+     * falhar inteira por causa de uma tabela divergente.
+     */
+    private fun loadLegacyModuleSummary(): List<AuditModuleSummaryRow> {
+        val rows = mutableListOf<AuditModuleSummaryRow>()
+        countLegacy("tbl_books", "Livros")?.let { rows += it }
+        countLegacy("tbl_author", "Autores")?.let { rows += it }
+        countLegacy("tbl_category", "Categorias")?.let { rows += it }
+        countLegacy("tbl_home_section", "Secoes da home")?.let { rows += it }
+        countLegacy("acervos", "Acervos")?.let { rows += it }
+        countLegacy("tbl_users", "Usuarios")?.let { rows += it }
+        countLegacy("tbl_comments", "Comentarios")?.let { rows += it }
+        countLegacy("Sites", "Sites")?.let { rows += it }
+        countLegacy("Jogos", "Jogos")?.let { rows += it }
+        countLegacy("tbl_settings", "Definicoes")?.let { rows += it }
+        return rows
+    }
+
+    private fun countLegacy(table: String, label: String): AuditModuleSummaryRow? {
+        if (!tableExists(table)) {
+            return null
+        }
+        val total = jdbc.queryForObject("SELECT COUNT(*) FROM `$table`", Long::class.java) ?: 0L
+        val statusColumn = LEGACY_STATUS_COLUMNS.firstOrNull { columnExists(table, it) }
+        val active = if (statusColumn == null) {
+            total
+        } else {
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM `$table` WHERE CAST(`$statusColumn` AS CHAR) = '1'",
+                Long::class.java
+            ) ?: 0L
+        }
+        return AuditModuleSummaryRow(
+            moduleName = label,
+            totalRows = total,
+            activeRows = active,
+            softDeletedRows = (total - active).coerceAtLeast(0)
+        )
+    }
+
+    private fun loadLegacyConsistency(): List<AuditConsistencyRow> {
+        val rows = mutableListOf<AuditConsistencyRow>()
+        if (tableExists("tbl_books") && tableExists("tbl_category")) {
+            // cat_id e varchar e pode conter lista ("5,6"); FIND_IN_SET evita falso positivo.
+            val orphanCats = jdbc.queryForObject(
+                """
+                SELECT COUNT(*) FROM tbl_books b
+                WHERE TRIM(COALESCE(b.cat_id, '')) NOT IN ('', '0')
+                  AND NOT EXISTS (
+                    SELECT 1 FROM tbl_category c WHERE FIND_IN_SET(c.cid, b.cat_id)
+                  )
+                """.trimIndent(),
+                Long::class.java
+            ) ?: 0L
+            rows += AuditConsistencyRow(checkName = "Livros sem categoria valida", invalidCount = orphanCats)
+        }
+        if (tableExists("tbl_books") && tableExists("tbl_author")) {
+            val orphanAuthors = jdbc.queryForObject(
+                """
+                SELECT COUNT(*) FROM tbl_books b
+                LEFT JOIN tbl_author a ON a.author_id = b.aid
+                WHERE b.aid <> 0 AND a.author_id IS NULL
+                """.trimIndent(),
+                Long::class.java
+            ) ?: 0L
+            rows += AuditConsistencyRow(checkName = "Livros sem autor valido", invalidCount = orphanAuthors)
+        }
+        if (tableExists("tbl_comments") && tableExists("tbl_books")) {
+            val orphanComments = jdbc.queryForObject(
+                """
+                SELECT COUNT(*) FROM tbl_comments c
+                LEFT JOIN tbl_books b ON b.id = c.book_id
+                WHERE b.id IS NULL
+                """.trimIndent(),
+                Long::class.java
+            ) ?: 0L
+            rows += AuditConsistencyRow(checkName = "Comentarios sem livro", invalidCount = orphanComments)
+        }
+        if (tableExists("tbl_settings")) {
+            val settings = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM tbl_settings WHERE id = 1",
+                Long::class.java
+            ) ?: 0L
+            rows += AuditConsistencyRow(
+                checkName = "tbl_settings sem linha id=1",
+                invalidCount = if (settings == 0L) 1L else 0L
+            )
+        }
+        return rows
+    }
+
+    private fun tableExists(table: String): Boolean {
+        val count = jdbc.queryForObject(
+            """
+            SELECT COUNT(*) FROM information_schema.tables
+            WHERE table_schema = DATABASE() AND table_name = ?
+            """.trimIndent(),
+            Int::class.java,
+            table
+        ) ?: 0
+        return count > 0
+    }
+
+    private fun columnExists(table: String, column: String): Boolean {
+        val count = jdbc.queryForObject(
+            """
+            SELECT COUNT(*) FROM information_schema.columns
+            WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?
+            """.trimIndent(),
+            Int::class.java,
+            table,
+            column
+        ) ?: 0
+        return count > 0
     }
 
     private fun loadModuleSummary(): List<AuditModuleSummaryRow> =

@@ -16,6 +16,9 @@ import { listSiteCategories } from "../../../services/siteCategoriesService";
 import { listSiteSections } from "../../../services/siteSectionsService";
 import { listSites } from "../../../services/sitesService";
 import { listSiteComments } from "../../../services/siteCommentsService";
+import { getSettings } from "../../../services/settingsService";
+import { listGames } from "../../../services/gamesService";
+import { getUnreadNotificationCount, listNotifications } from "../../../services/notificationsService";
 
 export const queryKeys = {
   books: (acervoId?: number) => (acervoId ? (["books", acervoId] as const) : (["books"] as const)),
@@ -39,7 +42,11 @@ export const queryKeys = {
   siteAuthors: ["site-authors"] as const,
   siteCategories: ["site-categories"] as const,
   siteSections: ["site-sections"] as const,
-  siteComments: ["site-comments"] as const
+  siteComments: ["site-comments"] as const,
+  settings: ["settings"] as const,
+  games: ["games"] as const,
+  notifications: ["notifications"] as const,
+  notificationsUnread: ["notifications-unread"] as const
 };
 
 export function getQueryErrorMessage(error: unknown, fallback: string): string {
@@ -167,6 +174,35 @@ export function useSiteCommentsQuery() {
   return useQuery({ queryKey: queryKeys.siteComments, queryFn: listSiteComments });
 }
 
+export function useSettingsQuery() {
+  return useQuery({ queryKey: queryKeys.settings, queryFn: getSettings });
+}
+
+export function useGamesQuery(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.games,
+    queryFn: listGames,
+    enabled: options?.enabled ?? true
+  });
+}
+
+export function useNotificationsQuery(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.notifications,
+    queryFn: listNotifications,
+    enabled: options?.enabled ?? true
+  });
+}
+
+export function useUnreadNotificationsQuery(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.notificationsUnread,
+    queryFn: getUnreadNotificationCount,
+    refetchInterval: 60_000,
+    enabled: options?.enabled ?? true
+  });
+}
+
 export function useInvalidateAdminQueries() {
   const queryClient = useQueryClient();
 
@@ -194,6 +230,12 @@ export function useInvalidateAdminQueries() {
     siteAuthors: () => queryClient.invalidateQueries({ queryKey: queryKeys.siteAuthors }),
     siteCategories: () => queryClient.invalidateQueries({ queryKey: queryKeys.siteCategories }),
     siteSections: () => queryClient.invalidateQueries({ queryKey: queryKeys.siteSections }),
-    siteComments: () => queryClient.invalidateQueries({ queryKey: queryKeys.siteComments })
+    siteComments: () => queryClient.invalidateQueries({ queryKey: queryKeys.siteComments }),
+    settings: () => queryClient.invalidateQueries({ queryKey: queryKeys.settings }),
+    games: () => queryClient.invalidateQueries({ queryKey: queryKeys.games }),
+    notifications: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.notificationsUnread });
+    }
   };
 }

@@ -57,6 +57,15 @@ const SiteSectionsPage = lazy(() =>
 const SiteCommentsPage = lazy(() =>
   import("./ui/pages/SiteCommentsPage").then((module) => ({ default: module.SiteCommentsPage }))
 );
+const NotificationsPage = lazy(() =>
+  import("./ui/pages/NotificationsPage").then((module) => ({ default: module.NotificationsPage }))
+);
+const SettingsPage = lazy(() =>
+  import("./ui/pages/SettingsPage").then((module) => ({ default: module.SettingsPage }))
+);
+const GamesPage = lazy(() =>
+  import("./ui/pages/GamesPage").then((module) => ({ default: module.GamesPage }))
+);
 const LoginPage = lazy(() =>
   import("./ui/pages/LoginPage").then((module) => ({ default: module.LoginPage }))
 );
@@ -128,6 +137,9 @@ export function AppRouter() {
           <Route path="/equipe" element={<GuardedPage path="/equipe" element={<TeamPage />} />} />
           <Route path="/perfis" element={<GuardedPage path="/perfis" element={<RolesPage />} />} />
           <Route path="/auditoria" element={<GuardedPage path="/auditoria" element={<AuditPage />} />} />
+          <Route path="/jogos" element={<GuardedPage path="/jogos" element={<GamesPage />} />} />
+          <Route path="/definicoes" element={<GuardedPage path="/definicoes" element={<SettingsPage />} />} />
+          <Route path="/notificacoes" element={<GuardedPage path="/notificacoes" element={<NotificationsPage />} />} />
         </Route>
         <Route path="*" element={<Navigate to={isAuthenticated() ? "/livros" : "/login"} replace />} />
       </Routes>

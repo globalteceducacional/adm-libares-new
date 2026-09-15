@@ -11,6 +11,7 @@ import com.libare.adm.modules.users.application.ListUsersUseCase
 import com.libare.adm.modules.users.application.UpdateUserAcervoUseCase
 import com.libare.adm.modules.users.application.UpdateUserProfileUseCase
 import com.libare.adm.modules.users.application.UpdateUserStatusUseCase
+import com.libare.adm.shared.api.PageResponse
 import com.libare.adm.shared.openapi.AdminSecured
 import com.libare.adm.shared.openapi.AdminWriteResponses
 import com.libare.adm.shared.openapi.OpenApiHeaders
@@ -76,9 +77,23 @@ class UserController(
     @GetMapping
     fun list(
         @Parameter(description = "Filtrar por ID do acervo", example = "2")
-        @RequestParam(required = false) acervoId: Long?
-    ): ResponseEntity<List<UserResponse>> =
-        ResponseEntity.ok(listUsersUseCase.execute(acervoId))
+        @RequestParam(required = false) acervoId: Long?,
+        @Parameter(description = "Pagina 1-based. Se omitido, retorna a lista completa")
+        @RequestParam(required = false) page: Int?,
+        @Parameter(description = "Tamanho da pagina (max 500)")
+        @RequestParam(required = false) size: Int?
+    ): ResponseEntity<List<UserResponse>> {
+        val users = listUsersUseCase.execute(acervoId)
+        if (page == null) {
+            return ResponseEntity.ok(users)
+        }
+        val paged = PageResponse.of(users, page, size)
+        return ResponseEntity.ok()
+            .header("X-Total-Count", paged.total.toString())
+            .header("X-Page", paged.page.toString())
+            .header("X-Size", paged.size.toString())
+            .body(paged.items)
+    }
 
     @Operation(
         summary = "Criar leitor",

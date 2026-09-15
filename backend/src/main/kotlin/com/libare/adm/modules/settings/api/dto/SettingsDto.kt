@@ -1,0 +1,50 @@
+package com.libare.adm.modules.settings.api.dto
+
+data class SettingsResponse(
+    val id: Int,
+    val appName: String,
+    val appLogo: String,
+    val appEmail: String,
+    val appVersion: String,
+    val appAuthor: String,
+    val appContact: String,
+    val appWebsite: String,
+    val appDescription: String,
+    val apiLatestLimit: Int,
+    val apiCatOrderBy: String,
+    val apiCatPostOrderBy: String,
+    val apiAuthorOrderBy: String,
+    val apiAuthorPostOrderBy: String,
+    val appPrivacyPolicy: String,
+    val publisherId: String,
+    val onesignalAppId: String,
+    val hasOnesignalRestKey: Boolean,
+    val interstitalAdId: String,
+    val interstitalAdIdStatus: Int,
+    val bannerAdId: String,
+    val bannerAdIdStatus: Int
+)
+
+data class UpdateSettingsRequest(
+    val appName: String? = null,
+    val appLogo: String? = null,
+    val appEmail: String? = null,
+    val appVersion: String? = null,
+    val appAuthor: String? = null,
+    val appContact: String? = null,
+    val appWebsite: String? = null,
+    val appDescription: String? = null,
+    val apiLatestLimit: Int? = null,
+    val apiCatOrderBy: String? = null,
+    val apiCatPostOrderBy: String? = null,
+    val apiAuthorOrderBy: String? = null,
+    val apiAuthorPostOrderBy: String? = null,
+    val appPrivacyPolicy: String? = null,
+    val publisherId: String? = null,
+    val onesignalAppId: String? = null,
+    val onesignalRestKey: String? = null,
+    val interstitalAdId: String? = null,
+    val interstitalAdIdStatus: Int? = null,
+    val bannerAdId: String? = null,
+    val bannerAdIdStatus: Int? = null
+)

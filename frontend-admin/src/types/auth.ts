@@ -31,6 +31,8 @@ export type AuthMeResponse = {
   allowedSchools: AuthSchoolOption[];
   requiresSchoolContext: boolean;
   effectiveSchoolId: number | null;
+  uiTheme?: string | null;
+  imageUrl?: string | null;
 };
 
 export type AuthSession = {

@@ -25,7 +25,7 @@ class PanelAdminUserEntity(
     val passwordHash: String,
 
     @Column(nullable = false, length = 150)
-    val name: String,
+    var name: String,
 
     @Column(nullable = false, length = 1)
     val status: String = "1",
@@ -35,6 +35,12 @@ class PanelAdminUserEntity(
 
     @Column(name = "perm_version", nullable = false)
     val permVersion: Int = 1,
+
+    @Column(name = "ui_theme", length = 16)
+    var uiTheme: String? = null,
+
+    @Column(name = "image_filename", length = 255)
+    var imageFilename: String? = null,
 
     @Column(name = "created_at", insertable = false, updatable = false)
     val createdAt: LocalDateTime? = null,

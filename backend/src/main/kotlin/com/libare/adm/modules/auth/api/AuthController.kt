@@ -3,8 +3,10 @@ package com.libare.adm.modules.auth.api
 import com.libare.adm.modules.auth.api.dto.AuthMeResponse
 import com.libare.adm.modules.auth.api.dto.LoginRequest
 import com.libare.adm.modules.auth.api.dto.LoginResponse
+import com.libare.adm.modules.auth.api.dto.UpdateAuthProfileRequest
 import com.libare.adm.modules.auth.application.GetCurrentUserUseCase
 import com.libare.adm.modules.auth.application.LoginUseCase
+import com.libare.adm.modules.auth.application.UpdateAdminProfileUseCase
 import com.libare.adm.shared.openapi.AdminSecured
 import com.libare.adm.shared.openapi.OpenApiTags
 import io.swagger.v3.oas.annotations.Operation
@@ -24,7 +26,8 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/v1/auth")
 class AuthController(
     private val loginUseCase: LoginUseCase,
-    private val getCurrentUserUseCase: GetCurrentUserUseCase
+    private val getCurrentUserUseCase: GetCurrentUserUseCase,
+    private val updateAdminProfileUseCase: UpdateAdminProfileUseCase
 ) {
 
     @Operation(
@@ -54,4 +57,16 @@ class AuthController(
         val response = getCurrentUserUseCase.execute()
         return ResponseEntity.ok(response)
     }
+
+    @Operation(summary = "Atualizar nome e tema do admin")
+    @AdminSecured
+    @org.springframework.web.bind.annotation.PatchMapping("/me")
+    fun updateMe(@Valid @RequestBody request: UpdateAuthProfileRequest): ResponseEntity<AuthMeResponse> =
+        ResponseEntity.ok(updateAdminProfileUseCase.execute(request))
+
+    @Operation(summary = "Upload do avatar do admin")
+    @AdminSecured
+    @PostMapping("/me/avatar")
+    fun uploadAvatar(@org.springframework.web.bind.annotation.RequestParam("file") file: org.springframework.web.multipart.MultipartFile): ResponseEntity<AuthMeResponse> =
+        ResponseEntity.ok(updateAdminProfileUseCase.uploadAvatar(file))
 }

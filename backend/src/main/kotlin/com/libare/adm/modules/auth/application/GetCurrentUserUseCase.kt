@@ -8,13 +8,15 @@ import com.libare.adm.modules.schools.infrastructure.persistence.repository.Scho
 import com.libare.adm.shared.exception.UnauthorizedException
 import com.libare.adm.shared.security.AdminPrincipal
 import com.libare.adm.shared.tenant.TenantContext
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
 @Service
 class GetCurrentUserUseCase(
     private val panelAdminUserRepository: PanelAdminUserJpaRepository,
     private val schoolRepository: SchoolJpaRepository,
-    private val resolveAdminSchoolsUseCase: ResolveAdminSchoolsUseCase
+    private val resolveAdminSchoolsUseCase: ResolveAdminSchoolsUseCase,
+    @Value("\${app.legacy.public-base-url:http://localhost:8080}") private val publicBaseUrl: String
 ) {
     fun execute(): AuthMeResponse {
         val principal = TenantContext.getOrNull()
@@ -41,7 +43,12 @@ class GetCurrentUserUseCase(
             permVersion = principal.permVersion,
             allowedSchools = allowedSchools,
             requiresSchoolContext = principal.requiresSchoolContext(),
-            effectiveSchoolId = effectiveSchoolId
+            effectiveSchoolId = effectiveSchoolId,
+            uiTheme = admin?.uiTheme,
+            imageUrl = admin?.imageFilename?.takeIf { it.isNotBlank() }?.let { filename ->
+                val base = publicBaseUrl.trim().removeSuffix("/")
+                "$base/legacy/assets/images/$filename"
+            }
         )
     }
 

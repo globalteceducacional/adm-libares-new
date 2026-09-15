@@ -1,14 +1,17 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Bell,
   BookOpen,
   Building2,
   ClipboardList,
+  Gamepad2,
   Globe,
   LayoutDashboard,
   LayoutList,
   Library,
   MessageSquareText,
   Pencil,
+  Settings,
   Shield,
   Tags,
   UserCog,
@@ -22,7 +25,8 @@ export type NavBadgeKey =
   | "homeSections"
   | "acervos"
   | "users"
-  | "comments";
+  | "comments"
+  | "games";
 
 export type NavItemConfig = {
   id: string;
@@ -116,6 +120,16 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         badgeKey: "acervos",
         permission: "acervos.view",
         keywords: ["escola", "biblioteca", "colecao"]
+      },
+      {
+        id: "games",
+        to: "/jogos",
+        label: "Jogos",
+        icon: Gamepad2,
+        description: "Jogos educativos do catálogo legado",
+        badgeKey: "games",
+        permission: "games.view",
+        keywords: ["ludo", "html5", "games"]
       }
     ]
   },
@@ -241,6 +255,24 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         description: "Logs e consistência de dados",
         permission: "reports.view",
         keywords: ["logs", "historico", "rastreio"]
+      },
+      {
+        id: "settings",
+        to: "/definicoes",
+        label: "Definições",
+        icon: Settings,
+        description: "tbl_settings, privacidade e OneSignal",
+        permission: "settings.view",
+        keywords: ["app", "privacidade", "onesignal"]
+      },
+      {
+        id: "notifications",
+        to: "/notificacoes",
+        label: "Notificações",
+        icon: Bell,
+        description: "Avisos do painel e push OneSignal",
+        permission: "notifications.view",
+        keywords: ["push", "sino", "aviso"]
       }
     ]
   }

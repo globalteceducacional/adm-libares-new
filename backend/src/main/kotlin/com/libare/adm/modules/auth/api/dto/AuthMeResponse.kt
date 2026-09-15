@@ -44,5 +44,11 @@ data class AuthMeResponse(
     val requiresSchoolContext: Boolean,
 
     @field:Schema(description = "Escola efetiva da requisicao atual", nullable = true)
-    val effectiveSchoolId: Long?
+    val effectiveSchoolId: Long?,
+
+    @field:Schema(description = "Tema persistido (light/dark)", nullable = true)
+    val uiTheme: String? = null,
+
+    @field:Schema(description = "URL publica do avatar", nullable = true)
+    val imageUrl: String? = null
 )

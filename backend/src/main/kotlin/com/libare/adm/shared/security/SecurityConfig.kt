@@ -66,7 +66,8 @@ class SecurityConfig(
                     "/user_register_galileu.php",
                     "/user_forgot_pass_api.php",
                     "/user_profile_api.php",
-                    "/user_profile_update_api.php"
+                    "/user_profile_update_api.php",
+                    "/privacyPolicy.php"
                 ).permitAll()
                 it.anyRequest().authenticated()
             }
@@ -111,7 +112,7 @@ class SecurityConfig(
             "X-Requested-With",
             "X-School-Context"
         )
-        configuration.exposedHeaders = listOf("X-School-Context")
+        configuration.exposedHeaders = listOf("X-School-Context", "X-Total-Count", "X-Page", "X-Size")
         configuration.allowCredentials = true
 
         val source = UrlBasedCorsConfigurationSource()

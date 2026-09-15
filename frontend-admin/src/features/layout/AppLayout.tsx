@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { useLayoutStore } from "../../stores/layoutStore";
 import { useThemeStore } from "../../stores/themeStore";
+import { useAuth } from "../auth/AuthContext";
 import { buildBreadcrumbs } from "./config/navigation";
 import { Sidebar } from "./components/Sidebar";
 import { Topbar } from "./components/Topbar";
@@ -10,6 +11,8 @@ import { Topbar } from "./components/Topbar";
 export function AppLayout() {
   const location = useLocation();
   const hydrateTheme = useThemeStore((s) => s.hydrate);
+  const setMode = useThemeStore((s) => s.setMode);
+  const { user } = useAuth();
   const sidebarCollapsed = useLayoutStore((s) => s.sidebarCollapsed);
   const mobileSidebarOpen = useLayoutStore((s) => s.mobileSidebarOpen);
   const closeMobileSidebar = useLayoutStore((s) => s.closeMobileSidebar);
@@ -17,6 +20,12 @@ export function AppLayout() {
   useEffect(() => {
     hydrateTheme();
   }, [hydrateTheme]);
+
+  useEffect(() => {
+    if (user?.uiTheme === "dark" || user?.uiTheme === "light") {
+      setMode(user.uiTheme);
+    }
+  }, [user?.uiTheme, setMode]);
 
   useEffect(() => {
     closeMobileSidebar();

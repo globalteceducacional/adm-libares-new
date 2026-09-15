@@ -4,6 +4,7 @@ import { Button } from "../../../shared/ui";
 import { cn } from "../../../shared/lib/cn";
 import { useAuth } from "../../auth/AuthContext";
 import { useThemeStore } from "../../../stores/themeStore";
+import { updateAuthProfile } from "../../../services/authMeService";
 
 type SidebarFooterProps = {
   collapsed: boolean;
@@ -11,9 +12,20 @@ type SidebarFooterProps = {
 
 export function SidebarFooter({ collapsed }: SidebarFooterProps) {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, refresh } = useAuth();
   const mode = useThemeStore((s) => s.mode);
   const toggleTheme = useThemeStore((s) => s.toggle);
+
+  async function handleToggleTheme() {
+    const next = mode === "dark" ? "light" : "dark";
+    toggleTheme();
+    try {
+      await updateAuthProfile({ uiTheme: next });
+      await refresh();
+    } catch {
+      // Tema local permanece mesmo se a API falhar.
+    }
+  }
 
   function handleLogout() {
     logout();
@@ -41,7 +53,7 @@ export function SidebarFooter({ collapsed }: SidebarFooterProps) {
           variant="icon"
           size="icon"
           className="border-white/10 bg-white/5 text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-foreground"
-          onClick={toggleTheme}
+          onClick={() => void handleToggleTheme()}
           aria-label="Alternar tema claro/escuro"
           title="Alternar tema"
         >

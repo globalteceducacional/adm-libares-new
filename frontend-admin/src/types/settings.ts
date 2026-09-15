@@ -1,0 +1,48 @@
+export type SettingsResponse = {
+  id: number;
+  appName: string;
+  appLogo: string;
+  appEmail: string;
+  appVersion: string;
+  appAuthor: string;
+  appContact: string;
+  appWebsite: string;
+  appDescription: string;
+  apiLatestLimit: number;
+  apiCatOrderBy: string;
+  apiCatPostOrderBy: string;
+  apiAuthorOrderBy: string;
+  apiAuthorPostOrderBy: string;
+  appPrivacyPolicy: string;
+  publisherId: string;
+  onesignalAppId: string;
+  hasOnesignalRestKey: boolean;
+  interstitalAdId: string;
+  interstitalAdIdStatus: number;
+  bannerAdId: string;
+  bannerAdIdStatus: number;
+};
+
+export type UpdateSettingsRequest = Partial<{
+  appName: string;
+  appLogo: string;
+  appEmail: string;
+  appVersion: string;
+  appAuthor: string;
+  appContact: string;
+  appWebsite: string;
+  appDescription: string;
+  apiLatestLimit: number;
+  apiCatOrderBy: string;
+  apiCatPostOrderBy: string;
+  apiAuthorOrderBy: string;
+  apiAuthorPostOrderBy: string;
+  appPrivacyPolicy: string;
+  publisherId: string;
+  onesignalAppId: string;
+  onesignalRestKey: string;
+  interstitalAdId: string;
+  interstitalAdIdStatus: number;
+  bannerAdId: string;
+  bannerAdIdStatus: number;
+}>;
