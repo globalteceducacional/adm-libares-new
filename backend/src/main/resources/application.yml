@@ -32,6 +32,13 @@ server:
   port: 8080
   # Nginx termina TLS e encaminha HTTP — respeita X-Forwarded-Proto/Host.
   forward-headers-strategy: framework
+  error:
+    # /error é público (ver SecurityConfig): devolve só status e path, nunca
+    # stacktrace, mensagem de exceção ou estrutura interna.
+    include-stacktrace: never
+    include-message: never
+    include-exception: false
+    include-binding-errors: never
 
 management:
   endpoints:

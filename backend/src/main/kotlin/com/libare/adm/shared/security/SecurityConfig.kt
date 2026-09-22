@@ -47,6 +47,9 @@ class SecurityConfig(
             .authorizeHttpRequests {
                 it.requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 it.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                // Sem isto, 400/404/500 sao reencaminhados para /error, barrados por falta de
+                // autenticacao e devolvidos como 401 de corpo vazio, escondendo o erro real.
+                it.requestMatchers("/error").permitAll()
                 it.requestMatchers("/legacy/assets/**", "/legacy/**").permitAll()
                 it.requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                 // UI OpenAPI: HTML/JS e schema sem JWT (chamadas /api/** continuam autenticadas).
