@@ -1,7 +1,7 @@
 # Unificação CSS e formulários — frontend-admin
 
 **Data:** 2026-09-22  
-**Status:** proposto (aguardando revisão)  
+**Status:** Fases 0–4 implementadas (local); aguarda commit/deploy  
 **Abordagem aprovada:** incremental (opção A)  
 **ADRs:** [docs/adr/](../../adr/README.md)
 
@@ -90,21 +90,26 @@ Clones quase idênticos: Acervos, Authors, Categories, SiteAuthors, SiteCategori
 Ordem sugerida (menor → maior risco):
 
 1. ~~Users + Team~~ ✅
-2. Acervos, Schools, Categories (+ Site*)  
-3. Authors, HomeSections, SiteSections  
-4. Roles (híbrido)  
-5. Books, Sites (upload / featured / checkbox lists)
+2. ~~Acervos, Schools, Categories (+ Site*) + Authors/SiteAuthors~~ ✅
+3. ~~HomeSections, SiteSections~~ ✅
+4. ~~Roles (híbrido)~~ ✅
+5. ~~Books, Sites~~ ✅
+
+**Fase 2 concluída (local):** todos os `*Form.tsx` de domínio migrados para FormGrid/Field/Button.
 
 Cada PR: um domínio, screenshot/smoke, sem misturar prune grande de CSS.
 
-### Fase 3 — Tokens na UI shell
+### Fase 3 — Tokens na UI shell ✅ implementada (local)
 
-- Trocar `violet-*` / `indigo-*` por `primary` / tokens em Topbar, Sidebar accents, Login hero, DashboardStatCard, PageHeroStrip, BerryFormPanel
+- Trocar `violet-*` / `indigo-*` por `primary` / tokens em Topbar, Sidebar, Login, DashboardStatCard, PageHeroStrip, BerryFormPanel, Games
 
-### Fase 4 — CSS morto + mobile gaps
+### Fase 4 — CSS morto + mobile gaps ✅ implementada (local)
 
-- Remover `.app-shell`, `.sidebar` legado, `.login-card`, media queries órfãs (após grep)
-- `renderMobileCard` em Schools, Roles, Games (Audit se fizer sentido)
+- Remover shell legado (`.app-shell`, `.sidebar` antigo, `.menu-link`, `.login-card`, `.primary-btn`, media 940px)
+- `renderMobileCard` em Schools, Roles, Games
+- SitesPage CTA → `Button` shared
+
+**Iniciativa CSS/forms:** Fases 0–4 concluídas localmente.
 
 ## 5. Riscos e mitigação
 
@@ -118,11 +123,12 @@ Cada PR: um domínio, screenshot/smoke, sem misturar prune grande de CSS.
 ## 6. Critérios de sucesso (iniciativa completa)
 
 - [x] Um único `:root` de tokens (`index.css`) — Fase 0
-- [ ] Nenhum form novo usando `primary-btn` / `book-form`
-- [ ] ≥80% dos `*Form.tsx` em Field/Input/Button (ou FormGrid)
-- [ ] `styles.css` reduzido (meta orientativa: &lt;50% do tamanho atual) sem classes shell mortas
-- [ ] Smoke mobile nas listagens críticas
-- [ ] `npx tsc -b` ok
+- [x] Nenhum form novo usando `primary-btn` / `book-form` — Fase 1/2 (forms de domínio migrados)
+- [x] ≥80% dos `*Form.tsx` em Field/Input/Button (ou FormGrid) — Fase 2
+- [x] `styles.css` reduzido sem classes shell mortas — Fase 4
+- [x] Smoke mobile nas listagens críticas (Schools/Roles/Games + demais) — Fase 4
+- [x] `npx tsc -b` ok
+- [x] UI shell sem `violet-*`/`indigo-*` hardcoded — Fase 3
 
 ## 7. Próximo passo após aprovação deste doc
 

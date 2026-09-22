@@ -30,7 +30,7 @@ export function Topbar({ breadcrumbs }: TopbarProps) {
           <Button
             variant="icon"
             size="icon"
-            className="border-violet-200 text-primary hover:bg-violet-50 lg:hidden dark:border-violet-900/40 dark:hover:bg-violet-950/40"
+            className="border-primary/20 text-primary hover:bg-primary/5 lg:hidden dark:border-primary/30 dark:hover:bg-primary/10"
             onClick={() => setMobileSidebarOpen(true)}
             aria-label="Abrir menu lateral"
           >
@@ -64,7 +64,7 @@ export function Topbar({ breadcrumbs }: TopbarProps) {
           />
           <button
             type="button"
-            className="hidden h-9 w-9 overflow-hidden rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-xs font-bold text-white shadow-md shadow-violet-600/25 sm:grid sm:place-items-center"
+            className="hidden h-9 w-9 overflow-hidden rounded-full bg-gradient-to-br from-primary to-primary-dark text-xs font-bold text-primary-foreground shadow-md shadow-primary/25 sm:grid sm:place-items-center"
             aria-label="Alterar foto do perfil"
             title="Alterar foto do perfil"
             onClick={() => fileRef.current?.click()}

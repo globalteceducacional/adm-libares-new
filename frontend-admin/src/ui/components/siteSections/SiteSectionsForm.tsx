@@ -1,8 +1,16 @@
 import type { FormEvent } from "react";
 import { useId, useMemo } from "react";
-import { motion } from "framer-motion";
 import type { UpsertSiteSectionRequest } from "../../../types/siteSections";
 import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
+import {
+  Button,
+  Field,
+  FormActions,
+  FormFullWidth,
+  FormGrid,
+  Input,
+  Select
+} from "../../../shared/ui";
 import { SearchableCheckboxList } from "../form/SearchableCheckboxList";
 
 type SiteOption = {
@@ -37,9 +45,6 @@ export function SiteSectionsForm({
   onChange,
   onToggleSite
 }: SiteSectionsFormProps) {
-  const titleId = useId();
-  const titleErrorId = `${titleId}-error`;
-  const statusId = useId();
   const sitesLegendId = useId();
 
   const siteItems = useMemo(
@@ -52,44 +57,40 @@ export function SiteSectionsForm({
   );
 
   return (
-    <form className="book-form modern" onSubmit={onSubmit} noValidate>
-      <fieldset className="form-field acervo-fieldset">
-        <legend>Identificacao</legend>
-        <label className="form-field" htmlFor={titleId}>
-          <span>Título</span>
-          <input
-            id={titleId}
-            type="text"
-            value={form.title}
-            maxLength={150}
-            onChange={(event) => onChange({ ...form, title: event.target.value })}
-            required
-            aria-invalid={isTitleInvalid || undefined}
-            aria-describedby={isTitleInvalid ? titleErrorId : undefined}
-          />
-          {isTitleInvalid ? (
-            <small id={titleErrorId} role="alert" className="warning-text">
-              Informe um titulo valido.
-            </small>
-          ) : null}
-        </label>
-        <label className="form-field" htmlFor={statusId}>
-          <span>Status</span>
-          <select
-            id={statusId}
-            value={form.status}
-            onChange={(event) => onChange({ ...form, status: event.target.value })}
-          >
-            <option value="1">Ativo</option>
-            <option value="0">Inativo</option>
-          </select>
-        </label>
-      </fieldset>
+    <FormGrid onSubmit={onSubmit}>
+      <Field
+        label="Titulo"
+        required
+        error={isTitleInvalid ? "Informe um titulo valido." : undefined}
+        className="sm:col-span-2"
+      >
+        <Input
+          type="text"
+          value={form.title}
+          maxLength={150}
+          onChange={(event) => onChange({ ...form, title: event.target.value })}
+          disabled={saving}
+          invalid={isTitleInvalid}
+        />
+      </Field>
 
-      <fieldset className="form-field acervo-fieldset">
-        <legend id={sitesLegendId}>Sites da seção</legend>
+      <Field label="Status">
+        <Select
+          value={form.status}
+          onChange={(event) => onChange({ ...form, status: event.target.value })}
+          disabled={saving}
+        >
+          <option value="1">Ativo</option>
+          <option value="0">Inativo</option>
+        </Select>
+      </Field>
+
+      <FormFullWidth>
+        <p id={sitesLegendId} className="mb-2 text-sm font-medium text-foreground">
+          Sites da secao
+        </p>
         {sitesLoading ? (
-          <small className="form-hint">Carregando sites...</small>
+          <p className="text-xs text-muted">Carregando sites...</p>
         ) : (
           <SearchableCheckboxList
             items={siteItems}
@@ -102,22 +103,16 @@ export function SiteSectionsForm({
             aria-labelledby={sitesLegendId}
           />
         )}
-      </fieldset>
+      </FormFullWidth>
 
-      <div className="book-form-actions">
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="primary-btn"
-          type="submit"
-          disabled={saving}
-        >
-          {saving ? "Salvando..." : editingId ? "Atualizar seção" : "Criar seção"}
-        </motion.button>
-        <button className="secondary-btn" type="button" onClick={onReset} disabled={saving}>
+      <FormActions>
+        <Button type="submit" disabled={saving || isTitleInvalid}>
+          {saving ? "Salvando..." : editingId ? "Atualizar secao" : "Criar secao"}
+        </Button>
+        <Button type="button" variant="secondary" onClick={onReset} disabled={saving}>
           {inModal ? "Cancelar" : "Limpar formulario"}
-        </button>
-      </div>
-    </form>
+        </Button>
+      </FormActions>
+    </FormGrid>
   );
 }

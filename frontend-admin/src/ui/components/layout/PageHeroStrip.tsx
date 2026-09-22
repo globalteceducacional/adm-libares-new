@@ -12,14 +12,14 @@ type PageHeroStripProps = {
 };
 
 const toneMap = {
-  primary: "from-violet-600/10 via-violet-500/5 to-transparent border-violet-500/20",
+  primary: "from-primary/10 via-primary/5 to-transparent border-primary/20",
   info: "from-sky-500/10 via-sky-500/5 to-transparent border-sky-500/20",
   success: "from-teal-500/10 via-teal-500/5 to-transparent border-teal-500/20",
   warning: "from-amber-500/10 via-amber-500/5 to-transparent border-amber-500/20"
 };
 
 const iconToneMap = {
-  primary: "bg-violet-600 text-white shadow-violet-600/25",
+  primary: "bg-primary text-primary-foreground shadow-primary/25",
   info: "bg-sky-500 text-white shadow-sky-500/25",
   success: "bg-teal-500 text-white shadow-teal-600/25",
   warning: "bg-amber-500 text-white shadow-amber-500/25"

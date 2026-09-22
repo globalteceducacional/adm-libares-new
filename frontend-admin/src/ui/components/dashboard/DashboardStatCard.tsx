@@ -16,14 +16,14 @@ type DashboardStatCardProps = {
 };
 
 const toneStyles = {
-  primary: "from-violet-600/15 to-violet-600/5 text-violet-700 dark:text-violet-300",
+  primary: "from-primary/15 to-primary/5 text-primary dark:text-sidebar-accent",
   info: "from-sky-500/15 to-sky-500/5 text-sky-700 dark:text-sky-300",
   success: "from-teal-500/15 to-teal-500/5 text-teal-700 dark:text-teal-300",
   warning: "from-amber-500/15 to-amber-500/5 text-amber-700 dark:text-amber-300"
 };
 
 const iconToneStyles = {
-  primary: "bg-violet-600 text-white shadow-lg shadow-violet-600/30",
+  primary: "bg-primary text-primary-foreground shadow-lg shadow-primary/30",
   info: "bg-sky-500 text-white shadow-lg shadow-sky-500/30",
   success: "bg-teal-500 text-white shadow-lg shadow-teal-500/30",
   warning: "bg-amber-500 text-white shadow-lg shadow-amber-500/30"

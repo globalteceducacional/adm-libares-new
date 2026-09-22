@@ -41,7 +41,7 @@ export function Sidebar({ collapsed, mobileOpen, onNavigate }: SidebarProps) {
       >
         <motion.span
           layout
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-600 to-violet-400 text-sm font-bold text-white shadow-lg shadow-violet-900/40 ring-2 ring-white/10"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-primary-dark text-sm font-bold text-primary-foreground shadow-lg shadow-primary/40 ring-2 ring-white/10"
         >
           LD
         </motion.span>

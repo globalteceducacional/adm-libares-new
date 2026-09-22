@@ -1,10 +1,19 @@
-import { motion } from "framer-motion";
 import { Star } from "lucide-react";
 import { useId, useMemo, type ChangeEvent, type FormEvent } from "react";
 import type { UpsertSiteRequest } from "../../../types/sites";
 import type { SiteAuthorResponse } from "../../../types/siteAuthors";
 import type { SiteCategoryResponse } from "../../../types/siteCategories";
 import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
+import {
+  Button,
+  Field,
+  FormActions,
+  FormFullWidth,
+  FormGrid,
+  Input,
+  Select,
+  Textarea
+} from "../../../shared/ui";
 import { SearchableCheckboxList } from "../form/SearchableCheckboxList";
 import { SearchableSelect } from "../form/SearchableSelect";
 import { LegacyImage } from "../LegacyImage";
@@ -59,20 +68,6 @@ export function SitesForm({
   const isBusy = saving || uploadingCover || uploadingFile;
   const formId = useId();
   const categoriesLegendId = `${formId}-categories-legend`;
-  const categoriesErrorId = `${formId}-categories-error`;
-  const authorId = `${formId}-author`;
-  const authorErrorId = `${formId}-author-error`;
-  const titleId = `${formId}-title`;
-  const titleErrorId = `${formId}-title-error`;
-  const descriptionId = `${formId}-description`;
-  const descriptionErrorId = `${formId}-description-error`;
-  const coverId = `${formId}-cover`;
-  const coverErrorId = `${formId}-cover-error`;
-  const fileTypeId = `${formId}-file-type`;
-  const fileUrlId = `${formId}-file-url`;
-  const fileLocalId = `${formId}-file-local`;
-  const fileErrorId = `${formId}-file-error`;
-  const statusId = `${formId}-status`;
 
   const categoryItems = useMemo(
     () =>
@@ -106,9 +101,11 @@ export function SitesForm({
   }
 
   return (
-    <form className="book-form modern" onSubmit={onSubmit} noValidate>
-      <fieldset className="form-field acervo-fieldset">
-        <legend id={categoriesLegendId}>Categorias</legend>
+    <FormGrid onSubmit={onSubmit}>
+      <FormFullWidth>
+        <p id={categoriesLegendId} className="mb-2 text-sm font-medium text-foreground">
+          Categorias
+        </p>
         <SearchableCheckboxList
           items={categoryItems}
           selectedIds={form.categoryIds}
@@ -123,113 +120,99 @@ export function SitesForm({
           emptyMessage="Nenhuma categoria ativa cadastrada."
           invalid={isCategoriesInvalid}
           aria-labelledby={categoriesLegendId}
-          aria-describedby={isCategoriesInvalid ? categoriesErrorId : undefined}
+          disabled={isBusy}
         />
         {isCategoriesInvalid ? (
-          <small id={categoriesErrorId} role="alert" className="warning-text">
+          <p className="mt-2 text-xs text-danger" role="alert">
             Selecione ao menos uma categoria.
-          </small>
+          </p>
         ) : null}
-      </fieldset>
+      </FormFullWidth>
 
-      <div className="form-field form-field--span-2">
-        <span id={`${authorId}-label`}>Autor</span>
-        <SearchableSelect
-          id={authorId}
-          options={authorSelectOptions}
-          value={form.authorId > 0 ? String(form.authorId) : ""}
-          onChange={(next) => onChange({ ...form, authorId: Number(next) || 0 })}
-          placeholder="Selecione um autor"
-          searchPlaceholder="Buscar autor por nome ou ID..."
-          emptyMessage="Nenhum autor ativo cadastrado."
-          allowEmpty
-          emptyLabel="Selecione um autor"
+      <FormFullWidth>
+        <Field
+          label="Autor"
           required
-          invalid={isAuthorInvalid}
-          aria-describedby={isAuthorInvalid ? authorErrorId : undefined}
-        />
-        {isAuthorInvalid ? (
-          <small id={authorErrorId} role="alert" className="warning-text">
-            Selecione um autor antes de salvar.
-          </small>
-        ) : null}
-      </div>
+          error={isAuthorInvalid ? "Selecione um autor antes de salvar." : undefined}
+        >
+          <SearchableSelect
+            options={authorSelectOptions}
+            value={form.authorId > 0 ? String(form.authorId) : ""}
+            onChange={(next) => onChange({ ...form, authorId: Number(next) || 0 })}
+            placeholder="Selecione um autor"
+            searchPlaceholder="Buscar autor por nome ou ID..."
+            emptyMessage="Nenhum autor ativo cadastrado."
+            allowEmpty
+            emptyLabel="Selecione um autor"
+            required
+            invalid={isAuthorInvalid}
+            disabled={isBusy}
+          />
+        </Field>
+      </FormFullWidth>
 
-      <label className="form-field" htmlFor={titleId}>
-        <span>Título</span>
-        <input
-          id={titleId}
+      <Field
+        label="Titulo"
+        required
+        error={isTitleInvalid ? "Informe um titulo valido." : undefined}
+        className="sm:col-span-2"
+      >
+        <Input
           type="text"
           value={form.title}
           maxLength={255}
           onChange={(event) => onChange({ ...form, title: event.target.value })}
-          required
-          aria-invalid={isTitleInvalid || undefined}
-          aria-describedby={isTitleInvalid ? titleErrorId : undefined}
-        />
-        {isTitleInvalid ? (
-          <small id={titleErrorId} role="alert" className="warning-text">
-            Informe um titulo valido.
-          </small>
-        ) : null}
-      </label>
-
-      <label className="form-field form-field--full" htmlFor={descriptionId}>
-        <span>Descrição</span>
-        <textarea
-          id={descriptionId}
-          rows={6}
-          value={form.description}
-          onChange={(event) => onChange({ ...form, description: event.target.value })}
-          required
-          aria-invalid={isDescriptionInvalid || undefined}
-          aria-describedby={isDescriptionInvalid ? descriptionErrorId : undefined}
-        />
-        {isDescriptionInvalid ? (
-          <small id={descriptionErrorId} role="alert" className="warning-text">
-            A descricao e obrigatoria.
-          </small>
-        ) : null}
-      </label>
-
-      <div className="form-field form-field--full">
-        <label htmlFor={coverId}>
-          <span>Capa</span>
-        </label>
-        <input
-          id={coverId}
-          type="file"
-          accept="image/*"
-          onChange={handleCoverChange}
+          invalid={isTitleInvalid}
           disabled={isBusy}
-          aria-invalid={isCoverInvalid || undefined}
-          aria-describedby={isCoverInvalid ? coverErrorId : undefined}
         />
-        {uploadingCover ? <small className="form-hint">Enviando capa...</small> : null}
+      </Field>
+
+      <FormFullWidth>
+        <Field
+          label="Descricao"
+          required
+          error={isDescriptionInvalid ? "A descricao e obrigatoria." : undefined}
+        >
+          <Textarea
+            rows={6}
+            value={form.description}
+            onChange={(event) => onChange({ ...form, description: event.target.value })}
+            invalid={isDescriptionInvalid}
+            disabled={isBusy}
+          />
+        </Field>
+      </FormFullWidth>
+
+      <FormFullWidth>
+        <Field
+          label="Capa"
+          error={isCoverInvalid ? "Envie a imagem da capa." : undefined}
+          hint={uploadingCover ? "Enviando capa..." : form.coverImage || undefined}
+        >
+          <Input
+            type="file"
+            accept="image/*"
+            onChange={handleCoverChange}
+            disabled={isBusy}
+            invalid={isCoverInvalid}
+          />
+        </Field>
         {form.coverImage ? (
-          <div className="book-cover-preview">
+          <div className="mt-2">
             <LegacyImage
               legacyPath={form.coverImage}
               folder="images"
               alt="Pre-visualizacao da capa"
               className="book-form-cover"
               fallbackClassName="book-form-cover-placeholder"
-              fallbackText="Capa indisponível"
+              fallbackText="Capa indisponivel"
             />
-            <small className="form-hint">{form.coverImage}</small>
           </div>
         ) : null}
-        {isCoverInvalid ? (
-          <small id={coverErrorId} role="alert" className="warning-text">
-            Envie a imagem da capa.
-          </small>
-        ) : null}
-      </div>
+      </FormFullWidth>
 
-      <label className="form-field" htmlFor={fileTypeId}>
-        <span>Tipo de arquivo</span>
-        <select
-          id={fileTypeId}
+      <Field label="Tipo de arquivo">
+        <Select
           value={form.fileType}
           onChange={(event) =>
             onChange({
@@ -237,106 +220,103 @@ export function SitesForm({
               fileType: event.target.value === "local" ? "local" : "server_url"
             })
           }
+          disabled={isBusy}
         >
           <option value="server_url">URL externa (server_url)</option>
           <option value="local">Arquivo local</option>
-        </select>
-      </label>
+        </Select>
+      </Field>
 
       {form.fileType === "server_url" ? (
-        <label className="form-field form-field--span-2" htmlFor={fileUrlId}>
-          <span>URL do arquivo</span>
-          <input
-            id={fileUrlId}
+        <Field
+          label="URL do arquivo"
+          className="sm:col-span-2"
+          error={isFileInvalid ? "Informe a URL do arquivo." : undefined}
+        >
+          <Input
             type="url"
             value={form.fileUrl ?? ""}
             onChange={(event) => onChange({ ...form, fileUrl: event.target.value })}
             placeholder="https://..."
-            aria-invalid={isFileInvalid || undefined}
-            aria-describedby={isFileInvalid ? fileErrorId : undefined}
-          />
-        </label>
-      ) : (
-        <div className="form-field form-field--span-2">
-          <label htmlFor={fileLocalId}>
-            <span>Arquivo (PDF ou EPUB)</span>
-          </label>
-          <input
-            id={fileLocalId}
-            type="file"
-            accept=".pdf,.epub,application/pdf,application/epub+zip"
-            onChange={handleFileChange}
+            invalid={isFileInvalid}
             disabled={isBusy}
-            aria-invalid={isFileInvalid || undefined}
-            aria-describedby={isFileInvalid ? fileErrorId : undefined}
           />
-          {uploadingFile ? <small className="form-hint">Enviando arquivo...</small> : null}
-          {form.fileUrl ? <small className="form-hint break-all">{form.fileUrl}</small> : null}
-        </div>
+        </Field>
+      ) : (
+        <FormFullWidth>
+          <Field
+            label="Arquivo (PDF ou EPUB)"
+            error={isFileInvalid ? "Envie o arquivo PDF ou EPUB." : undefined}
+            hint={uploadingFile ? "Enviando arquivo..." : form.fileUrl || undefined}
+          >
+            <Input
+              type="file"
+              accept=".pdf,.epub,application/pdf,application/epub+zip"
+              onChange={handleFileChange}
+              disabled={isBusy}
+              invalid={isFileInvalid}
+            />
+          </Field>
+        </FormFullWidth>
       )}
-      {isFileInvalid ? (
-        <small id={fileErrorId} role="alert" className="warning-text form-field--full">
-          {form.fileType === "server_url"
-            ? "Informe a URL do arquivo."
-            : "Envie o arquivo PDF ou EPUB."}
-        </small>
-      ) : null}
 
-      <label
-        className={`form-field form-field--full featured-toggle${
-          form.featured === "1" ? " is-checked" : ""
-        }`}
-      >
-        <input
-          type="checkbox"
-          checked={form.featured === "1"}
-          onChange={(event) =>
-            onChange({
-              ...form,
-              featured: event.target.checked ? "1" : "0"
-            })
-          }
-        />
-        <Star
-          size={18}
-          className="featured-toggle__icon"
-          aria-hidden
-          fill={form.featured === "1" ? "currentColor" : "none"}
-        />
-        <span className="featured-toggle__copy">
-          <strong>Destacar na home do app</strong>
-          <small>Aparece no bloco de destaques da tela inicial do leitor.</small>
-        </span>
-      </label>
+      <FormFullWidth>
+        <label
+          className={`featured-toggle flex cursor-pointer items-center gap-3 rounded-xl border border-border px-3 py-3${
+            form.featured === "1" ? " is-checked" : ""
+          }`}
+        >
+          <input
+            type="checkbox"
+            checked={form.featured === "1"}
+            onChange={(event) =>
+              onChange({
+                ...form,
+                featured: event.target.checked ? "1" : "0"
+              })
+            }
+            disabled={isBusy}
+          />
+          <Star
+            size={18}
+            className="featured-toggle__icon"
+            aria-hidden
+            fill={form.featured === "1" ? "currentColor" : "none"}
+          />
+          <span className="featured-toggle__copy">
+            <strong>Destacar na home do app</strong>
+            <small>Aparece no bloco de destaques da tela inicial do leitor.</small>
+          </span>
+        </label>
+      </FormFullWidth>
 
-      <label className="form-field" htmlFor={statusId}>
-        <span>Status</span>
-        <select
-          id={statusId}
+      <Field label="Status">
+        <Select
           value={form.status}
           onChange={(event) => onChange({ ...form, status: event.target.value })}
+          disabled={isBusy}
         >
           <option value="1">Ativo</option>
           <option value="0">Inativo</option>
-        </select>
-      </label>
+        </Select>
+      </Field>
 
-      {uploadError ? <p className="error-text">{uploadError}</p> : null}
+      {uploadError ? (
+        <FormFullWidth>
+          <p className="text-sm text-danger" role="alert">
+            {uploadError}
+          </p>
+        </FormFullWidth>
+      ) : null}
 
-      <div className="book-form-actions">
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="primary-btn"
-          type="submit"
-          disabled={isBusy}
-        >
+      <FormActions>
+        <Button type="submit" disabled={isBusy}>
           {saving ? "Salvando..." : editingId ? "Atualizar site" : "Criar site"}
-        </motion.button>
-        <button className="secondary-btn" type="button" onClick={onReset} disabled={isBusy}>
+        </Button>
+        <Button type="button" variant="secondary" onClick={onReset} disabled={isBusy}>
           Cancelar
-        </button>
-      </div>
-    </form>
+        </Button>
+      </FormActions>
+    </FormGrid>
   );
 }

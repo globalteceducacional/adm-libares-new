@@ -316,6 +316,63 @@ export function SchoolsPage() {
         emptyMessage="Nenhuma escola encontrada."
         countLabel={`${filteredSchools.length} escola(s) com o filtro atual`}
         error={listingError}
+        renderMobileCard={(school) => (
+          <article className="book-card">
+            <div className="book-card-body">
+              <p className="book-card-id">#{school.id}</p>
+              <h3>{decodeHtmlEntities(school.name)}</h3>
+              <p className="book-card-author">{school.slug}</p>
+              <StatusBadge active={school.status === "1"} />
+            </div>
+            <div
+              className="book-card-actions"
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
+            >
+              <TableRowActions>
+                {canUpdate ? (
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="table-btn icon"
+                    type="button"
+                    onClick={() => handleEdit(school)}
+                    disabled={saving}
+                  >
+                    <Pencil size={14} />
+                    Editar
+                  </motion.button>
+                ) : null}
+                {canUpdate && school.status !== "1" ? (
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="table-btn icon"
+                    type="button"
+                    onClick={() => handleActivate(school)}
+                    disabled={saving}
+                  >
+                    <Power size={14} />
+                    Ativar
+                  </motion.button>
+                ) : null}
+                {canDelete && school.status === "1" ? (
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="table-btn danger icon"
+                    type="button"
+                    onClick={() => setConfirmDeleteId(school.id)}
+                    disabled={saving}
+                  >
+                    <Trash2 size={14} />
+                    Desativar
+                  </motion.button>
+                ) : null}
+              </TableRowActions>
+            </div>
+          </article>
+        )}
       />
 
       <SchoolFormModal

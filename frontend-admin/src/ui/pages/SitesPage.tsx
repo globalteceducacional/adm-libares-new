@@ -32,7 +32,7 @@ import { EMPTY_SITE_FORM } from "../../types/sites";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
 import { useAdminMutation } from "../../hooks/useAdminMutation";
 import { useSelectedEntity } from "../../hooks/useSelectedEntity";
-import { ConfirmDialog, StatusBadge } from "../../shared/ui";
+import { ConfirmDialog, StatusBadge, Button } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { stripHtml } from "../../shared/lib/stripHtml";
 import { type DataTableColumn } from "../components/table/DataTable";
@@ -441,16 +441,10 @@ export function SitesPage() {
           tone="primary"
           actions={
             <PermissionGate permission="sites.create">
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.98 }}
-                className="primary-btn icon"
-                type="button"
-                onClick={openCreateForm}
-              >
+              <Button type="button" onClick={openCreateForm}>
                 <Plus size={16} />
                 Novo site
-              </motion.button>
+              </Button>
             </PermissionGate>
           }
         />

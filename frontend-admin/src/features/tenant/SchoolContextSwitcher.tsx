@@ -67,13 +67,13 @@ export function SchoolContextSwitcher() {
   return (
     <div
       className={cn(
-        "hidden items-center gap-2 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs sm:flex",
+        "flex max-w-[min(100%,220px)] items-center gap-1.5 rounded-xl border border-border bg-surface px-2 py-1 text-xs sm:max-w-none sm:gap-2 sm:px-3 sm:py-1.5",
         allowedSchools.length === 0 && "opacity-70"
       )}
     >
       <Building2 size={14} className="shrink-0 text-muted" aria-hidden />
-      <span className="whitespace-nowrap text-muted">Escola</span>
-      <div className="min-w-[180px] max-w-[240px]">
+      <span className="hidden whitespace-nowrap text-muted xs:inline sm:inline">Escola</span>
+      <div className="min-w-0 flex-1 sm:min-w-[180px] sm:max-w-[240px]">
         <SearchableSelect
           options={schoolOptions}
           value={schoolContextId != null ? String(schoolContextId) : ""}

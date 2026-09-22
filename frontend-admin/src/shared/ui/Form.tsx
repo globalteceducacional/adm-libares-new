@@ -2,7 +2,8 @@ import {
   forwardRef,
   type FormEventHandler,
   type ReactNode,
-  type SelectHTMLAttributes
+  type SelectHTMLAttributes,
+  type TextareaHTMLAttributes
 } from "react";
 import { cn } from "../lib/cn";
 
@@ -30,6 +31,29 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   )
 );
 Select.displayName = "Select";
+
+export type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  invalid?: boolean;
+};
+
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
+  ({ className, invalid, "aria-invalid": ariaInvalid, ...props }, ref) => (
+    <textarea
+      ref={ref}
+      className={cn(
+        "min-h-[120px] w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-foreground",
+        "placeholder:text-muted transition-colors",
+        "focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20",
+        "disabled:cursor-not-allowed disabled:opacity-60",
+        invalid && "border-danger focus:border-danger focus:ring-danger/20",
+        className
+      )}
+      {...props}
+      aria-invalid={ariaInvalid ?? (invalid ? true : undefined)}
+    />
+  )
+);
+Textarea.displayName = "Textarea";
 
 type FormGridProps = {
   children: ReactNode;

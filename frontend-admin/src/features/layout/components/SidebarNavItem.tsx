@@ -62,7 +62,7 @@ export function SidebarNavItem({ item, collapsed, badge, onNavigate }: SidebarNa
             <>
               <span className="sr-only">{item.label}</span>
               {badge !== undefined ? (
-                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-violet-300 ring-2 ring-[#212946]" aria-hidden />
+                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-sidebar-accent ring-2 ring-sidebar" aria-hidden />
               ) : null}
             </>
           )}

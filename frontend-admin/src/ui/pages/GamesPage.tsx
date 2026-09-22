@@ -144,7 +144,7 @@ export function GamesPage() {
             legacyPath={game.coverImage}
             alt={decodeHtmlEntities(game.title)}
             className="h-12 w-12 rounded-lg object-cover"
-            fallbackClassName="grid h-12 w-12 place-items-center rounded-lg bg-violet-100 text-xs font-semibold text-violet-700"
+            fallbackClassName="grid h-12 w-12 place-items-center rounded-lg bg-primary/10 text-xs font-semibold text-primary"
             fallbackText="J"
           />
         )
@@ -223,6 +223,49 @@ export function GamesPage() {
         emptyMessage="Nenhum jogo encontrado"
         countLabel={`${filtered.length} jogo(s) com o filtro atual`}
         error={listingError}
+        renderMobileCard={(game) => (
+          <article className="book-card">
+            <div className="book-card-media">
+              <LegacyImage
+                legacyPath={game.coverImage}
+                alt={`Capa de ${decodeHtmlEntities(game.title)}`}
+                className="table-avatar"
+                fallbackClassName="table-avatar-placeholder"
+                fallbackText={decodeHtmlEntities(game.title).charAt(0).toUpperCase() || "J"}
+              />
+            </div>
+            <div className="book-card-body">
+              <p className="book-card-id">#{game.id}</p>
+              <h3>{decodeHtmlEntities(game.title)}</h3>
+              <p className="book-card-author">{game.fileType || "-"}</p>
+              <StatusBadge active={game.status === 1} />
+            </div>
+            <div
+              className="book-card-actions"
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
+            >
+              <TableRowActions>
+                {canUpdate ? (
+                  <button type="button" className="table-btn icon" onClick={() => openEdit(game)}>
+                    <Pencil size={14} />
+                    Editar
+                  </button>
+                ) : null}
+                {canDelete ? (
+                  <button
+                    type="button"
+                    className="table-btn danger icon"
+                    onClick={() => setConfirmDeleteId(game.id)}
+                  >
+                    <Trash2 size={14} />
+                    Excluir
+                  </button>
+                ) : null}
+              </TableRowActions>
+            </div>
+          </article>
+        )}
       />
 
       <Modal

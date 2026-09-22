@@ -1,7 +1,14 @@
 import type { ChangeEvent, FormEvent } from "react";
-import { useId } from "react";
-import { motion } from "framer-motion";
 import type { UpsertSiteCategoryRequest } from "../../../types/siteCategories";
+import {
+  Button,
+  Field,
+  FormActions,
+  FormFullWidth,
+  FormGrid,
+  Input,
+  Select
+} from "../../../shared/ui";
 import { LegacyImage } from "../LegacyImage";
 
 type SiteCategoriesFormProps = {
@@ -30,94 +37,70 @@ export function SiteCategoriesForm({
   onImageChange
 }: SiteCategoriesFormProps) {
   const isBusy = saving || uploadingImage;
-  const nameId = useId();
-  const nameErrorId = `${nameId}-error`;
-  const statusId = useId();
-  const imageId = useId();
 
   return (
-    <form className="book-form modern" onSubmit={onSubmit} noValidate>
-      <fieldset className="form-field acervo-fieldset">
-        <legend>Identificacao</legend>
-        <label className="form-field" htmlFor={nameId}>
-          <span>Nome</span>
-          <input
-            id={nameId}
-            type="text"
-            value={form.name}
-            maxLength={255}
-            onChange={(event) => onChange({ ...form, name: event.target.value })}
-            required
-            aria-invalid={isNameInvalid || undefined}
-            aria-describedby={isNameInvalid ? nameErrorId : undefined}
-          />
-          {isNameInvalid ? (
-            <small id={nameErrorId} role="alert" className="warning-text">
-              Informe um nome valido.
-            </small>
-          ) : null}
-        </label>
-      </fieldset>
+    <FormGrid onSubmit={onSubmit}>
+      <Field
+        label="Nome"
+        required
+        error={isNameInvalid ? "Informe um nome valido." : undefined}
+        className="sm:col-span-2"
+      >
+        <Input
+          type="text"
+          value={form.name}
+          maxLength={255}
+          onChange={(event) => onChange({ ...form, name: event.target.value })}
+          disabled={isBusy}
+          invalid={isNameInvalid}
+        />
+      </Field>
 
-      <fieldset className="form-field acervo-fieldset">
-        <legend>Midia</legend>
-        <div className="form-field">
-          <label htmlFor={imageId}>
-            <span>Imagem da categoria</span>
-          </label>
-          <input
-            id={imageId}
+      <FormFullWidth>
+        <Field
+          label="Imagem da categoria"
+          hint={uploadingImage ? "Enviando imagem..." : form.image || undefined}
+        >
+          <Input
             type="file"
             accept="image/*"
             onChange={onImageChange}
             disabled={isBusy}
           />
-          {uploadingImage ? <small className="form-hint">Enviando imagem...</small> : null}
-          {form.image ? (
-            <div className="book-cover-preview">
-              <LegacyImage
-                legacyPath={form.image}
-                folder="images"
-                alt="Pre-visualizacao da imagem"
-                className="table-avatar h-24 w-24"
-                fallbackClassName="table-avatar-placeholder h-24 w-24"
-                fallbackText={form.name.trim().charAt(0).toUpperCase() || "C"}
-              />
-              <small className="form-hint">{form.image}</small>
-            </div>
-          ) : null}
-        </div>
-      </fieldset>
+        </Field>
+        {form.image ? (
+          <div className="mt-2">
+            <LegacyImage
+              legacyPath={form.image}
+              folder="images"
+              alt="Pre-visualizacao da imagem"
+              className="table-avatar h-24 w-24"
+              fallbackClassName="table-avatar-placeholder h-24 w-24"
+              fallbackText={form.name.trim().charAt(0).toUpperCase() || "C"}
+            />
+          </div>
+        ) : null}
+      </FormFullWidth>
 
-      <fieldset className="form-field acervo-fieldset">
-        <legend>Status</legend>
-        <label className="form-field" htmlFor={statusId}>
-          <span>Status</span>
-          <select
-            id={statusId}
-            value={form.status}
-            onChange={(event) => onChange({ ...form, status: event.target.value })}
-          >
-            <option value="1">Ativo</option>
-            <option value="0">Inativo</option>
-          </select>
-        </label>
-      </fieldset>
-
-      <div className="book-form-actions">
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="primary-btn"
-          type="submit"
+      <Field label="Status">
+        <Select
+          value={form.status}
+          onChange={(event) => onChange({ ...form, status: event.target.value })}
           disabled={isBusy}
         >
+          <option value="1">Ativo</option>
+          <option value="0">Inativo</option>
+        </Select>
+      </Field>
+
+      <FormActions>
+        <Button type="submit" disabled={isBusy || isNameInvalid}>
           {saving ? "Salvando..." : editingId ? "Atualizar categoria" : "Criar categoria"}
-        </motion.button>
-        <button className="secondary-btn" type="button" onClick={onReset} disabled={isBusy}>
+        </Button>
+        <Button type="button" variant="secondary" onClick={onReset} disabled={isBusy}>
           {inModal ? "Cancelar" : "Limpar formulario"}
-        </button>
-      </div>
-    </form>
+        </Button>
+      </FormActions>
+    </FormGrid>
   );
 }

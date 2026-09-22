@@ -396,6 +396,68 @@ export function RolesPage() {
         emptyMessage="Nenhum perfil encontrado."
         countLabel={`${filteredRoles.length} perfil(is) com o filtro atual`}
         error={listingError}
+        renderMobileCard={(role) => (
+          <article className="book-card">
+            <div className="book-card-body">
+              <p className="book-card-id">#{role.id}</p>
+              <h3 className="inline-flex flex-wrap items-center gap-2">
+                {decodeHtmlEntities(role.name)}
+                {role.isSystem ? <Badge tone="muted">Sistema</Badge> : null}
+              </h3>
+              <p className="book-card-author">
+                {role.permissionCodes.length} permissão(ões)
+              </p>
+              <StatusBadge active={role.status === "1"} />
+            </div>
+            <div
+              className="book-card-actions"
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
+            >
+              <TableRowActions>
+                {canUpdate ? (
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="table-btn icon"
+                    type="button"
+                    onClick={() => handleEdit(role)}
+                    disabled={saving}
+                  >
+                    <Pencil size={14} />
+                    {role.isSystem ? "Ver" : "Editar"}
+                  </motion.button>
+                ) : null}
+                {canUpdate && !role.isSystem && role.status !== "1" ? (
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="table-btn icon"
+                    type="button"
+                    onClick={() => handleActivate(role)}
+                    disabled={saving}
+                  >
+                    <Power size={14} />
+                    Ativar
+                  </motion.button>
+                ) : null}
+                {canDelete && !role.isSystem && role.status === "1" ? (
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="table-btn danger icon"
+                    type="button"
+                    onClick={() => setConfirmDeleteId(role.id)}
+                    disabled={saving}
+                  >
+                    <Trash2 size={14} />
+                    Desativar
+                  </motion.button>
+                ) : null}
+              </TableRowActions>
+            </div>
+          </article>
+        )}
       />
 
       <RoleFormModal

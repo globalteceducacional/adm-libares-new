@@ -1,9 +1,15 @@
 import type { FormEvent } from "react";
-import { motion } from "framer-motion";
 import type { UpsertRoleRequest } from "../../../types/roles";
-import { BerrySelect } from "../layout/BerrySelect";
+import {
+  Button,
+  Field,
+  FormActions,
+  FormFullWidth,
+  FormGrid,
+  Input,
+  Select
+} from "../../../shared/ui";
 import { SearchableCheckboxList } from "../form/SearchableCheckboxList";
-import { Field, Input } from "../../../shared/ui";
 
 type PermissionItem = {
   id: string;
@@ -49,34 +55,33 @@ export function RolesForm({
   const fieldsDisabled = isEditingSystemRole || needsSchoolContext;
 
   return (
-    <form className="book-form modern" onSubmit={onSubmit} noValidate>
-      <div className="grid gap-4 md:grid-cols-2">
-        <Field
-          label="Nome"
-          required
-          error={isNameInvalid ? "Informe um nome valido." : undefined}
-        >
-          <Input
-            value={form.name}
-            onChange={(event) => onChange({ ...form, name: event.target.value })}
-            disabled={fieldsDisabled}
-            required
-            invalid={isNameInvalid}
-          />
-        </Field>
-        <BerrySelect
-          label="Status"
+    <FormGrid onSubmit={onSubmit}>
+      <Field
+        label="Nome"
+        required
+        error={isNameInvalid ? "Informe um nome valido." : undefined}
+      >
+        <Input
+          value={form.name}
+          onChange={(event) => onChange({ ...form, name: event.target.value })}
+          disabled={fieldsDisabled}
+          invalid={isNameInvalid}
+        />
+      </Field>
+
+      <Field label="Status">
+        <Select
           value={form.status}
           onChange={(event) => onChange({ ...form, status: event.target.value })}
           disabled={fieldsDisabled}
         >
           <option value="1">Ativo</option>
           <option value="0">Inativo</option>
-        </BerrySelect>
-      </div>
+        </Select>
+      </Field>
 
-      <fieldset className="form-field acervo-fieldset">
-        <legend>Permissoes</legend>
+      <FormFullWidth>
+        <p className="mb-2 text-sm font-medium text-foreground">Permissoes</p>
         <SearchableCheckboxList
           items={permissionItems}
           selectedIds={form.permissionCodes}
@@ -87,26 +92,22 @@ export function RolesForm({
           emptyMessage="Nenhuma permissão disponível."
         />
         {isPermissionsInvalid ? (
-          <small className="warning-text">Selecione ao menos uma permissão.</small>
+          <p className="mt-2 text-xs text-danger" role="alert">
+            Selecione ao menos uma permissão.
+          </p>
         ) : null}
-      </fieldset>
+      </FormFullWidth>
 
-      <div className="book-form-actions">
+      <FormActions>
         {canSubmit ? (
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="primary-btn"
-            type="submit"
-            disabled={saving || needsSchoolContext}
-          >
+          <Button type="submit" disabled={saving || needsSchoolContext || isNameInvalid}>
             {saving ? "Salvando..." : editingId ? "Salvar perfil" : "Criar perfil"}
-          </motion.button>
+          </Button>
         ) : null}
-        <button className="secondary-btn" type="button" onClick={onReset} disabled={saving}>
+        <Button type="button" variant="secondary" onClick={onReset} disabled={saving}>
           {isEditingSystemRole ? "Fechar" : inModal ? "Cancelar" : "Limpar formulario"}
-        </button>
-      </div>
-    </form>
+        </Button>
+      </FormActions>
+    </FormGrid>
   );
 }

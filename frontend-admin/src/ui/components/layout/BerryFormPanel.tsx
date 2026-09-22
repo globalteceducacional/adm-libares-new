@@ -19,7 +19,7 @@ export function BerryFormPanel({ icon: Icon, title, description, children, class
         title={
           Icon ? (
             <span className="inline-flex items-center gap-2">
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-violet-600/10 text-violet-700 dark:text-violet-300">
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary dark:text-sidebar-accent">
                 <Icon size={16} />
               </span>
               {title}

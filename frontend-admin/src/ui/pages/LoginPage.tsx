@@ -46,7 +46,7 @@ export function LoginPage() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      <section className="relative hidden overflow-hidden bg-gradient-to-br from-violet-800 via-violet-700 to-indigo-700 p-10 text-white lg:flex lg:flex-col lg:justify-between">
+      <section className="relative hidden overflow-hidden bg-gradient-to-br from-primary-dark via-primary to-[#4527a0] p-10 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.12),transparent_40%)]" />
         <div className="relative">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium">
@@ -56,7 +56,7 @@ export function LoginPage() {
           <h1 className="mt-8 max-w-md text-4xl font-bold leading-tight">
             Gestao moderna do catalogo Libare Digital
           </h1>
-          <p className="mt-4 max-w-lg text-sm text-indigo-100/90">
+          <p className="mt-4 max-w-lg text-sm text-white/90">
             Controle livros, autores, usuarios e moderacao em um unico lugar, com navegacao
             dinamica e experiencia responsiva.
           </p>
@@ -64,14 +64,14 @@ export function LoginPage() {
 
         <div className="relative grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
-            <BookOpen size={20} className="mb-2 text-violet-200" />
+            <BookOpen size={20} className="mb-2 text-sidebar-accent" />
             <p className="text-sm font-semibold">Catalogo unificado</p>
-            <p className="mt-1 text-xs text-indigo-100/80">Livros e autores com visao consolidada.</p>
+            <p className="mt-1 text-xs text-white/80">Livros e autores com visao consolidada.</p>
           </div>
           <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
-            <ShieldCheck size={20} className="mb-2 text-violet-200" />
+            <ShieldCheck size={20} className="mb-2 text-sidebar-accent" />
             <p className="text-sm font-semibold">Acesso seguro</p>
-            <p className="mt-1 text-xs text-indigo-100/80">Autenticacao JWT para administradores.</p>
+            <p className="mt-1 text-xs text-white/80">Autenticacao JWT para administradores.</p>
           </div>
         </div>
       </section>
@@ -84,7 +84,7 @@ export function LoginPage() {
           className="w-full max-w-md space-y-6"
         >
           <div className="space-y-2 text-center lg:text-left">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-violet-700 to-violet-500 text-sm font-bold text-white lg:mx-0">
+            <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-primary-dark to-primary text-sm font-bold text-primary-foreground lg:mx-0">
               LD
             </div>
             <h2 className="text-2xl font-bold text-foreground">Entrar no painel</h2>
