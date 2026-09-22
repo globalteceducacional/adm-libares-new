@@ -17,7 +17,9 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * Cria usuario do app ([tbl_users]) com escola do contexto e acervo vinculado.
+ * Cria usuario do app ([tbl_users]) com acervo vinculado.
+ * Escola vem do header X-School-Context quando presente; caso contrario,
+ * e inferida do [acervo.schoolId] (permite criar com "Todas as escolas").
  *
  * **Gap conhecido de login do leitor:** o PHP legado `adm-libares/user_login_api.php`
  * ainda compara `$row['password'] == $password` (plaintext). Hashes BCrypt gravados
@@ -39,9 +41,6 @@ class CreateUserUseCase(
         auditSessionContext.applyActor(currentActorResolver.resolveActorId())
         userPolicy.requireCreate()
 
-        val schoolId = TenantContext.get().effectiveSchoolId()
-            ?: throw BadRequestException("Informe o contexto de escola via header X-School-Context")
-
         val email = request.email.trim()
         if (userRepository.countByEmailIgnoreCase(email) > 0) {
             throw BadRequestException("Ja existe um usuario com este email")
@@ -52,9 +51,8 @@ class CreateUserUseCase(
         if (!acervo.status) {
             throw BadRequestException("Acervo inativo")
         }
-        if (acervo.schoolId != schoolId) {
-            throw ForbiddenException("Acervo nao pertence a escola do contexto")
-        }
+
+        val schoolId = resolveSchoolId(acervo.schoolId)
 
         val registeredOn = (System.currentTimeMillis() / 1000).toString()
         val saved = userRepository.save(
@@ -75,5 +73,26 @@ class CreateUserUseCase(
         )
 
         return userResponseMapper.fromEntity(saved)
+    }
+
+    private fun resolveSchoolId(acervoSchoolId: Long?): Long {
+        val principal = TenantContext.get()
+        val contextSchoolId = principal.effectiveSchoolId()
+
+        if (contextSchoolId != null) {
+            if (acervoSchoolId != null && acervoSchoolId != contextSchoolId) {
+                throw ForbiddenException("Acervo nao pertence a escola do contexto")
+            }
+            return contextSchoolId
+        }
+
+        val schoolId = acervoSchoolId
+            ?: throw BadRequestException(
+                "Acervo sem escola vinculada. Selecione outro acervo ou informe X-School-Context"
+            )
+        if (!principal.canAccessSchool(schoolId)) {
+            throw ForbiddenException("Sem acesso a escola do acervo selecionado")
+        }
+        return schoolId
     }
 }

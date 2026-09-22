@@ -36,7 +36,7 @@ import { UserDetailModal } from "../components/users/UserDetailModal";
 import { UserFormModal } from "../components/users/UserFormModal";
 import { LegacyImage } from "../components/LegacyImage";
 import type { UserResponse } from "../../types/users";
-import { Alert, Button, ConfirmDialog, StatusBadge } from "../../shared/ui";
+import { Button, ConfirmDialog, StatusBadge } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
@@ -62,7 +62,7 @@ type SaveAcervoVariables = {
 
 export function UsersPage() {
   const location = useLocation();
-  const { requiresSchoolContext, schoolContextId } = useAuth();
+  const { schoolContextId } = useAuth();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const [acervoFilter, setAcervoFilter] = useState<string>("all");
   const selectedAcervoId = acervoFilter === "all" ? undefined : Number(acervoFilter);
@@ -90,7 +90,6 @@ export function UsersPage() {
   const canUpdateUser = usePermission("users.update");
   const canBlockUser = usePermission("users.block");
   const canDeleteUser = usePermission("users.delete");
-  const needsSchoolContext = requiresSchoolContext && !schoolContextId;
 
   const schoolLabel = useMemo(() => {
     if (!schoolContextId) {
@@ -238,7 +237,7 @@ export function UsersPage() {
       if (!canUpdateUser) {
         return;
       }
-    } else if (!canCreateUser || needsSchoolContext) {
+    } else if (!canCreateUser) {
       return;
     }
     if (isFormInvalid) {
@@ -415,12 +414,6 @@ export function UsersPage() {
       }
       stats={<ListingMiniStats items={listStats} />}
     >
-      {needsSchoolContext ? (
-        <Alert tone="warning">
-          Selecione uma escola no topo do painel para criar usuarios.
-        </Alert>
-      ) : null}
-
       <AdminListingSection<UserResponse>
         title="Lista de leitores"
         search={search}
@@ -527,7 +520,6 @@ export function UsersPage() {
         form={form}
         saving={saving}
         error={formError}
-        needsSchoolContext={needsSchoolContext}
         isFormInvalid={isFormInvalid}
         schoolLabel={schoolLabel}
         acervoOptions={acervoOptions}

@@ -9,7 +9,6 @@ type UserFormModalProps = {
   form: CreateUserFormState;
   saving: boolean;
   error: string;
-  needsSchoolContext: boolean;
   isFormInvalid: boolean;
   schoolLabel: string | null;
   acervoOptions: AcervoOptionResponse[];
@@ -25,7 +24,6 @@ export function UserFormModal({
   form,
   saving,
   error,
-  needsSchoolContext,
   isFormInvalid,
   schoolLabel,
   acervoOptions,
@@ -42,7 +40,7 @@ export function UserFormModal({
       description={
         editingId
           ? `Atualize o perfil #${editingId}.`
-          : "Cadastre um leitor do aplicativo."
+          : "Cadastre um leitor do aplicativo. A escola e definida pelo acervo escolhido."
       }
       size="lg"
       className="max-w-2xl"
@@ -54,7 +52,6 @@ export function UserFormModal({
           form={form}
           inModal
           saving={saving}
-          needsSchoolContext={needsSchoolContext}
           isFormInvalid={isFormInvalid}
           schoolLabel={schoolLabel}
           acervoOptions={acervoOptions}

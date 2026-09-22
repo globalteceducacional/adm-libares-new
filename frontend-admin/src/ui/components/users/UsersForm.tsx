@@ -20,7 +20,6 @@ type UsersFormProps = {
   form: CreateUserFormState;
   inModal?: boolean;
   saving: boolean;
-  needsSchoolContext: boolean;
   isFormInvalid: boolean;
   schoolLabel: string | null;
   acervoOptions: AcervoOptionResponse[];
@@ -34,7 +33,6 @@ export function UsersForm({
   form,
   inModal = false,
   saving,
-  needsSchoolContext,
   isFormInvalid,
   schoolLabel,
   acervoOptions,
@@ -43,7 +41,7 @@ export function UsersForm({
   onChange
 }: UsersFormProps) {
   const isCreate = mode === "create";
-  const disabled = saving || (isCreate && needsSchoolContext);
+  const disabled = saving;
   const acervoSelectOptions = useMemo(
     () =>
       acervoOptions.map((acervo) => ({
@@ -55,15 +53,20 @@ export function UsersForm({
 
   return (
     <form className="book-form modern" onSubmit={onSubmit} noValidate>
-      {isCreate || schoolLabel ? (
+      {isCreate ? (
         <label className="form-field">
           <span>Escola</span>
           <input
             type="text"
-            value={schoolLabel ?? "Selecione uma escola no painel"}
+            value={schoolLabel ?? "Definida automaticamente pelo acervo"}
             readOnly
             disabled
           />
+        </label>
+      ) : schoolLabel ? (
+        <label className="form-field">
+          <span>Escola</span>
+          <input type="text" value={schoolLabel} readOnly disabled />
         </label>
       ) : null}
       <label className="form-field">
