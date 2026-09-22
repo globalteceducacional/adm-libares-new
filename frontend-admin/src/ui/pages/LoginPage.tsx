@@ -10,8 +10,8 @@ import { Alert, Button, Field, Input } from "../../shared/ui";
 export function LoginPage() {
   const navigate = useNavigate();
   const { refresh } = useAuth();
-  const [username, setUsername] = useState("teste.admin");
-  const [password, setPassword] = useState("Admin@123");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
