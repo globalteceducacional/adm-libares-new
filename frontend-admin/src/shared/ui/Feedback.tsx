@@ -48,12 +48,14 @@ export function Field({
   hint,
   error,
   required,
+  className,
   children
 }: {
   label: string;
   hint?: string;
   error?: string;
   required?: boolean;
+  className?: string;
   children: ReactNode;
 }) {
   const generatedId = useId();
@@ -77,7 +79,7 @@ export function Field({
     : children;
 
   return (
-    <div className="flex flex-col gap-2 text-sm">
+    <div className={cn("flex flex-col gap-2 text-sm", className)}>
       <label htmlFor={controlId} className="font-medium text-foreground">
         {label}
         {required ? (

@@ -7,6 +7,7 @@ export { SearchInput } from "./SearchInput";
 export { Breadcrumbs, PageHeader, type BreadcrumbItem } from "./PageHeader";
 export { PageShell } from "./PageShell";
 export { Alert, Field } from "./Feedback";
+export { Select, FormGrid, FormActions, FormFullWidth, type SelectProps } from "./Form";
 export { Modal, type ModalProps } from "./Modal";
 export { ConfirmDialog, type ConfirmDialogProps } from "./ConfirmDialog";
 export { DetailField } from "./DetailField";

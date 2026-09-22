@@ -33,6 +33,7 @@ type SearchableSelectProps = {
   compact?: boolean;
   /** Marca o controle como invalido para leitores de tela. */
   invalid?: boolean;
+  "aria-invalid"?: boolean;
   "aria-describedby"?: string;
 };
 
@@ -65,6 +66,7 @@ export function SearchableSelect({
   className,
   compact = false,
   invalid = false,
+  "aria-invalid": ariaInvalid,
   "aria-describedby": ariaDescribedBy
 }: SearchableSelectProps) {
   const generatedId = useId();
@@ -206,7 +208,7 @@ export function SearchableSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listboxId}
-        aria-invalid={invalid || undefined}
+        aria-invalid={ariaInvalid ?? (invalid ? true : undefined)}
         aria-describedby={ariaDescribedBy}
         onClick={() => {
           if (disabled) {

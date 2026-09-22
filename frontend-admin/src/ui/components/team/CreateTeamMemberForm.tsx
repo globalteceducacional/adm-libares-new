@@ -1,9 +1,16 @@
 import type { FormEvent } from "react";
 import { useMemo } from "react";
-import { motion } from "framer-motion";
 import type { SchoolResponse } from "../../../types/schools";
 import type { CreateTeamMemberRequest, TeamRoleCode } from "../../../types/team";
-import { BerrySelect } from "../layout/BerrySelect";
+import {
+  Button,
+  Field,
+  FormActions,
+  FormFullWidth,
+  FormGrid,
+  Input,
+  Select
+} from "../../../shared/ui";
 import { SearchableSelect } from "../form/SearchableSelect";
 import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
 
@@ -41,6 +48,10 @@ export function CreateTeamMemberForm({
   onChange
 }: CreateTeamMemberFormProps) {
   const disabled = saving || needsSchoolContext;
+  const passwordError =
+    form.password.length > 0 && form.password.length < 6
+      ? "A senha deve ter no minimo 6 caracteres."
+      : undefined;
   const schoolSelectOptions = useMemo(
     () =>
       schoolOptions.map((school) => ({
@@ -51,33 +62,30 @@ export function CreateTeamMemberForm({
   );
 
   return (
-    <form className="book-form modern" onSubmit={onSubmit} noValidate>
-      <label className="form-field">
-        <span>Usuário</span>
-        <input
+    <FormGrid onSubmit={onSubmit}>
+      <Field label="Usuario" required>
+        <Input
           type="text"
           value={form.username}
           maxLength={100}
           autoComplete="username"
           onChange={(event) => onChange({ ...form, username: event.target.value })}
           disabled={disabled}
-          required
         />
-      </label>
-      <label className="form-field">
-        <span>Nome</span>
-        <input
+      </Field>
+
+      <Field label="Nome" required>
+        <Input
           type="text"
           value={form.name}
           maxLength={150}
           onChange={(event) => onChange({ ...form, name: event.target.value })}
           disabled={disabled}
-          required
         />
-      </label>
-      <label className="form-field">
-        <span>Senha</span>
-        <input
+      </Field>
+
+      <Field label="Senha" required error={passwordError} className="sm:col-span-2">
+        <Input
           type="password"
           value={form.password}
           minLength={6}
@@ -85,64 +93,74 @@ export function CreateTeamMemberForm({
           autoComplete="new-password"
           onChange={(event) => onChange({ ...form, password: event.target.value })}
           disabled={disabled}
-          required
+          invalid={Boolean(passwordError)}
         />
-        {form.password.length > 0 && form.password.length < 6 ? (
-          <small className="warning-text">A senha deve ter no minimo 6 caracteres.</small>
-        ) : null}
-      </label>
-      <SearchableSelect
-        label="Escola"
-        options={schoolSelectOptions}
-        value={form.schoolId}
-        onChange={(next) => onChange({ ...form, schoolId: next })}
-        placeholder="Selecione uma escola"
-        searchPlaceholder="Buscar escola..."
-        emptyMessage="Nenhuma escola disponivel."
-        allowEmpty
-        emptyLabel="Selecione uma escola"
-        disabled={disabled || (!isSuperAdmin && schoolOptions.length <= 1)}
-        required
-      />
+      </Field>
+
+      <FormFullWidth>
+        <Field label="Escola" required>
+          <SearchableSelect
+            options={schoolSelectOptions}
+            value={form.schoolId}
+            onChange={(next) => onChange({ ...form, schoolId: next })}
+            placeholder="Selecione uma escola"
+            searchPlaceholder="Buscar escola..."
+            emptyMessage="Nenhuma escola disponivel."
+            allowEmpty
+            emptyLabel="Selecione uma escola"
+            disabled={disabled || (!isSuperAdmin && schoolOptions.length <= 1)}
+            required
+          />
+        </Field>
+      </FormFullWidth>
+
       {isSuperAdmin ? (
-        <BerrySelect
-          label="Perfil"
-          value={form.roleCode}
-          onChange={(event) =>
-            onChange({ ...form, roleCode: event.target.value as TeamRoleCode })
-          }
-          disabled={disabled}
-          required
-        >
-          <option value="SCHOOL_ADMIN">Admin da escola</option>
-          <option value="PROFESSOR">Professor</option>
-        </BerrySelect>
+        <Field label="Perfil" required>
+          <Select
+            value={form.roleCode}
+            onChange={(event) =>
+              onChange({ ...form, roleCode: event.target.value as TeamRoleCode })
+            }
+            disabled={disabled}
+          >
+            <option value="SCHOOL_ADMIN">Admin da escola</option>
+            <option value="PROFESSOR">Professor</option>
+          </Select>
+        </Field>
       ) : (
-        <label className="form-field">
-          <span>Perfil</span>
-          <input type="text" value="Professor" disabled readOnly />
-        </label>
+        <Field label="Perfil">
+          <Input type="text" value="Professor" disabled readOnly />
+        </Field>
       )}
-      <div className="book-form-actions">
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="primary-btn"
+
+      {isFormInvalid ? (
+        <FormFullWidth>
+          <p className="text-xs text-warning-strong" role="status">
+            Preencha usuario, nome, senha (min. 6) e escola.
+          </p>
+        </FormFullWidth>
+      ) : null}
+
+      {needsSchoolContext ? (
+        <FormFullWidth>
+          <p className="text-xs text-warning-strong" role="status">
+            Selecione uma escola no topo do painel para liberar o cadastro.
+          </p>
+        </FormFullWidth>
+      ) : null}
+
+      <FormActions>
+        <Button
           type="submit"
-          disabled={disabled}
+          disabled={disabled || isFormInvalid || Boolean(passwordError)}
         >
           {saving ? "Salvando..." : "Criar membro da equipe"}
-        </motion.button>
-        <button className="secondary-btn" type="button" onClick={onReset} disabled={saving}>
+        </Button>
+        <Button type="button" variant="secondary" onClick={onReset} disabled={saving}>
           {inModal ? "Cancelar" : "Limpar formulario"}
-        </button>
-      </div>
-      {isFormInvalid ? (
-        <small className="warning-text form-field--full">
-          Preencha usuario, nome, senha (min. 6) e escola.
-        </small>
-      ) : null}
-    </form>
+        </Button>
+      </FormActions>
+    </FormGrid>
   );
 }
 

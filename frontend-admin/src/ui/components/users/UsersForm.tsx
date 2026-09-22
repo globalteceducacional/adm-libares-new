@@ -1,9 +1,17 @@
 import type { FormEvent } from "react";
 import { useMemo } from "react";
-import { motion } from "framer-motion";
 import type { AcervoOptionResponse } from "../../../types/acervos";
 import type { CreateUserRequest, UpdateUserProfileRequest } from "../../../types/users";
 import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
+import {
+  Button,
+  Field,
+  FormActions,
+  FormFullWidth,
+  FormGrid,
+  Input,
+  Select
+} from "../../../shared/ui";
 import { SearchableSelect } from "../form/SearchableSelect";
 
 export type CreateUserFormState = {
@@ -42,6 +50,10 @@ export function UsersForm({
 }: UsersFormProps) {
   const isCreate = mode === "create";
   const disabled = saving;
+  const passwordError =
+    isCreate && form.password.length > 0 && form.password.length < 6
+      ? "A senha deve ter no minimo 6 caracteres."
+      : undefined;
   const acervoSelectOptions = useMemo(
     () =>
       acervoOptions.map((acervo) => ({
@@ -52,49 +64,45 @@ export function UsersForm({
   );
 
   return (
-    <form className="book-form modern" onSubmit={onSubmit} noValidate>
+    <FormGrid onSubmit={onSubmit}>
       {isCreate ? (
-        <label className="form-field">
-          <span>Escola</span>
-          <input
+        <Field label="Escola" hint="Definida pelo acervo escolhido quando nao ha escola no topo.">
+          <Input
             type="text"
             value={schoolLabel ?? "Definida automaticamente pelo acervo"}
             readOnly
             disabled
           />
-        </label>
+        </Field>
       ) : schoolLabel ? (
-        <label className="form-field">
-          <span>Escola</span>
-          <input type="text" value={schoolLabel} readOnly disabled />
-        </label>
+        <Field label="Escola">
+          <Input type="text" value={schoolLabel} readOnly disabled />
+        </Field>
       ) : null}
-      <label className="form-field">
-        <span>Nome</span>
-        <input
+
+      <Field label="Nome" required>
+        <Input
           type="text"
           value={form.name}
           maxLength={150}
           onChange={(event) => onChange({ ...form, name: event.target.value })}
           disabled={disabled}
-          required
         />
-      </label>
-      <label className="form-field">
-        <span>Email</span>
-        <input
+      </Field>
+
+      <Field label="Email" required>
+        <Input
           type="email"
           value={form.email}
           maxLength={190}
           onChange={(event) => onChange({ ...form, email: event.target.value })}
           disabled={disabled}
-          required
         />
-      </label>
+      </Field>
+
       {isCreate ? (
-        <label className="form-field">
-          <span>Senha</span>
-          <input
+        <Field label="Senha" required error={passwordError}>
+          <Input
             type="password"
             value={form.password}
             minLength={6}
@@ -102,69 +110,61 @@ export function UsersForm({
             autoComplete="new-password"
             onChange={(event) => onChange({ ...form, password: event.target.value })}
             disabled={disabled}
-            required
+            invalid={Boolean(passwordError)}
           />
-          {form.password.length > 0 && form.password.length < 6 ? (
-            <small className="warning-text">A senha deve ter no minimo 6 caracteres.</small>
-          ) : null}
-        </label>
+        </Field>
       ) : null}
-      <label className="form-field">
-        <span>Telefone</span>
-        <input
+
+      <Field label="Telefone" required>
+        <Input
           type="text"
           value={form.phone}
           maxLength={40}
           onChange={(event) => onChange({ ...form, phone: event.target.value })}
           disabled={disabled}
-          required
         />
-      </label>
+      </Field>
+
       {isCreate ? (
         <>
-          <div className="form-field">
-            <span>Acervo</span>
-            <SearchableSelect
-              options={acervoSelectOptions}
-              value={form.acervoId}
-              onChange={(next) => onChange({ ...form, acervoId: next })}
-              placeholder="Selecione um acervo"
-              searchPlaceholder="Buscar acervo..."
-              emptyMessage="Nenhum acervo ativo cadastrado."
-              allowEmpty
-              emptyLabel="Selecione um acervo"
-              disabled={disabled}
-              required
-            />
-          </div>
-          <label className="form-field">
-            <span>Status</span>
-            <select
+          <FormFullWidth>
+            <Field label="Acervo" required>
+              <SearchableSelect
+                options={acervoSelectOptions}
+                value={form.acervoId}
+                onChange={(next) => onChange({ ...form, acervoId: next })}
+                placeholder="Selecione um acervo"
+                searchPlaceholder="Buscar acervo..."
+                emptyMessage="Nenhum acervo ativo cadastrado."
+                allowEmpty
+                emptyLabel="Selecione um acervo"
+                disabled={disabled}
+                required
+              />
+            </Field>
+          </FormFullWidth>
+          <Field label="Status">
+            <Select
               value={form.status}
               onChange={(event) => onChange({ ...form, status: event.target.value })}
               disabled={disabled}
             >
               <option value="1">Ativo</option>
               <option value="0">Inativo</option>
-            </select>
-          </label>
+            </Select>
+          </Field>
         </>
       ) : null}
-      <div className="book-form-actions">
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="primary-btn"
-          type="submit"
-          disabled={disabled || isFormInvalid}
-        >
+
+      <FormActions>
+        <Button type="submit" disabled={disabled || isFormInvalid || Boolean(passwordError)}>
           {saving ? "Salvando..." : isCreate ? "Criar usuario" : "Salvar perfil"}
-        </motion.button>
-        <button className="secondary-btn" type="button" onClick={onReset} disabled={saving}>
+        </Button>
+        <Button type="button" variant="secondary" onClick={onReset} disabled={saving}>
           {inModal ? "Cancelar" : "Limpar formulario"}
-        </button>
-      </div>
-    </form>
+        </Button>
+      </FormActions>
+    </FormGrid>
   );
 }
 
