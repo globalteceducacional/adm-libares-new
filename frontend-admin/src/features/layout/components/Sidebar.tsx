@@ -27,7 +27,7 @@ export function Sidebar({ collapsed, mobileOpen, onNavigate }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "berry-sidebar fixed inset-y-0 left-0 z-[60] flex max-h-[100dvh] flex-col border-r border-sidebar-border text-sidebar-foreground transition-[width,transform] duration-300 lg:static lg:max-h-none",
+        "berry-sidebar fixed inset-y-0 left-0 z-[60] flex h-[100dvh] max-h-[100dvh] flex-col border-r border-sidebar-border text-sidebar-foreground transition-[width,transform] duration-300 lg:static lg:h-full lg:max-h-full lg:min-h-0 lg:shrink-0",
         showExpandedSidebar ? "w-[min(280px,100vw)] px-4 py-4" : "w-[80px] px-2 py-4",
         mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0 lg:shadow-none"
       )}
@@ -82,7 +82,7 @@ export function Sidebar({ collapsed, mobileOpen, onNavigate }: SidebarProps) {
       <SidebarSearch value={searchQuery} onChange={setSearchQuery} collapsed={!showExpandedSidebar} />
 
       <nav
-        className="mt-3 flex flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden pr-1 scrollbar-thin"
+        className="mt-3 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden overscroll-contain pr-1 scrollbar-thin"
         aria-label="Navegacao principal"
       >
         {groups.length === 0 ? (

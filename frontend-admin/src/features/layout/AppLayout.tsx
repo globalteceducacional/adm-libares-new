@@ -32,6 +32,14 @@ export function AppLayout() {
   }, [location.pathname, closeMobileSidebar]);
 
   useEffect(() => {
+    const main = document.getElementById("main-content");
+    if (main) {
+      main.scrollTop = 0;
+    }
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  useEffect(() => {
     if (!mobileSidebarOpen) {
       return;
     }
@@ -45,7 +53,7 @@ export function AppLayout() {
   const breadcrumbs = buildBreadcrumbs(location.pathname);
 
   return (
-    <div className="min-h-screen bg-background lg:flex">
+    <div className="flex h-[100dvh] max-h-[100dvh] overflow-hidden bg-background">
       <a
         href="#main-content"
         className="sr-only left-4 top-4 z-[120] rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-card focus:not-sr-only focus:absolute"
@@ -69,9 +77,13 @@ export function AppLayout() {
 
       <Sidebar collapsed={sidebarCollapsed} mobileOpen={mobileSidebarOpen} onNavigate={closeMobileSidebar} />
 
-      <div className="flex min-w-0 flex-1 flex-col lg:min-h-screen">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <Topbar breadcrumbs={breadcrumbs} />
-        <main id="main-content" tabIndex={-1} className="flex-1 px-3 py-4 outline-none sm:px-5 md:px-8 md:py-6">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 outline-none sm:px-5 md:px-8 md:py-6"
+        >
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
