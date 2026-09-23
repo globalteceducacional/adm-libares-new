@@ -13,6 +13,8 @@ interface AcervoJpaRepository : JpaRepository<AcervoEntity, Int> {
         fun getStatus(): Boolean
         fun getBookCount(): Number
         fun getUserCount(): Number
+        fun getSchoolId(): Number?
+        fun getSchoolName(): String?
     }
 
     fun existsByNomeIgnoreCase(nome: String): Boolean
@@ -31,12 +33,15 @@ interface AcervoJpaRepository : JpaRepository<AcervoEntity, Int> {
                 a.descricao AS descricao,
                 a.status AS status,
                 COUNT(DISTINCT la.book_id) AS bookCount,
-                COUNT(DISTINCT u.id) AS userCount
+                COUNT(DISTINCT u.id) AS userCount,
+                a.school_id AS schoolId,
+                s.name AS schoolName
             FROM acervos a
+            LEFT JOIN app_schools s ON s.id = a.school_id
             LEFT JOIN livros_acervos la ON la.acervo_id = a.id
             LEFT JOIN tbl_users u ON u.acervo_id = a.id
             WHERE (:tenantSchoolId IS NULL OR a.school_id = :tenantSchoolId)
-            GROUP BY a.id, a.nome, a.descricao, a.status, a.created_at, a.school_id
+            GROUP BY a.id, a.nome, a.descricao, a.status, a.created_at, a.school_id, s.name
             ORDER BY a.id DESC
         """,
         nativeQuery = true

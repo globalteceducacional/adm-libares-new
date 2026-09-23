@@ -5,6 +5,7 @@ import com.libare.adm.modules.catalog.api.dto.UpsertAcervoRequest
 import com.libare.adm.modules.catalog.application.policy.AcervoPolicy
 import com.libare.adm.modules.catalog.infrastructure.persistence.entity.AcervoEntity
 import com.libare.adm.modules.catalog.infrastructure.persistence.repository.AcervoJpaRepository
+import com.libare.adm.modules.schools.infrastructure.persistence.repository.SchoolJpaRepository
 import com.libare.adm.shared.exception.BadRequestException
 import com.libare.adm.shared.exception.NotFoundException
 import com.libare.adm.shared.persistence.AuditSessionContext
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class CreateAcervoUseCase(
     private val acervoRepository: AcervoJpaRepository,
+    private val schoolRepository: SchoolJpaRepository,
     private val acervoPolicy: AcervoPolicy,
     private val currentActorResolver: CurrentActorResolver,
     private val auditSessionContext: AuditSessionContext
@@ -25,7 +27,11 @@ class CreateAcervoUseCase(
     fun execute(request: UpsertAcervoRequest): AcervoResponse {
         auditSessionContext.applyActor(currentActorResolver.resolveActorId())
 
-        val schoolId = acervoPolicy.resolveSchoolIdForCreate()
+        val schoolId = acervoPolicy.resolveSchoolIdForWrite(request.schoolId)
+        if (!schoolRepository.existsById(schoolId)) {
+            throw BadRequestException("Escola invalida")
+        }
+
         val name = request.name.trim()
         if (acervoRepository.existsByNomeIgnoreCaseAndSchoolId(name, schoolId)) {
             throw BadRequestException("Ja existe um acervo com este nome nesta escola")
@@ -40,13 +46,17 @@ class CreateAcervoUseCase(
             )
         )
 
+        val schoolName = schoolRepository.findById(schoolId).orElse(null)?.name
+
         return AcervoResponse(
             id = saved.id.toAcervoIdLong(),
             name = saved.nome,
             description = saved.descricao,
             status = if (saved.status) "1" else "0",
             bookCount = 0,
-            userCount = 0
+            userCount = 0,
+            schoolId = schoolId,
+            schoolName = schoolName
         )
     }
 }
@@ -54,6 +64,7 @@ class CreateAcervoUseCase(
 @Service
 class UpdateAcervoUseCase(
     private val acervoRepository: AcervoJpaRepository,
+    private val schoolRepository: SchoolJpaRepository,
     private val acervoPolicy: AcervoPolicy,
     private val currentActorResolver: CurrentActorResolver,
     private val auditSessionContext: AuditSessionContext,
@@ -64,8 +75,10 @@ class UpdateAcervoUseCase(
         auditSessionContext.applyActor(currentActorResolver.resolveActorId())
 
         val existing = acervoPolicy.loadForUpdate(acervoId)
-        val schoolId = existing.schoolId
-            ?: throw BadRequestException("Acervo sem escola vinculada")
+        val schoolId = acervoPolicy.resolveSchoolIdForUpdate(existing, request.schoolId)
+        if (!schoolRepository.existsById(schoolId)) {
+            throw BadRequestException("Escola invalida")
+        }
 
         val name = request.name.trim()
         if (acervoRepository.existsByNomeIgnoreCaseAndSchoolIdAndIdNot(name, schoolId, existing.id)) {
@@ -78,7 +91,7 @@ class UpdateAcervoUseCase(
                 nome = name,
                 descricao = request.description?.trim()?.ifBlank { null },
                 status = request.status.trim() != "0",
-                schoolId = existing.schoolId,
+                schoolId = schoolId,
                 createdAt = existing.createdAt
             )
         )
@@ -92,7 +105,10 @@ class UpdateAcervoUseCase(
             description = updated.descricao,
             status = if (updated.status) "1" else "0",
             bookCount = stats?.getBookCount()?.toLong() ?: 0,
-            userCount = stats?.getUserCount()?.toLong() ?: 0
+            userCount = stats?.getUserCount()?.toLong() ?: 0,
+            schoolId = schoolId,
+            schoolName = stats?.getSchoolName()
+                ?: schoolRepository.findById(schoolId).orElse(null)?.name
         )
     }
 }
@@ -140,7 +156,9 @@ class GetAcervoUseCase(
             description = row.getDescricao(),
             status = if (row.getStatus()) "1" else "0",
             bookCount = row.getBookCount().toLong(),
-            userCount = row.getUserCount().toLong()
+            userCount = row.getUserCount().toLong(),
+            schoolId = row.getSchoolId()?.toLong(),
+            schoolName = row.getSchoolName()
         )
     }
 }

@@ -80,6 +80,16 @@ export function AcervoDetailModal({
       <dl className="grid gap-4 sm:grid-cols-2">
         <DetailField label="ID" value={`#${acervo.id}`} />
         <DetailField label="Status" value={<StatusBadge active={acervo.status === "1"} />} />
+        <DetailField
+          label="Escola"
+          value={
+            acervo.schoolName
+              ? decodeHtmlEntities(acervo.schoolName)
+              : acervo.schoolId
+                ? `Escola #${acervo.schoolId}`
+                : "Sem escola vinculada"
+          }
+        />
         <DetailField label="Livros vinculados" value={acervo.bookCount.toLocaleString("pt-BR")} />
         <DetailField label="Usuários vinculados" value={acervo.userCount.toLocaleString("pt-BR")} />
       </dl>

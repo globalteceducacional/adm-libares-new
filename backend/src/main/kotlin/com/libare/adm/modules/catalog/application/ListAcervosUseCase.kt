@@ -20,7 +20,9 @@ class ListAcervosUseCase(
                 description = row.getDescricao(),
                 status = if (row.getStatus()) "1" else "0",
                 bookCount = row.getBookCount().toLong(),
-                userCount = row.getUserCount().toLong()
+                userCount = row.getUserCount().toLong(),
+                schoolId = row.getSchoolId()?.toLong(),
+                schoolName = row.getSchoolName()
             )
         }
     }

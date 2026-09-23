@@ -3,6 +3,7 @@ package com.libare.adm.modules.catalog.application.policy
 import com.libare.adm.modules.catalog.infrastructure.persistence.entity.AcervoEntity
 import com.libare.adm.modules.catalog.infrastructure.persistence.repository.AcervoJpaRepository
 import com.libare.adm.shared.exception.BadRequestException
+import com.libare.adm.shared.exception.ForbiddenException
 import com.libare.adm.shared.exception.NotFoundException
 import com.libare.adm.shared.security.AuthorizationService
 import com.libare.adm.shared.tenant.TenantContext
@@ -26,10 +27,42 @@ class AcervoPolicy(
         authorizationService.check("acervos.delete")
     }
 
-    fun resolveSchoolIdForCreate(): Long {
+    /**
+     * Resolve a escola do acervo: body.schoolId (preferencial) ou X-School-Context.
+     */
+    fun resolveSchoolIdForWrite(requestedSchoolId: Long?): Long {
         requireCreate()
-        return TenantContext.get().effectiveSchoolId()
-            ?: throw BadRequestException("Super admin deve informar contexto de escola via header X-School-Context")
+        val principal = TenantContext.get()
+        val contextSchoolId = principal.effectiveSchoolId()
+
+        val schoolId = requestedSchoolId ?: contextSchoolId
+            ?: throw BadRequestException(
+                "Informe a escola do acervo (campo schoolId) ou selecione no topo do painel"
+            )
+
+        if (!principal.canAccessSchool(schoolId)) {
+            throw ForbiddenException("Sem acesso a escola informada")
+        }
+        return schoolId
+    }
+
+    fun resolveSchoolIdForUpdate(existing: AcervoEntity, requestedSchoolId: Long?): Long {
+        requireUpdate()
+        val principal = TenantContext.get()
+
+        if (requestedSchoolId == null) {
+            return existing.schoolId
+                ?: throw BadRequestException("Acervo sem escola; informe schoolId para vincular")
+        }
+
+        if (!principal.canAccessSchool(requestedSchoolId)) {
+            throw ForbiddenException("Sem acesso a escola informada")
+        }
+        // Trocar escola so se puder ver o acervo atual (ou ele ainda nao tem escola).
+        if (existing.schoolId != null) {
+            assertCanModify(existing)
+        }
+        return requestedSchoolId
     }
 
     fun assertCanModify(acervo: AcervoEntity) {
@@ -40,7 +73,9 @@ class AcervoPolicy(
         requireUpdate()
         val acervo = acervoRepository.findById(acervoId.toAcervoId())
             .orElseThrow { NotFoundException("Acervo nao encontrado") }
-        assertCanModify(acervo)
+        if (acervo.schoolId != null) {
+            assertCanModify(acervo)
+        }
         return acervo
     }
 

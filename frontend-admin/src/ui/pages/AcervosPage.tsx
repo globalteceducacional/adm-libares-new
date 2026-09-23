@@ -6,9 +6,11 @@ import { createAcervo, deleteAcervo, updateAcervo } from "../../services/acervos
 import {
   getQueryErrorMessage,
   useAcervosQuery,
-  useInvalidateAdminQueries
+  useInvalidateAdminQueries,
+  useSchoolsQuery
 } from "../../features/shared/api/queries";
 import { buildBreadcrumbs } from "../../features/layout/config/navigation";
+import { useAuth } from "../../features/auth/AuthContext";
 import { PermissionGate } from "../../features/auth/PermissionGate";
 import { useAnyPermission } from "../../features/auth/usePermission";
 import { AcervoDetailModal } from "../components/acervos/AcervoDetailModal";
@@ -30,7 +32,8 @@ import { TableRowActions } from "../components/table/TableRowActions";
 const EMPTY_FORM: UpsertAcervoRequest = {
   name: "",
   description: "",
-  status: "1"
+  status: "1",
+  schoolId: null
 };
 
 type SaveAcervoVariables = {
@@ -40,14 +43,26 @@ type SaveAcervoVariables = {
 
 export function AcervosPage() {
   const location = useLocation();
+  const { schoolContextId, allowedSchools } = useAuth();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const acervosQuery = useAcervosQuery();
+  const schoolsQuery = useSchoolsQuery();
   const invalidate = useInvalidateAdminQueries();
   const acervos = acervosQuery.data ?? [];
+  const schoolOptions =
+    schoolsQuery.data?.filter((school) => school.status === "1") ??
+    allowedSchools.map((school) => ({
+      id: school.id,
+      name: school.name,
+      slug: "",
+      status: "1"
+    }));
   const loading = acervosQuery.isLoading;
   const listingError = acervosQuery.error
     ? getQueryErrorMessage(acervosQuery.error, "Falha ao carregar acervos")
-    : undefined;
+    : schoolsQuery.error
+      ? getQueryErrorMessage(schoolsQuery.error, "Falha ao carregar escolas")
+      : undefined;
 
   const [formError, setFormError] = useState("");
   const [formModalOpen, setFormModalOpen] = useState(false);
@@ -59,7 +74,8 @@ export function AcervosPage() {
   const [showValidation, setShowValidation] = useState(false);
 
   const isNameInvalid = form.name.trim().length === 0;
-  const isFormInvalid = isNameInvalid;
+  const isSchoolInvalid = form.schoolId == null || form.schoolId <= 0;
+  const isFormInvalid = isNameInvalid || isSchoolInvalid;
   const canCreateAcervo = useAnyPermission(["acervos.create"]);
   const canUpdateAcervo = useAnyPermission(["acervos.update"]);
   const canDeleteAcervo = useAnyPermission(["acervos.delete"]);
@@ -90,7 +106,8 @@ export function AcervosPage() {
       updateAcervo(acervo.id, {
         name: acervo.name,
         description: acervo.description ?? undefined,
-        status: "1"
+        status: "1",
+        schoolId: acervo.schoolId ?? undefined
       }),
     successMessage: "Acervo ativado com sucesso.",
     errorFallback: "Falha ao ativar acervo",
@@ -137,6 +154,10 @@ export function AcervosPage() {
 
   function openCreateForm() {
     resetForm();
+    setForm({
+      ...EMPTY_FORM,
+      schoolId: schoolContextId
+    });
     setFormError("");
     setFormModalOpen(true);
   }
@@ -155,7 +176,8 @@ export function AcervosPage() {
         payload: {
           name: form.name.trim(),
           description: form.description?.trim() || undefined,
-          status: form.status
+          status: form.status,
+          schoolId: form.schoolId
         }
       });
     } catch {
@@ -170,7 +192,8 @@ export function AcervosPage() {
     setForm({
       name: decodeHtmlEntities(acervo.name),
       description: stripHtml(acervo.description) ?? "",
-      status: acervo.status
+      status: acervo.status,
+      schoolId: acervo.schoolId ?? null
     });
     setSelectedAcervo(null);
     setFormModalOpen(true);
@@ -210,6 +233,16 @@ export function AcervosPage() {
     () => [
       { key: "id", label: "ID", render: (acervo) => acervo.id },
       { key: "name", label: "Nome", render: (acervo) => decodeHtmlEntities(acervo.name) },
+      {
+        key: "school",
+        label: "Escola",
+        render: (acervo) =>
+          acervo.schoolName
+            ? decodeHtmlEntities(acervo.schoolName)
+            : acervo.schoolId
+              ? `Escola #${acervo.schoolId}`
+              : "—"
+      },
       {
         key: "books",
         label: "Livros",
@@ -345,7 +378,10 @@ export function AcervosPage() {
               <p className="book-card-id">#{acervo.id}</p>
               <h3>{decodeHtmlEntities(acervo.name)}</h3>
               <p className="book-card-author">
-                {acervo.bookCount} livros · {acervo.userCount} usuarios
+                {acervo.schoolName
+                  ? decodeHtmlEntities(acervo.schoolName)
+                  : "Sem escola"}{" "}
+                · {acervo.bookCount} livros · {acervo.userCount} usuarios
               </p>
               <StatusBadge active={acervo.status === "1"} />
             </div>
@@ -358,9 +394,11 @@ export function AcervosPage() {
         editingId={editingId}
         form={form}
         isNameInvalid={showValidation && isNameInvalid}
+        isSchoolInvalid={showValidation && isSchoolInvalid}
         isFormInvalid={isFormInvalid}
         saving={saving}
         error={formError}
+        schoolOptions={schoolOptions}
         onClose={closeFormModal}
         onSubmit={handleSubmit}
         onReset={closeFormModal}

@@ -6,5 +6,7 @@ data class AcervoResponse(
     val description: String?,
     val status: String,
     val bookCount: Long,
-    val userCount: Long
+    val userCount: Long,
+    val schoolId: Long? = null,
+    val schoolName: String? = null
 )
