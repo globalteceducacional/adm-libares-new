@@ -13,7 +13,8 @@ export default {
         primary: {
           DEFAULT: "rgb(var(--primary-rgb) / <alpha-value>)",
           foreground: "#ffffff",
-          dark: "var(--primary-700)"
+          dark: "var(--primary-700)",
+          light: "var(--primary-light)"
         },
         accent: "var(--teal)",
         success: "var(--success)",

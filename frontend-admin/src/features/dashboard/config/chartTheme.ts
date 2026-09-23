@@ -1,17 +1,21 @@
-/** Paleta inspirada no Berry (Material) para graficos Recharts. */
+/**
+ * Paleta dos graficos Recharts alinhada a identidade Globaltec:
+ * azul royal (#0020A0) e destaque (#2F4FD0) do logo, seguidos de cores de apoio distinguiveis.
+ * Recharts nao resolve CSS vars em SVG, por isso hex fixo aqui.
+ */
 export const CHART_COLORS = [
-  "#673ab7",
-  "#2196f3",
+  "#0020a0",
+  "#2f4fd0",
   "#00bcd4",
   "#4caf50",
   "#ff9800",
   "#e91e63",
-  "#9c27b0",
-  "#3f51b5"
+  "#7986cb",
+  "#9db0f2"
 ] as const;
 
-export const CHART_PRIMARY = "#673ab7";
-export const CHART_SECONDARY = "#2196f3";
+export const CHART_PRIMARY = "#0020a0";
+export const CHART_SECONDARY = "#2f4fd0";
 export const CHART_SUCCESS = "#00bcd4";
 export const CHART_WARNING = "#ff9800";
 

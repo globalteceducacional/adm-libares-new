@@ -37,9 +37,9 @@ select {
 }
 
 .berry-nav-item-active {
-  background: linear-gradient(90deg, #673ab7 0%, #7e57c2 100%);
+  background: linear-gradient(90deg, var(--sidebar-active) 0%, var(--primary-light) 100%);
   color: #fff;
-  box-shadow: 0 8px 20px rgba(103, 58, 183, 0.35);
+  box-shadow: 0 8px 20px rgb(var(--primary-rgb) / 0.35);
 }
 
 .berry-nav-item-active .berry-nav-icon {

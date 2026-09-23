@@ -9,9 +9,11 @@
     --surface-2: #f1f5f9;
     --text: #1e293b;
     --text-muted: #64748b;
-    --primary: #673ab7;
-    --primary-rgb: 103 58 183;
-    --primary-700: #512da8;
+    /* Identidade Globaltec Educacional: azul royal do logo (#0020A0) + brilho do "G" (#2040C0). */
+    --primary: #0020a0;
+    --primary-rgb: 0 32 160;
+    --primary-700: #001478;
+    --primary-light: #2f4fd0;
     --teal: #1fb2a5;
     --warning: #f59e0b;
     /* amber-700: usado quando o aviso aparece como TEXTO (o amber claro falha em AA) */
@@ -19,15 +21,15 @@
     --success: #22c55e;
     --danger: #ef4444;
     --border: #e2e8f0;
-    --shadow: 0 4px 20px rgba(103, 58, 183, 0.08);
-    /* Berry: sidebar sempre escuro, independente do tema do conteudo */
-    --sidebar: #212946;
+    --shadow: 0 4px 20px rgba(0, 32, 160, 0.08);
+    /* Sidebar sempre escuro (navy Globaltec), independente do tema do conteudo */
+    --sidebar: #0b1240;
     --sidebar-foreground: #ffffff;
-    --sidebar-muted: #8492c4;
+    --sidebar-muted: #8fa0d8;
     --sidebar-border: rgba(255, 255, 255, 0.08);
-    --sidebar-hover: rgba(103, 58, 183, 0.14);
-    --sidebar-active: #673ab7;
-    --sidebar-accent: #b39ddb;
+    --sidebar-hover: rgba(47, 79, 208, 0.22);
+    --sidebar-active: #2040c0;
+    --sidebar-accent: #9db0f2;
     --sidebar-input: rgba(255, 255, 255, 0.06);
   }
 
@@ -38,15 +40,20 @@
     --text: #e5e7eb;
     --text-muted: #94a3b8;
     --warning-strong: #fbbf24;
+    /* No escuro o azul base (#0020A0) some sobre a superficie; sobe para o tom de destaque do logo. */
+    --primary: #3355d6;
+    --primary-rgb: 51 85 214;
+    --primary-700: #2040c0;
+    --primary-light: #5b78e6;
     --border: #2a3550;
     --shadow: 0 16px 32px rgba(4, 6, 14, 0.45);
-    --sidebar: #1a2038;
+    --sidebar: #090e33;
     --sidebar-foreground: #f8fafc;
-    --sidebar-muted: #94a3b8;
+    --sidebar-muted: #94a3c8;
     --sidebar-border: rgba(255, 255, 255, 0.07);
-    --sidebar-hover: rgba(129, 140, 248, 0.16);
-    --sidebar-active: #7e57c2;
-    --sidebar-accent: #b39ddb;
+    --sidebar-hover: rgba(91, 120, 230, 0.18);
+    --sidebar-active: #2f4fd0;
+    --sidebar-accent: #9db0f2;
     --sidebar-input: rgba(255, 255, 255, 0.05);
   }
 
