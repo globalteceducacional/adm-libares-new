@@ -16,7 +16,8 @@ export type CreateUserRequest = {
   password: string;
   phone: string;
   userImage?: string;
-  acervoId: number;
+  /** Opcional — pode vincular acervo/escola depois da criacao. */
+  acervoId?: number | null;
   status?: string;
 };
 

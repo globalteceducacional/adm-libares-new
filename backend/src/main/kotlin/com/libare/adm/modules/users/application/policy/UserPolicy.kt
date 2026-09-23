@@ -25,6 +25,11 @@ class UserPolicy(
     }
 
     fun assertCanModify(user: UserEntity) {
+        // Sem escola ainda: quem passou em requireUpdate/Delete/Block pode agir
+        // (ex.: vincular acervo depois). Com escola, respeita o tenant.
+        if (user.schoolId == null) {
+            return
+        }
         authorizationService.assertSameSchool(user.schoolId)
     }
 }

@@ -17,9 +17,9 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * Cria usuario do app ([tbl_users]) com acervo vinculado.
- * Escola vem do header X-School-Context quando presente; caso contrario,
- * e inferida do [acervo.schoolId] (permite criar com "Todas as escolas").
+ * Cria usuario do app ([tbl_users]).
+ * Acervo e escola sao opcionais: sem acervo o leitor fica sem vinculo
+ * e pode receber acervo/escola depois via [UpdateUserAcervoUseCase].
  *
  * **Gap conhecido de login do leitor:** o PHP legado `adm-libares/user_login_api.php`
  * ainda compara `$row['password'] == $password` (plaintext). Hashes BCrypt gravados
@@ -46,13 +46,17 @@ class CreateUserUseCase(
             throw BadRequestException("Ja existe um usuario com este email")
         }
 
-        val acervo = acervoRepository.findById(request.acervoId.toAcervoId())
-            .orElseThrow { BadRequestException("Acervo invalido") }
-        if (!acervo.status) {
-            throw BadRequestException("Acervo inativo")
+        val acervoId = request.acervoId
+        val (resolvedAcervoId, schoolId) = if (acervoId != null) {
+            val acervo = acervoRepository.findById(acervoId.toAcervoId())
+                .orElseThrow { BadRequestException("Acervo invalido") }
+            if (!acervo.status) {
+                throw BadRequestException("Acervo inativo")
+            }
+            acervoId.toAcervoId() to resolveSchoolId(acervo.schoolId)
+        } else {
+            null to null
         }
-
-        val schoolId = resolveSchoolId(acervo.schoolId)
 
         val registeredOn = (System.currentTimeMillis() / 1000).toString()
         val saved = userRepository.save(
@@ -66,7 +70,7 @@ class CreateUserUseCase(
                 authId = "",
                 isDeleted = 0,
                 registeredOn = registeredOn,
-                acervoId = request.acervoId.toAcervoId(),
+                acervoId = resolvedAcervoId,
                 schoolId = schoolId,
                 status = if (request.status.trim() == "0") "0" else "1"
             )
@@ -75,7 +79,7 @@ class CreateUserUseCase(
         return userResponseMapper.fromEntity(saved)
     }
 
-    private fun resolveSchoolId(acervoSchoolId: Long?): Long {
+    private fun resolveSchoolId(acervoSchoolId: Long?): Long? {
         val principal = TenantContext.get()
         val contextSchoolId = principal.effectiveSchoolId()
 
@@ -86,13 +90,12 @@ class CreateUserUseCase(
             return contextSchoolId
         }
 
-        val schoolId = acervoSchoolId
-            ?: throw BadRequestException(
-                "Acervo sem escola vinculada. Selecione outro acervo ou informe X-School-Context"
-            )
-        if (!principal.canAccessSchool(schoolId)) {
+        if (acervoSchoolId == null) {
+            return null
+        }
+        if (!principal.canAccessSchool(acervoSchoolId)) {
             throw ForbiddenException("Sem acesso a escola do acervo selecionado")
         }
-        return schoolId
+        return acervoSchoolId
     }
 }

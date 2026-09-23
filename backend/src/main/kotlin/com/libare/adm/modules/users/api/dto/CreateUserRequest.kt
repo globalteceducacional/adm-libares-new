@@ -6,7 +6,10 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
 
-@Schema(description = "Cadastro de leitor do aplicativo (tbl_users). Escola vem do header X-School-Context.")
+@Schema(
+    description = "Cadastro de leitor do aplicativo (tbl_users). " +
+        "Acervo/escola sao opcionais e podem ser vinculados depois."
+)
 data class CreateUserRequest(
     @field:NotBlank @field:Size(max = 150)
     @field:Schema(description = "Nome completo", example = "Maria Silva", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -29,8 +32,13 @@ data class CreateUserRequest(
     val userImage: String? = null,
 
     @field:Positive
-    @field:Schema(description = "Acervo da escola ao qual o leitor tera acesso", example = "2", requiredMode = Schema.RequiredMode.REQUIRED)
-    val acervoId: Long,
+    @field:Schema(
+        description = "Acervo opcional. Se omitido, o usuario fica sem escola/acervo ate o vinculo posterior.",
+        example = "2",
+        nullable = true,
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED
+    )
+    val acervoId: Long? = null,
 
     @field:Size(max = 1)
     @field:Schema(description = "Status: 1=ativo, 0=inativo", example = "1", allowableValues = ["0", "1"])

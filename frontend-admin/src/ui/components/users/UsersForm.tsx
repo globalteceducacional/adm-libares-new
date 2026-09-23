@@ -66,10 +66,17 @@ export function UsersForm({
   return (
     <FormGrid onSubmit={onSubmit}>
       {isCreate ? (
-        <Field label="Escola" hint="Definida pelo acervo escolhido quando nao ha escola no topo.">
+        <Field
+          label="Escola"
+          hint="Opcional. Sem acervo o usuario fica sem escola; o vinculo pode ser feito depois."
+        >
           <Input
             type="text"
-            value={schoolLabel ?? "Definida automaticamente pelo acervo"}
+            value={
+              form.acervoId
+                ? schoolLabel ?? "Definida pelo acervo selecionado"
+                : "Sem vinculo (pode definir depois)"
+            }
             readOnly
             disabled
           />
@@ -128,18 +135,20 @@ export function UsersForm({
       {isCreate ? (
         <>
           <FormFullWidth>
-            <Field label="Acervo" required>
+            <Field
+              label="Acervo"
+              hint="Opcional. Sem acervo, vincule depois na ficha do usuario."
+            >
               <SearchableSelect
                 options={acervoSelectOptions}
                 value={form.acervoId}
                 onChange={(next) => onChange({ ...form, acervoId: next })}
-                placeholder="Selecione um acervo"
+                placeholder="Sem acervo por enquanto"
                 searchPlaceholder="Buscar acervo..."
                 emptyMessage="Nenhum acervo ativo cadastrado."
                 allowEmpty
-                emptyLabel="Selecione um acervo"
+                emptyLabel="Sem acervo (vincular depois)"
                 disabled={disabled}
-                required
               />
             </Field>
           </FormFullWidth>
@@ -169,12 +178,13 @@ export function UsersForm({
 }
 
 export function toCreateUserRequest(form: CreateUserFormState): CreateUserRequest {
+  const acervoId = form.acervoId.trim() ? Number(form.acervoId) : null;
   return {
     name: form.name.trim(),
     email: form.email.trim(),
     password: form.password,
     phone: form.phone.trim(),
-    acervoId: Number(form.acervoId),
+    acervoId: acervoId != null && Number.isFinite(acervoId) && acervoId > 0 ? acervoId : null,
     status: form.status || "1"
   };
 }

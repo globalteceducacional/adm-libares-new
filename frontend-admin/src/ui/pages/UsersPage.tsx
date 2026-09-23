@@ -117,9 +117,7 @@ export function UsersPage() {
     : form.name.trim().length === 0 ||
       form.email.trim().length === 0 ||
       form.password.length < 6 ||
-      form.phone.trim().length === 0 ||
-      !form.acervoId ||
-      Number.isNaN(Number(form.acervoId));
+      form.phone.trim().length === 0;
 
   async function invalidateUserQueries() {
     await invalidate.users();

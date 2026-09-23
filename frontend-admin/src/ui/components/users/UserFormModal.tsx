@@ -40,7 +40,7 @@ export function UserFormModal({
       description={
         editingId
           ? `Atualize o perfil #${editingId}.`
-          : "Cadastre um leitor do aplicativo. A escola e definida pelo acervo escolhido."
+          : "Cadastre um leitor. Acervo e escola sao opcionais e podem ser vinculados depois."
       }
       size="lg"
       className="max-w-2xl"
