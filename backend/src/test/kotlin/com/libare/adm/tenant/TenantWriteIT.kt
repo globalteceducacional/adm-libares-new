@@ -44,8 +44,14 @@ class TenantWriteIT {
         schoolAId = schools[0]
         schoolBId = schools[1]
 
+        // Escola do leitor e derivada do acervo (ADR 0006).
         schoolBUserId = jdbcTemplate.queryForList(
-            "SELECT id FROM tbl_users WHERE school_id = ? LIMIT 1",
+            """
+            SELECT u.id FROM tbl_users u
+            INNER JOIN acervos a ON a.id = u.acervo_id
+            WHERE a.school_id = ?
+            LIMIT 1
+            """.trimIndent(),
             Long::class.java,
             schoolBId
         ).firstOrNull() ?: 0

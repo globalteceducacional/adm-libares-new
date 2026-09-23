@@ -11,7 +11,9 @@ class ReaderHomeSectionUseCases(
     private val mapper: ReaderBookRowMapper
 ) {
     fun homeSection(params: Map<String, String>): Map<String, Any> {
-        val acervoId = acervo.resolve(params)
+        val scope = acervo.resolve(params)
+        if (scope.isEmpty) return EbookAppEnvelope.array(emptyList())
+        val acervoId = scope.acervoId
         val sections = jdbc.query(
             "SELECT * FROM tbl_home_section WHERE status = '1' OR status = 1 ORDER BY id DESC"
         ) { rs, _ ->
@@ -31,7 +33,9 @@ class ReaderHomeSectionUseCases(
     fun homeSectionId(params: Map<String, String>): Map<String, Any> {
         val sectionId = params["homesection_id"]?.toLongOrNull() ?: 0L
         val page = (params["page"]?.toIntOrNull() ?: 1).coerceAtLeast(1)
-        val acervoId = acervo.resolve(params)
+        val scope = acervo.resolve(params)
+        if (scope.isEmpty) return EbookAppEnvelope.array(emptyList())
+        val acervoId = scope.acervoId
 
         val section = jdbc.query(
             "SELECT * FROM tbl_home_section WHERE (status = '1' OR status = 1) AND id = ? ORDER BY id DESC",

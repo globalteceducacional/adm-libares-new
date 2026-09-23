@@ -16,7 +16,9 @@ class ReaderBookDetailUseCase(
 ) {
     fun bookId(params: Map<String, String>): Map<String, Any> {
         val bookId = params["book_id"]?.toLongOrNull() ?: 0L
-        val acervoId = acervo.resolve(params)
+        val scope = acervo.resolve(params)
+        if (scope.isEmpty) return EbookAppEnvelope.array(emptyList())
+        val acervoId = scope.acervoId
         if (acervoId != null && !acervo.bookInAcervo(bookId, acervoId)) {
             return EbookAppEnvelope.array(emptyList())
         }

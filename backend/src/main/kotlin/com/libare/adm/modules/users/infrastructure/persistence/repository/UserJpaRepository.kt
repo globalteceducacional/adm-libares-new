@@ -16,6 +16,8 @@ interface UserJpaRepository : JpaRepository<UserEntity, Long> {
         fun getStatus(): String
         fun getAcervoId(): Number?
         fun getAcervoName(): String?
+        fun getSchoolId(): Number?
+        fun getSchoolName(): String?
     }
 
     fun findAllByStatus(status: String): List<UserEntity>
@@ -48,6 +50,10 @@ interface UserJpaRepository : JpaRepository<UserEntity, Long> {
         @Param("excludeId") excludeId: Long
     ): Long
 
+    /**
+     * Escola derivada do acervo (ADR 0006). Leitores sem acervo ("nao reivindicados")
+     * aparecem em qualquer visao de escola para poderem ser vinculados depois.
+     */
     @Query(
         value = """
             SELECT
@@ -59,10 +65,13 @@ interface UserJpaRepository : JpaRepository<UserEntity, Long> {
                 u.user_image AS userImage,
                 u.status AS status,
                 u.acervo_id AS acervoId,
-                a.nome AS acervoName
+                a.nome AS acervoName,
+                a.school_id AS schoolId,
+                s.name AS schoolName
             FROM tbl_users u
             LEFT JOIN acervos a ON a.id = u.acervo_id
-            WHERE (:tenantSchoolId IS NULL OR u.school_id = :tenantSchoolId)
+            LEFT JOIN app_schools s ON s.id = a.school_id
+            WHERE (:tenantSchoolId IS NULL OR a.school_id = :tenantSchoolId OR u.acervo_id IS NULL)
             ORDER BY u.id DESC
         """,
         nativeQuery = true
@@ -80,11 +89,14 @@ interface UserJpaRepository : JpaRepository<UserEntity, Long> {
                 u.user_image AS userImage,
                 u.status AS status,
                 u.acervo_id AS acervoId,
-                a.nome AS acervoName
+                a.nome AS acervoName,
+                a.school_id AS schoolId,
+                s.name AS schoolName
             FROM tbl_users u
             LEFT JOIN acervos a ON a.id = u.acervo_id
+            LEFT JOIN app_schools s ON s.id = a.school_id
             WHERE u.acervo_id = :acervoId
-              AND (:tenantSchoolId IS NULL OR u.school_id = :tenantSchoolId)
+              AND (:tenantSchoolId IS NULL OR a.school_id = :tenantSchoolId)
             ORDER BY u.id DESC
         """,
         nativeQuery = true

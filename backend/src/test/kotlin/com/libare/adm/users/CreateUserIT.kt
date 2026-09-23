@@ -80,13 +80,13 @@ class CreateUserIT {
     }
 
     @Test
-    fun `create user without school context returns 400`() {
+    fun `super admin without school context creates user with acervo (global view)`() {
         val token = login("teste.admin", "Admin@123")
         val acervo = requireAcervoPair()
         val email = "it.create.user.noctx.${System.currentTimeMillis()}@local.dev"
         createdUserEmails += email
 
-        mockMvc.post("/api/v1/users") {
+        val responseJson = mockMvc.post("/api/v1/users") {
             header("Authorization", "Bearer $token")
             contentType = MediaType.APPLICATION_JSON
             content = createBody(
@@ -96,9 +96,46 @@ class CreateUserIT {
                 phone = "11988887777",
                 acervoId = acervo.first
             )
-        }.andExpect {
-            status { isBadRequest() }
         }
+            .andExpect { status { isCreated() } }
+            .andReturn()
+            .response
+            .contentAsString
+
+        // Escola derivada do acervo (ADR 0006)
+        val created = objectMapper.readTree(responseJson)
+        assertEquals(acervo.second, created.path("schoolId").asLong())
+    }
+
+    @Test
+    fun `create user without acervo leaves reader unassigned`() {
+        val token = login("teste.admin", "Admin@123")
+        val acervo = requireAcervoPair()
+        val email = "it.create.user.noacervo.${System.currentTimeMillis()}@local.dev"
+        createdUserEmails += email
+
+        val responseJson = mockMvc.post("/api/v1/users") {
+            header("Authorization", "Bearer $token")
+            header("X-School-Context", acervo.second.toString())
+            contentType = MediaType.APPLICATION_JSON
+            content = """
+                {
+                  "name": "IT Sem Acervo",
+                  "email": "$email",
+                  "password": "Secret@123",
+                  "phone": "11988887777",
+                  "status": "1"
+                }
+            """.trimIndent()
+        }
+            .andExpect { status { isCreated() } }
+            .andReturn()
+            .response
+            .contentAsString
+
+        val created = objectMapper.readTree(responseJson)
+        assertTrue(created.path("acervoId").isNull, "Sem acervo deve retornar acervoId null")
+        assertTrue(created.path("schoolId").isNull, "Sem acervo nao ha escola derivada")
     }
 
     @Test

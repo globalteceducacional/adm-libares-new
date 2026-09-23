@@ -38,7 +38,6 @@ class DeleteUserUseCase(
                 isDeleted = existing.isDeleted,
                 registeredOn = existing.registeredOn,
                 acervoId = existing.acervoId,
-                schoolId = existing.schoolId,
                 status = "0"
             )
         )

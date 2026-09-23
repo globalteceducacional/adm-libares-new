@@ -1,4 +1,4 @@
-import { Trash2, UserCheck, UserX } from "lucide-react";
+import { Link2Off, Trash2, UserCheck, UserX } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
 import { Button, DetailField, Modal, StatusBadge } from "../../../shared/ui";
@@ -16,7 +16,8 @@ type UserDetailModalProps = {
   onEdit?: (user: UserResponse) => void;
   onToggleStatus?: (user: UserResponse) => void;
   onDelete?: (user: UserResponse) => void;
-  onSaveAcervo: (user: UserResponse, acervoId: number) => Promise<void>;
+  /** acervoId null = desvincular (ADR 0006). */
+  onSaveAcervo: (user: UserResponse, acervoId: number | null) => Promise<void>;
 };
 
 export function UserDetailModal({
@@ -56,19 +57,32 @@ export function UserDetailModal({
   const currentUser = user;
   const name = decodeHtmlEntities(currentUser.name);
   const isActive = currentUser.status === "1";
-  const acervoChanged = selectedAcervoId !== (currentUser.acervoId ? String(currentUser.acervoId) : "");
+  const currentAcervoValue = currentUser.acervoId ? String(currentUser.acervoId) : "";
+  const acervoChanged = selectedAcervoId !== currentAcervoValue;
   const canSaveAcervo = selectedAcervoId !== "" && acervoChanged;
+  const canUnlink = currentUser.acervoId != null;
 
-  async function handleSaveAcervo() {
-    if (!canSaveAcervo) {
-      return;
-    }
+  async function submitAcervo(acervoId: number | null) {
     setAcervoError("");
     try {
-      await onSaveAcervo(currentUser, Number(selectedAcervoId));
+      await onSaveAcervo(currentUser, acervoId);
     } catch (error) {
       setAcervoError(error instanceof Error ? error.message : "Falha ao salvar acervo");
     }
+  }
+
+  function handleSaveAcervo() {
+    if (!canSaveAcervo) {
+      return;
+    }
+    void submitAcervo(Number(selectedAcervoId));
+  }
+
+  function handleUnlinkAcervo() {
+    if (!canUnlink) {
+      return;
+    }
+    void submitAcervo(null);
   }
 
   return (
@@ -151,7 +165,16 @@ export function UserDetailModal({
                 <span className="warning-text">Sem acervo</span>
               )
             }
-            className="sm:col-span-2"
+          />
+          <DetailField
+            label="Escola"
+            value={
+              currentUser.schoolName ? (
+                decodeHtmlEntities(currentUser.schoolName)
+              ) : (
+                <span className="text-muted">— (derivada do acervo)</span>
+              )
+            }
           />
         </dl>
       </div>
@@ -159,7 +182,8 @@ export function UserDetailModal({
       <div className="mt-5 border-t border-border pt-4">
         <h3 className="text-xs font-medium uppercase tracking-wide text-muted">Vincular acervo</h3>
         <p className="mt-1 text-xs text-muted">
-          O usuario vera no app apenas os livros do acervo selecionado.
+          O usuario vera no app apenas os livros do acervo selecionado. Sem acervo, o catalogo fica
+          vazio.
         </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
           <div className="form-field flex-1">
@@ -184,6 +208,18 @@ export function UserDetailModal({
           >
             Salvar acervo
           </Button>
+          {canUnlink ? (
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={handleUnlinkAcervo}
+              disabled={saving}
+              aria-label="Desvincular acervo do usuario"
+            >
+              <Link2Off size={16} />
+              Desvincular
+            </Button>
+          ) : null}
         </div>
         {acervoError ? <p className="error-text mt-2">{acervoError}</p> : null}
       </div>

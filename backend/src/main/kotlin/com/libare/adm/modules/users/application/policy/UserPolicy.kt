@@ -1,12 +1,21 @@
 package com.libare.adm.modules.users.application.policy
 
+import com.libare.adm.modules.catalog.infrastructure.persistence.entity.AcervoEntity
+import com.libare.adm.modules.catalog.infrastructure.persistence.repository.AcervoJpaRepository
 import com.libare.adm.modules.users.infrastructure.persistence.entity.UserEntity
+import com.libare.adm.shared.exception.BadRequestException
 import com.libare.adm.shared.security.AuthorizationService
+import com.libare.adm.shared.util.toAcervoId
 import org.springframework.stereotype.Component
 
+/**
+ * Regras de acesso ao leitor ([UserEntity]).
+ * A escola do leitor e sempre derivada do acervo (ADR 0006): sem acervo = nao reivindicado.
+ */
 @Component
 class UserPolicy(
-    private val authorizationService: AuthorizationService
+    private val authorizationService: AuthorizationService,
+    private val acervoRepository: AcervoJpaRepository
 ) {
     fun requireCreate() {
         authorizationService.check("users.create")
@@ -24,12 +33,27 @@ class UserPolicy(
         authorizationService.check("users.block")
     }
 
+    /** Leitor com acervo: ator precisa acessar a escola do acervo. Sem acervo: livre. */
     fun assertCanModify(user: UserEntity) {
-        // Sem escola ainda: quem passou em requireUpdate/Delete/Block pode agir
-        // (ex.: vincular acervo depois). Com escola, respeita o tenant.
-        if (user.schoolId == null) {
-            return
+        val acervoSchoolId = user.acervoId?.let { acervoId ->
+            acervoRepository.findById(acervoId).orElse(null)?.schoolId
         }
-        authorizationService.assertSameSchool(user.schoolId)
+        authorizationService.assertSameSchoolOrUnassigned(acervoSchoolId)
+    }
+
+    /**
+     * Valida um acervo como destino de vinculo: existe, ativo, com escola acessivel pelo ator.
+     * Retorna a entidade para o chamador reutilizar.
+     */
+    fun requireLinkableAcervo(acervoId: Long): AcervoEntity {
+        val acervo = acervoRepository.findById(acervoId.toAcervoId())
+            .orElseThrow { BadRequestException("Acervo invalido") }
+        if (!acervo.status) {
+            throw BadRequestException("Acervo inativo nao pode ser vinculado")
+        }
+        val schoolId = acervo.schoolId
+            ?: throw BadRequestException("Acervo sem escola; vincule o acervo a uma escola antes")
+        authorizationService.assertSameSchool(schoolId)
+        return acervo
     }
 }

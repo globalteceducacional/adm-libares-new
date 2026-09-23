@@ -57,15 +57,21 @@ type SaveUserVariables = {
 
 type SaveAcervoVariables = {
   user: UserResponse;
-  acervoId: number;
+  /** null = desvincular (ADR 0006). */
+  acervoId: number | null;
 };
+
+/** Valor do filtro de acervo que representa "leitores sem acervo" (filtrado no cliente). */
+const ACERVO_FILTER_NONE = "none";
 
 export function UsersPage() {
   const location = useLocation();
   const { schoolContextId } = useAuth();
   const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
   const [acervoFilter, setAcervoFilter] = useState<string>("all");
-  const selectedAcervoId = acervoFilter === "all" ? undefined : Number(acervoFilter);
+  const onlyWithoutAcervo = acervoFilter === ACERVO_FILTER_NONE;
+  const selectedAcervoId =
+    acervoFilter === "all" || onlyWithoutAcervo ? undefined : Number(acervoFilter);
   const usersQuery = useUsersQuery(selectedAcervoId);
   const acervosQuery = useAcervoOptionsQuery();
   const schoolsQuery = useSchoolsQuery();
@@ -102,6 +108,7 @@ export function UsersPage() {
   const acervoFilterOptions = useMemo(
     () => [
       { value: "all", label: "Todos os acervos" },
+      { value: ACERVO_FILTER_NONE, label: "Sem acervo" },
       ...acervoOptions.map((acervo) => ({
         value: String(acervo.id),
         label: decodeHtmlEntities(acervo.name)
@@ -173,7 +180,10 @@ export function UsersPage() {
 
   const acervoMutation = useAdminMutation<UserResponse, SaveAcervoVariables>({
     mutationFn: ({ user, acervoId }) => updateUserAcervo(user.id, { acervoId }),
-    successMessage: "Acervo do usuario atualizado com sucesso.",
+    successMessage: (_data, { acervoId }) =>
+      acervoId === null
+        ? "Acervo desvinculado. O usuário não verá livros até receber outro acervo."
+        : "Acervo do usuário atualizado com sucesso.",
     errorFallback: "Falha ao atualizar acervo",
     toastError: false,
     invalidate: async () => {
@@ -250,7 +260,7 @@ export function UsersPage() {
     }
   }
 
-  async function handleSaveAcervo(user: UserResponse, acervoId: number) {
+  async function handleSaveAcervo(user: UserResponse, acervoId: number | null) {
     await acervoMutation.mutateAsync({ user, acervoId });
   }
 
@@ -295,6 +305,11 @@ export function UsersPage() {
           ) : (
             <span className="warning-text">Sem acervo</span>
           )
+      },
+      {
+        key: "school",
+        label: "Escola",
+        render: (user) => (user.schoolName ? decodeHtmlEntities(user.schoolName) : "—")
       },
       {
         key: "status",
@@ -358,21 +373,24 @@ export function UsersPage() {
     const normalized = search.trim().toLowerCase();
     return users.filter((user) => {
       const byStatus = statusFilter === "all" || user.status === statusFilter;
+      const byAcervo = !onlyWithoutAcervo || user.acervoId == null;
       const byText =
         normalized.length === 0 ||
         decodeHtmlEntities(user.name).toLowerCase().includes(normalized) ||
         user.email.toLowerCase().includes(normalized) ||
         String(user.id).includes(normalized);
-      return byStatus && byText;
+      return byStatus && byAcervo && byText;
     });
-  }, [users, search, statusFilter]);
+  }, [users, search, statusFilter, onlyWithoutAcervo]);
 
   const emptyMessage = useMemo(
     () =>
       `Nenhum usuario encontrado para os filtros aplicados.${
-        search || statusFilter !== "all" ? " Limpe os filtros para ver mais resultados." : ""
+        search || statusFilter !== "all" || acervoFilter !== "all"
+          ? " Limpe os filtros para ver mais resultados."
+          : ""
       }`,
-    [search, statusFilter]
+    [search, statusFilter, acervoFilter]
   );
 
   const listStats = useMemo(() => {
@@ -457,6 +475,7 @@ export function UsersPage() {
               <p className="book-card-author">{user.email}</p>
               <p className="book-card-author">
                 {user.acervoName ? decodeHtmlEntities(user.acervoName) : "Sem acervo"}
+                {user.schoolName ? ` · ${decodeHtmlEntities(user.schoolName)}` : ""}
               </p>
               <StatusBadge active={user.status === "1"} />
             </div>

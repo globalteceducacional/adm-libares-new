@@ -47,7 +47,6 @@ class UpdateUserProfileUseCase(
                 isDeleted = existing.isDeleted,
                 registeredOn = existing.registeredOn,
                 acervoId = existing.acervoId,
-                schoolId = existing.schoolId,
                 status = existing.status
             )
         )

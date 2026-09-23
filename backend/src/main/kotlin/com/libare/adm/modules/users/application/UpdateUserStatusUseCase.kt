@@ -46,7 +46,6 @@ class UpdateUserStatusUseCase(
                 isDeleted = existing.isDeleted,
                 registeredOn = existing.registeredOn,
                 acervoId = existing.acervoId,
-                schoolId = existing.schoolId,
                 status = if (request.status == "0") "0" else "1"
             )
         )

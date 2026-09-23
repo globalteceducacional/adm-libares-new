@@ -108,7 +108,6 @@ class ReaderLoginUseCase(
             isDeleted = user.isDeleted,
             registeredOn = user.registeredOn,
             acervoId = user.acervoId,
-            schoolId = user.schoolId,
             status = user.status
         )
 
@@ -125,7 +124,6 @@ class ReaderLoginUseCase(
             isDeleted = user.isDeleted,
             registeredOn = user.registeredOn,
             acervoId = user.acervoId,
-            schoolId = user.schoolId,
             status = user.status
         )
 }

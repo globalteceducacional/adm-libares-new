@@ -1,27 +1,26 @@
 package com.libare.adm.modules.users.application
 
-import com.libare.adm.modules.catalog.infrastructure.persistence.repository.AcervoJpaRepository
 import com.libare.adm.modules.users.api.dto.UpdateUserAcervoRequest
 import com.libare.adm.modules.users.api.dto.UserResponse
 import com.libare.adm.modules.users.application.policy.UserPolicy
 import com.libare.adm.modules.users.infrastructure.persistence.entity.UserEntity
 import com.libare.adm.modules.users.infrastructure.persistence.repository.UserJpaRepository
-import com.libare.adm.shared.exception.BadRequestException
 import com.libare.adm.shared.exception.NotFoundException
 import com.libare.adm.shared.persistence.AuditSessionContext
-import com.libare.adm.shared.security.AuthorizationService
 import com.libare.adm.shared.security.CurrentActorResolver
-import com.libare.adm.shared.util.toAcervoId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
+/**
+ * Vincula ou desvincula (`acervoId = null`) o acervo do leitor (ADR 0006).
+ * Quem pode agir: quem acessa a escola do acervo atual (ou qualquer admin, se o leitor
+ * ainda nao tem acervo). O acervo de destino precisa estar em escola acessivel.
+ */
 @Service
 class UpdateUserAcervoUseCase(
     private val userRepository: UserJpaRepository,
-    private val acervoRepository: AcervoJpaRepository,
     private val userResponseMapper: UserResponseMapper,
     private val userPolicy: UserPolicy,
-    private val authorizationService: AuthorizationService,
     private val currentActorResolver: CurrentActorResolver,
     private val auditSessionContext: AuditSessionContext
 ) {
@@ -34,12 +33,7 @@ class UpdateUserAcervoUseCase(
             .orElseThrow { NotFoundException("Usuario nao encontrado") }
         userPolicy.assertCanModify(existing)
 
-        val acervo = acervoRepository.findById(request.acervoId.toAcervoId())
-            .orElseThrow { BadRequestException("Acervo nao encontrado") }
-        if (!acervo.status) {
-            throw BadRequestException("Acervo inativo nao pode ser vinculado ao usuario")
-        }
-        authorizationService.assertSameSchool(acervo.schoolId)
+        val nextAcervoId = request.acervoId?.let { userPolicy.requireLinkableAcervo(it).id }
 
         val updated = userRepository.save(
             UserEntity(
@@ -53,8 +47,7 @@ class UpdateUserAcervoUseCase(
                 authId = existing.authId,
                 isDeleted = existing.isDeleted,
                 registeredOn = existing.registeredOn,
-                acervoId = request.acervoId.toAcervoId(),
-                schoolId = acervo.schoolId,
+                acervoId = nextAcervoId,
                 status = existing.status
             )
         )

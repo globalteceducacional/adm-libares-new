@@ -23,7 +23,18 @@ class ReaderHomeUseCase(
     private val mapper: ReaderBookRowMapper
 ) {
     fun home(params: Map<String, String>): Map<String, Any> {
-        val acervoId = acervo.resolve(params)
+        val scope = acervo.resolve(params)
+        if (scope.isEmpty) {
+            // Leitor sem acervo: home vazia (ADR 0006).
+            return EbookAppEnvelope.obj(
+                mapOf(
+                    "featured_books" to emptyList<Any>(),
+                    "latest_books" to emptyList<Any>(),
+                    "popular_books" to emptyList<Any>()
+                )
+            )
+        }
+        val acervoId = scope.acervoId
         val featured = queryBooks(
             "WHERE tbl_books.featured = 1",
             "ORDER BY tbl_books.id DESC",
@@ -84,7 +95,9 @@ class ReaderCatalogListUseCases(
     private val urls: LegacyAssetUrlBuilder
 ) {
     fun catList(params: Map<String, String>): Map<String, Any> {
-        val acervoId = acervo.resolve(params)
+        val scope = acervo.resolve(params)
+        if (scope.isEmpty) return EbookAppEnvelope.array(emptyList())
+        val acervoId = scope.acervoId
         val order = if (API_CAT_ORDER_BY.equals("ASC", true)) "ASC" else "DESC"
         val cats = jdbc.query(
             "SELECT * FROM tbl_category ORDER BY tbl_category.cid $order"
@@ -104,7 +117,9 @@ class ReaderCatalogListUseCases(
 
     fun catId(params: Map<String, String>): Map<String, Any> {
         val catId = params["cat_id"].orEmpty()
-        val acervoId = acervo.resolve(params)
+        val scope = acervo.resolve(params)
+        if (scope.isEmpty) return EbookAppEnvelope.array(emptyList())
+        val acervoId = scope.acervoId
         return EbookAppEnvelope.array(
             listBooks(
                 where = "WHERE tbl_books.cat_id = ?",
@@ -116,7 +131,9 @@ class ReaderCatalogListUseCases(
     }
 
     fun authorList(params: Map<String, String>): Map<String, Any> {
-        val acervoId = acervo.resolve(params)
+        val scope = acervo.resolve(params)
+        if (scope.isEmpty) return EbookAppEnvelope.array(emptyList())
+        val acervoId = scope.acervoId
         val authors = if (acervoId == null) {
             jdbc.query("SELECT * FROM tbl_author ORDER BY $API_AUTHOR_ORDER_BY") { rs, _ ->
                 mapAuthor(rs)
@@ -139,7 +156,9 @@ class ReaderCatalogListUseCases(
 
     fun authorId(params: Map<String, String>): Map<String, Any> {
         val authorId = params["author_id"].orEmpty()
-        val acervoId = acervo.resolve(params)
+        val scope = acervo.resolve(params)
+        if (scope.isEmpty) return EbookAppEnvelope.array(emptyList())
+        val acervoId = scope.acervoId
         return EbookAppEnvelope.array(
             listBooks(
                 where = "WHERE tbl_books.aid = ?",
@@ -152,7 +171,9 @@ class ReaderCatalogListUseCases(
     }
 
     fun latest(params: Map<String, String>): Map<String, Any> {
-        val acervoId = acervo.resolve(params)
+        val scope = acervo.resolve(params)
+        if (scope.isEmpty) return EbookAppEnvelope.array(emptyList())
+        val acervoId = scope.acervoId
         return EbookAppEnvelope.array(
             listBooks(
                 where = "",
@@ -164,7 +185,9 @@ class ReaderCatalogListUseCases(
     }
 
     fun allBook(params: Map<String, String>): Map<String, Any> {
-        val acervoId = acervo.resolve(params)
+        val scope = acervo.resolve(params)
+        if (scope.isEmpty) return EbookAppEnvelope.array(emptyList())
+        val acervoId = scope.acervoId
         return EbookAppEnvelope.array(
             listBooks(
                 where = "",
@@ -177,7 +200,9 @@ class ReaderCatalogListUseCases(
 
     fun searchText(params: Map<String, String>): Map<String, Any> {
         val q = params["search_text"].orEmpty()
-        val acervoId = acervo.resolve(params)
+        val scope = acervo.resolve(params)
+        if (scope.isEmpty) return EbookAppEnvelope.array(emptyList())
+        val acervoId = scope.acervoId
         return EbookAppEnvelope.array(
             listBooks(
                 where = "WHERE tbl_books.book_title LIKE ?",

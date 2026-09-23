@@ -3,29 +3,46 @@ package com.libare.adm.modules.reader.application
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 
-/** Resolve acervo_id a partir de user_id / acervo_id (espelho PHP). */
+/**
+ * Escopo de catalogo resolvido para uma requisicao do app (ADR 0006).
+ *
+ * - [acervoId] != null -> filtra por `livros_acervos`
+ * - [isEmpty] -> leitor identificado **sem** acervo: nao ve nada
+ * - ambos falsos -> sem filtro (requisicao anonima legada, sem `user_id`)
+ */
+data class ReaderScope(val acervoId: Long?, val isEmpty: Boolean) {
+    companion object {
+        val UNRESTRICTED = ReaderScope(acervoId = null, isEmpty = false)
+        val EMPTY = ReaderScope(acervoId = null, isEmpty = true)
+        fun of(acervoId: Long) = ReaderScope(acervoId = acervoId, isEmpty = false)
+    }
+}
+
+/** Resolve o escopo de acervo a partir de `user_id` / `acervo_id` (espelho PHP, endurecido). */
 @Component
 class ReaderAcervoFilter(
     private val jdbc: JdbcTemplate
 ) {
-    fun resolve(params: Map<String, String>): Long? {
-        var acervoId: Long? = null
-        val userId = params["user_id"]?.trim().orEmpty()
-        if (userId.isNotBlank()) {
-            acervoId = jdbc.query(
+    /**
+     * Com `user_id`: o acervo do usuario e a fonte de verdade e `acervo_id` da query e ignorado.
+     * Usuario sem acervo -> [ReaderScope.EMPTY]. Sem `user_id`: comportamento legado.
+     */
+    fun resolve(params: Map<String, String>): ReaderScope {
+        val userId = params["user_id"]?.trim()?.toLongOrNull()
+        if (userId != null && userId > 0) {
+            val acervoId = jdbc.query(
                 "SELECT acervo_id FROM tbl_users WHERE id = ? LIMIT 1",
                 { rs, _ ->
                     val v = rs.getObject("acervo_id")
                     if (v == null) null else rs.getLong("acervo_id")
                 },
-                userId.toLongOrNull() ?: 0L
+                userId
             ).firstOrNull()
+            return acervoId?.takeIf { it > 0 }?.let { ReaderScope.of(it) } ?: ReaderScope.EMPTY
         }
-        val direct = params["acervo_id"]?.trim().orEmpty()
-        if (direct.isNotBlank()) {
-            acervoId = direct.toLongOrNull()
-        }
-        return acervoId?.takeIf { it > 0 }
+
+        val direct = params["acervo_id"]?.trim()?.toLongOrNull()
+        return direct?.takeIf { it > 0 }?.let { ReaderScope.of(it) } ?: ReaderScope.UNRESTRICTED
     }
 
     /** Fragmento SQL: INNER JOIN livros_acervos (sem placeholder). */

@@ -8,6 +8,9 @@ export type UserResponse = {
   status: string;
   acervoId?: number | null;
   acervoName?: string | null;
+  /** Derivados do acervo (ADR 0006); null quando o leitor nao tem acervo. */
+  schoolId?: number | null;
+  schoolName?: string | null;
 };
 
 export type CreateUserRequest = {
@@ -32,5 +35,6 @@ export type UpdateUserStatusRequest = {
 };
 
 export type UpdateUserAcervoRequest = {
-  acervoId: number;
+  /** null desvincula o leitor do acervo atual. */
+  acervoId: number | null;
 };

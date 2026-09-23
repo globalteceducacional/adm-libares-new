@@ -58,24 +58,21 @@ class AcervoPolicy(
         if (!principal.canAccessSchool(requestedSchoolId)) {
             throw ForbiddenException("Sem acesso a escola informada")
         }
-        // Trocar escola so se puder ver o acervo atual (ou ele ainda nao tem escola).
-        if (existing.schoolId != null) {
-            assertCanModify(existing)
-        }
+        // Trocar escola exige acesso a escola atual (acervo sem escola e livre — ADR 0006).
+        assertCanModify(existing)
         return requestedSchoolId
     }
 
+    /** Acervo com escola: ator precisa acessa-la. Sem escola (legado): nao reivindicado, livre. */
     fun assertCanModify(acervo: AcervoEntity) {
-        authorizationService.assertSameSchool(acervo.schoolId)
+        authorizationService.assertSameSchoolOrUnassigned(acervo.schoolId)
     }
 
     fun loadForUpdate(acervoId: Long): AcervoEntity {
         requireUpdate()
         val acervo = acervoRepository.findById(acervoId.toAcervoId())
             .orElseThrow { NotFoundException("Acervo nao encontrado") }
-        if (acervo.schoolId != null) {
-            assertCanModify(acervo)
-        }
+        assertCanModify(acervo)
         return acervo
     }
 

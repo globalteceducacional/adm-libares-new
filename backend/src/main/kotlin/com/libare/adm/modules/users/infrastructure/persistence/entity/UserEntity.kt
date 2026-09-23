@@ -41,11 +41,12 @@ class UserEntity(
     @Column(name = "registered_on", nullable = false, length = 200)
     val registeredOn: String = "",
 
+    /**
+     * Unico vinculo de tenant do leitor (ADR 0006). A escola e derivada de acervos.school_id.
+     * A coluna legada tbl_users.school_id nao e mais mapeada.
+     */
     @Column(name = "acervo_id")
     val acervoId: Int? = null,
-
-    @Column(name = "school_id")
-    val schoolId: Long? = null,
 
     @Column(name = "status", nullable = false, length = 1)
     val status: String = "1"

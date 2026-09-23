@@ -1,25 +1,22 @@
 package com.libare.adm.modules.users.application
 
-import com.libare.adm.modules.catalog.infrastructure.persistence.repository.AcervoJpaRepository
 import com.libare.adm.modules.users.api.dto.CreateUserRequest
 import com.libare.adm.modules.users.api.dto.UserResponse
 import com.libare.adm.modules.users.application.policy.UserPolicy
 import com.libare.adm.modules.users.infrastructure.persistence.entity.UserEntity
 import com.libare.adm.modules.users.infrastructure.persistence.repository.UserJpaRepository
 import com.libare.adm.shared.exception.BadRequestException
-import com.libare.adm.shared.exception.ForbiddenException
 import com.libare.adm.shared.persistence.AuditSessionContext
 import com.libare.adm.shared.security.CurrentActorResolver
-import com.libare.adm.shared.tenant.TenantContext
 import com.libare.adm.shared.util.toAcervoId
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * Cria usuario do app ([tbl_users]).
- * Acervo e escola sao opcionais: sem acervo o leitor fica sem vinculo
- * e pode receber acervo/escola depois via [UpdateUserAcervoUseCase].
+ * Cria leitor do app ([tbl_users]).
+ * O acervo e o unico vinculo de tenant (ADR 0006); e opcional na criacao e pode ser
+ * atribuido depois via [UpdateUserAcervoUseCase]. Sem acervo o leitor ve catalogo vazio.
  *
  * **Gap conhecido de login do leitor:** o PHP legado `adm-libares/user_login_api.php`
  * ainda compara `$row['password'] == $password` (plaintext). Hashes BCrypt gravados
@@ -29,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class CreateUserUseCase(
     private val userRepository: UserJpaRepository,
-    private val acervoRepository: AcervoJpaRepository,
     private val userResponseMapper: UserResponseMapper,
     private val userPolicy: UserPolicy,
     private val passwordEncoder: PasswordEncoder,
@@ -46,17 +42,8 @@ class CreateUserUseCase(
             throw BadRequestException("Ja existe um usuario com este email")
         }
 
-        val acervoId = request.acervoId
-        val (resolvedAcervoId, schoolId) = if (acervoId != null) {
-            val acervo = acervoRepository.findById(acervoId.toAcervoId())
-                .orElseThrow { BadRequestException("Acervo invalido") }
-            if (!acervo.status) {
-                throw BadRequestException("Acervo inativo")
-            }
-            acervoId.toAcervoId() to resolveSchoolId(acervo.schoolId)
-        } else {
-            null to null
-        }
+        // Acervo informado precisa existir, estar ativo e pertencer a uma escola acessivel.
+        val acervoId = request.acervoId?.let { userPolicy.requireLinkableAcervo(it).id }
 
         val registeredOn = (System.currentTimeMillis() / 1000).toString()
         val saved = userRepository.save(
@@ -70,32 +57,11 @@ class CreateUserUseCase(
                 authId = "",
                 isDeleted = 0,
                 registeredOn = registeredOn,
-                acervoId = resolvedAcervoId,
-                schoolId = schoolId,
+                acervoId = acervoId,
                 status = if (request.status.trim() == "0") "0" else "1"
             )
         )
 
         return userResponseMapper.fromEntity(saved)
-    }
-
-    private fun resolveSchoolId(acervoSchoolId: Long?): Long? {
-        val principal = TenantContext.get()
-        val contextSchoolId = principal.effectiveSchoolId()
-
-        if (contextSchoolId != null) {
-            if (acervoSchoolId != null && acervoSchoolId != contextSchoolId) {
-                throw ForbiddenException("Acervo nao pertence a escola do contexto")
-            }
-            return contextSchoolId
-        }
-
-        if (acervoSchoolId == null) {
-            return null
-        }
-        if (!principal.canAccessSchool(acervoSchoolId)) {
-            throw ForbiddenException("Sem acesso a escola do acervo selecionado")
-        }
-        return acervoSchoolId
     }
 }

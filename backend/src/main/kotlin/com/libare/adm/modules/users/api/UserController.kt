@@ -55,7 +55,7 @@ class UserController(
 ) {
     @Operation(
         summary = "Listar leitores",
-        description = "Lista leitores da escola do contexto. Filtro opcional por acervo."
+        description = "Lista leitores cujo acervo pertence a escola do contexto, mais os sem acervo. Filtro opcional por acervo."
     )
     @AdminSecured
     @Parameter(
@@ -97,7 +97,7 @@ class UserController(
 
     @Operation(
         summary = "Criar leitor",
-        description = "Cadastra leitor do app com email, senha e acervo da escola do contexto."
+        description = "Cadastra leitor do app com email e senha. Acervo e opcional (pode vincular depois)."
     )
     @AdminSecured
     @AdminWriteResponses
@@ -153,7 +153,10 @@ class UserController(
         @Valid @RequestBody request: UpdateUserStatusRequest
     ): ResponseEntity<UserResponse> = ResponseEntity.ok(updateUserStatusUseCase.execute(userId, request))
 
-    @Operation(summary = "Alterar acervo do leitor", description = "Vincula o leitor a outro acervo da mesma escola.")
+    @Operation(
+        summary = "Alterar acervo do leitor",
+        description = "Vincula o leitor a um acervo de escola acessivel. acervoId null desvincula (leitor fica sem catalogo no app)."
+    )
     @AdminSecured
     @AdminWriteResponses
     @ApiResponses(value = [ApiResponse(responseCode = "200", description = "Acervo atualizado")])

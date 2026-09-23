@@ -1,20 +1,23 @@
 package com.libare.adm.modules.users.application
 
 import com.libare.adm.modules.catalog.infrastructure.persistence.repository.AcervoJpaRepository
+import com.libare.adm.modules.schools.infrastructure.persistence.repository.SchoolJpaRepository
 import com.libare.adm.modules.users.api.dto.UserResponse
 import com.libare.adm.modules.users.infrastructure.persistence.entity.UserEntity
 import com.libare.adm.modules.users.infrastructure.persistence.repository.UserJpaRepository
 import com.libare.adm.shared.util.toAcervoIdLong
 import org.springframework.stereotype.Service
 
+/** Monta [UserResponse]; escola sempre derivada do acervo (ADR 0006). */
 @Service
 class UserResponseMapper(
-    private val acervoRepository: AcervoJpaRepository
+    private val acervoRepository: AcervoJpaRepository,
+    private val schoolRepository: SchoolJpaRepository
 ) {
     fun fromEntity(user: UserEntity): UserResponse {
-        val acervoName = user.acervoId?.let { acervoId ->
-            acervoRepository.findById(acervoId).orElse(null)?.nome
-        }
+        val acervo = user.acervoId?.let { acervoRepository.findById(it).orElse(null) }
+        val schoolId = acervo?.schoolId
+        val schoolName = schoolId?.let { schoolRepository.findById(it).orElse(null)?.name }
         return UserResponse(
             id = user.id,
             name = user.name,
@@ -24,7 +27,9 @@ class UserResponseMapper(
             userImage = user.userImage,
             status = user.status,
             acervoId = user.acervoId?.toAcervoIdLong(),
-            acervoName = acervoName
+            acervoName = acervo?.nome,
+            schoolId = schoolId,
+            schoolName = schoolName
         )
     }
 
@@ -38,6 +43,8 @@ class UserResponseMapper(
             userImage = row.getUserImage(),
             status = row.getStatus(),
             acervoId = row.getAcervoId()?.toLong(),
-            acervoName = row.getAcervoName()
+            acervoName = row.getAcervoName(),
+            schoolId = row.getSchoolId()?.toLong(),
+            schoolName = row.getSchoolName()
         )
 }
