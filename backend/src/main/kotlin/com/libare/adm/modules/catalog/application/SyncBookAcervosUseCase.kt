@@ -34,10 +34,10 @@ class SyncBookAcervosUseCase(
 
         val schoolIds = acervos.mapNotNull { it.schoolId }.distinct()
         if (schoolIds.isEmpty()) {
-            throw BadRequestException("Acervos sem escola vinculada")
+            throw BadRequestException("Acervos sem contrato vinculado")
         }
         if (schoolIds.size != 1) {
-            throw BadRequestException("Acervos devem pertencer a mesma escola")
+            throw BadRequestException("Acervos devem pertencer a mesmo contrato")
         }
         authorizationService.assertSameSchool(schoolIds.single())
 

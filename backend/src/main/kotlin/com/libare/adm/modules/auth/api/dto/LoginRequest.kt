@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank
 
 @Schema(description = "Credenciais de login do painel administrativo")
 data class LoginRequest(
-    @field:Schema(description = "Nome de usuario administrativo", example = "admin.escola", requiredMode = Schema.RequiredMode.REQUIRED)
+    @field:Schema(description = "Nome de usuario administrativo", example = "admin.contrato", requiredMode = Schema.RequiredMode.REQUIRED)
     @field:NotBlank(message = "username e obrigatorio")
     val username: String,
 

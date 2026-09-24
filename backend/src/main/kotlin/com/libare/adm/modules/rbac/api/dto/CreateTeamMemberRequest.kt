@@ -23,12 +23,12 @@ data class CreateTeamMemberRequest(
     val name: String,
 
     @field:NotNull
-    @field:Schema(description = "Escola a vincular", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+    @field:Schema(description = "Contrato a vincular", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
     val schoolId: Long,
 
     @field:NotBlank
     @field:Schema(
-        description = "Perfil do sistema na escola",
+        description = "Perfil do sistema no contrato",
         example = "PROFESSOR",
         allowableValues = ["SCHOOL_ADMIN", "PROFESSOR"],
         requiredMode = Schema.RequiredMode.REQUIRED

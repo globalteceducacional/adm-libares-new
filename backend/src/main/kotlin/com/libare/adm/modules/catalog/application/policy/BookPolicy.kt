@@ -40,7 +40,7 @@ class BookPolicy(
         val acervos = acervoRepository.findAllById(links.map { it.acervoId })
         val hasAccess = acervos.any { it.schoolId == tenantSchoolId }
         if (!hasAccess) {
-            throw ForbiddenException("Livro nao pertence a escola do usuario")
+            throw ForbiddenException("Livro nao pertence o contrato do usuario")
         }
     }
 }

@@ -20,7 +20,7 @@ import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { useAuth } from "../../features/auth/AuthContext";
 import { PermissionGate } from "../../features/auth/PermissionGate";
 import { usePermission } from "../../features/auth/usePermission";
-import { useAdminListFilters } from "../../hooks/useAdminListFilters";
+import { ACERVO_FILTER_NONE, useAdminListFilters } from "../../hooks/useAdminListFilters";
 import { useAdminMutation } from "../../hooks/useAdminMutation";
 import { AdminListingSection } from "../components/layout/AdminListingSection";
 import { SearchableSelect } from "../components/form/SearchableSelect";
@@ -61,14 +61,12 @@ type SaveAcervoVariables = {
   acervoId: number | null;
 };
 
-/** Valor do filtro de acervo que representa "leitores sem acervo" (filtrado no cliente). */
-const ACERVO_FILTER_NONE = "none";
-
 export function UsersPage() {
   const location = useLocation();
   const { schoolContextId } = useAuth();
-  const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
-  const [acervoFilter, setAcervoFilter] = useState<string>("all");
+  // `acervoId` na URL permite deep-link a partir do hub do acervo ("none" = sem acervo).
+  const { search, setSearch, statusFilter, setStatusFilter, acervoFilter, setAcervoFilter } =
+    useAdminListFilters({ syncAcervo: true, acervoAllowNone: true });
   const onlyWithoutAcervo = acervoFilter === ACERVO_FILTER_NONE;
   const selectedAcervoId =
     acervoFilter === "all" || onlyWithoutAcervo ? undefined : Number(acervoFilter);
@@ -84,7 +82,7 @@ export function UsersPage() {
     : acervosQuery.error
       ? getQueryErrorMessage(acervosQuery.error, "Falha ao carregar acervos")
       : schoolsQuery.error
-        ? getQueryErrorMessage(schoolsQuery.error, "Falha ao carregar escolas")
+        ? getQueryErrorMessage(schoolsQuery.error, "Falha ao carregar contratos")
         : undefined;
   const [formError, setFormError] = useState("");
   const [formModalOpen, setFormModalOpen] = useState(false);
@@ -102,7 +100,7 @@ export function UsersPage() {
       return null;
     }
     const school = schoolsQuery.data?.find((item) => item.id === schoolContextId);
-    return school ? decodeHtmlEntities(school.name) : `Escola #${schoolContextId}`;
+    return school ? decodeHtmlEntities(school.name) : `Contrato #${schoolContextId}`;
   }, [schoolContextId, schoolsQuery.data]);
 
   const acervoFilterOptions = useMemo(
@@ -308,7 +306,7 @@ export function UsersPage() {
       },
       {
         key: "school",
-        label: "Escola",
+        label: "Contrato",
         render: (user) => (user.schoolName ? decodeHtmlEntities(user.schoolName) : "—")
       },
       {

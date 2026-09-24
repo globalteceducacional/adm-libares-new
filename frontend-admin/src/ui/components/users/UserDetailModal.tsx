@@ -1,7 +1,7 @@
 import { Link2Off, Trash2, UserCheck, UserX } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
-import { Button, DetailField, Modal, StatusBadge } from "../../../shared/ui";
+import { Button, ConfirmDialog, DetailField, Modal, StatusBadge } from "../../../shared/ui";
 import type { AcervoOptionResponse } from "../../../types/acervos";
 import type { UserResponse } from "../../../types/users";
 import { SearchableSelect } from "../form/SearchableSelect";
@@ -33,11 +33,13 @@ export function UserDetailModal({
 }: UserDetailModalProps) {
   const [selectedAcervoId, setSelectedAcervoId] = useState<string>("");
   const [acervoError, setAcervoError] = useState("");
+  const [confirmUnlinkOpen, setConfirmUnlinkOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
       setSelectedAcervoId(user.acervoId ? String(user.acervoId) : "");
       setAcervoError("");
+      setConfirmUnlinkOpen(false);
     }
   }, [user]);
 
@@ -82,7 +84,12 @@ export function UserDetailModal({
     if (!canUnlink) {
       return;
     }
-    void submitAcervo(null);
+    setConfirmUnlinkOpen(true);
+  }
+
+  async function handleConfirmUnlink() {
+    await submitAcervo(null);
+    setConfirmUnlinkOpen(false);
   }
 
   return (
@@ -167,7 +174,7 @@ export function UserDetailModal({
             }
           />
           <DetailField
-            label="Escola"
+            label="Contrato"
             value={
               currentUser.schoolName ? (
                 decodeHtmlEntities(currentUser.schoolName)
@@ -223,6 +230,18 @@ export function UserDetailModal({
         </div>
         {acervoError ? <p className="error-text mt-2">{acervoError}</p> : null}
       </div>
+
+      <ConfirmDialog
+        open={confirmUnlinkOpen}
+        title="Desvincular acervo"
+        description={`${name} ficara sem acervo e nao vera nenhum livro no app ate ser vinculado novamente.`}
+        confirmLabel="Desvincular"
+        loading={saving}
+        onConfirm={() => {
+          void handleConfirmUnlink();
+        }}
+        onCancel={() => setConfirmUnlinkOpen(false)}
+      />
     </Modal>
   );
 }

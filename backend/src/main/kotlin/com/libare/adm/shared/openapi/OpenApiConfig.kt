@@ -35,7 +35,7 @@ class OpenApiConfig {
                         1) Abra /swagger-ui.html
                         2) POST /api/v1/auth/login → accessToken
                         3) Authorize → Bearer <token>
-                        Header opcional/obrigatorio conforme tenant: X-School-Context (ID da escola).
+                        Header opcional/obrigatorio conforme tenant: X-School-Context (ID do contrato).
                         Cada operacao tem summary, description e respostas HTTP documentadas.
                         """.trimIndent()
                     )

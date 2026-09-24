@@ -10,9 +10,15 @@ interface LivroAcervoJpaRepository : JpaRepository<LivroAcervoEntity, Int> {
 
     fun findByBookIdIn(bookIds: Collection<Long>): List<LivroAcervoEntity>
 
+    fun findByAcervoId(acervoId: Int): List<LivroAcervoEntity>
+
     @Modifying
     @Query("DELETE FROM LivroAcervoEntity la WHERE la.bookId = :bookId")
     fun deleteByBookId(bookId: Long)
+
+    @Modifying
+    @Query("DELETE FROM LivroAcervoEntity la WHERE la.acervoId = :acervoId AND la.bookId IN :bookIds")
+    fun deleteByAcervoIdAndBookIdIn(acervoId: Int, bookIds: Collection<Long>)
 
     @Query(
         value = "SELECT book_id FROM livros_acervos WHERE acervo_id = :acervoId",

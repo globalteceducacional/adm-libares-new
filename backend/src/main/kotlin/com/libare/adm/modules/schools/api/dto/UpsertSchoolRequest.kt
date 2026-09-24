@@ -4,14 +4,14 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 
-@Schema(description = "Dados para criar ou atualizar uma escola")
+@Schema(description = "Dados para criar ou atualizar um contrato")
 data class UpsertSchoolRequest(
-    @field:Schema(description = "Nome da escola", example = "Escola Municipal ABC", requiredMode = Schema.RequiredMode.REQUIRED)
+    @field:Schema(description = "Nome do contrato", example = "Contrato Prefeitura ABC", requiredMode = Schema.RequiredMode.REQUIRED)
     @field:NotBlank(message = "Nome e obrigatorio")
     @field:Size(max = 150, message = "Nome deve ter no maximo 150 caracteres")
     val name: String,
 
-    @field:Schema(description = "Slug URL-friendly (gerado automaticamente se omitido)", example = "escola-municipal-abc", nullable = true)
+    @field:Schema(description = "Slug URL-friendly (gerado automaticamente se omitido)", example = "contrato-prefeitura-abc", nullable = true)
     @field:Size(max = 80, message = "Slug deve ter no maximo 80 caracteres")
     val slug: String? = null,
 

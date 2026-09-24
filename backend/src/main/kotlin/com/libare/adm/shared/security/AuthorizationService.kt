@@ -18,9 +18,9 @@ class AuthorizationService {
     }
 
     /**
-     * Recurso **com** escola: o ator precisa estar nessa escola (ou ser super admin global).
+     * Recurso **com** contrato: o ator precisa estar nesse contrato (ou ser super admin global).
      * `targetSchoolId == null` e negado — use [assertSameSchoolOrUnassigned] quando
-     * "sem escola" significar "nao reivindicado" (ADR 0006).
+     * "sem contrato" significar "nao reivindicado" (ADR 0006).
      */
     fun assertSameSchool(targetSchoolId: Long?) {
         val principal = TenantContext.get()
@@ -29,13 +29,13 @@ class AuthorizationService {
         }
         val effective = principal.effectiveSchoolId()
         if (effective == null || targetSchoolId == null || effective != targetSchoolId) {
-            throw ForbiddenException("Acesso negado a recurso de outra escola")
+            throw ForbiddenException("Acesso negado a recurso de outro contrato")
         }
     }
 
     /**
-     * Recurso sem escola (`null`) e "nao reivindicado": qualquer ator que ja passou na
-     * checagem de permissao pode agir. Com escola, cai em [assertSameSchool].
+     * Recurso sem contrato (`null`) e "nao reivindicado": qualquer ator que ja passou na
+     * checagem de permissao pode agir. Com contrato, cai em [assertSameSchool].
      */
     fun assertSameSchoolOrUnassigned(targetSchoolId: Long?) {
         if (targetSchoolId == null) {

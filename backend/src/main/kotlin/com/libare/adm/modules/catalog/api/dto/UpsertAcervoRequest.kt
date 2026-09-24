@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
 
-@Schema(description = "Payload para criar ou atualizar um acervo da escola")
+@Schema(description = "Payload para criar ou atualizar um acervo do contrato")
 data class UpsertAcervoRequest(
     @field:Schema(description = "Nome do acervo", example = "Acervo Principal", maxLength = 100)
     @field:NotBlank(message = "Nome e obrigatorio")
@@ -21,7 +21,7 @@ data class UpsertAcervoRequest(
     val status: String = "1",
 
     @field:Schema(
-        description = "Escola dona do acervo. Se omitido, usa X-School-Context.",
+        description = "Contrato dono do acervo. Se omitido, usa X-School-Context.",
         example = "1",
         nullable = true
     )

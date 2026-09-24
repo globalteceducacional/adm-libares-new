@@ -31,9 +31,9 @@ data class UserResponse(
     @field:Schema(description = "Nome do acervo vinculado", example = "Acervo Principal", nullable = true)
     val acervoName: String? = null,
 
-    @field:Schema(description = "ID da escola (derivado do acervo)", example = "1", nullable = true)
+    @field:Schema(description = "ID do contrato (derivado do acervo)", example = "1", nullable = true)
     val schoolId: Long? = null,
 
-    @field:Schema(description = "Nome da escola (derivado do acervo)", example = "Escola Central", nullable = true)
+    @field:Schema(description = "Nome do contrato (derivado do acervo)", example = "Contrato Central", nullable = true)
     val schoolName: String? = null
 )

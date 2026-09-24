@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component
 
 /**
  * Regras de acesso ao leitor ([UserEntity]).
- * A escola do leitor e sempre derivada do acervo (ADR 0006): sem acervo = nao reivindicado.
+ * O contrato do leitor e sempre derivada do acervo (ADR 0006): sem acervo = nao reivindicado.
  */
 @Component
 class UserPolicy(
@@ -33,7 +33,7 @@ class UserPolicy(
         authorizationService.check("users.block")
     }
 
-    /** Leitor com acervo: ator precisa acessar a escola do acervo. Sem acervo: livre. */
+    /** Leitor com acervo: ator precisa acessar o contrato do acervo. Sem acervo: livre. */
     fun assertCanModify(user: UserEntity) {
         val acervoSchoolId = user.acervoId?.let { acervoId ->
             acervoRepository.findById(acervoId).orElse(null)?.schoolId
@@ -42,7 +42,7 @@ class UserPolicy(
     }
 
     /**
-     * Valida um acervo como destino de vinculo: existe, ativo, com escola acessivel pelo ator.
+     * Valida um acervo como destino de vinculo: existe, ativo, com contrato acessivel pelo ator.
      * Retorna a entidade para o chamador reutilizar.
      */
     fun requireLinkableAcervo(acervoId: Long): AcervoEntity {
@@ -52,7 +52,7 @@ class UserPolicy(
             throw BadRequestException("Acervo inativo nao pode ser vinculado")
         }
         val schoolId = acervo.schoolId
-            ?: throw BadRequestException("Acervo sem escola; vincule o acervo a uma escola antes")
+            ?: throw BadRequestException("Acervo sem contrato; vincule o acervo a um contrato antes")
         authorizationService.assertSameSchool(schoolId)
         return acervo
     }

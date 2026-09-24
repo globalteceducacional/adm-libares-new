@@ -54,7 +54,7 @@ class SyncRolePermissionsUseCase(
         val blocked = distinctCodes.filter { it in SCHOOL_EXCLUDED_PERMISSIONS }
         if (blocked.isNotEmpty()) {
             throw com.libare.adm.shared.exception.BadRequestException(
-                "Permissoes nao permitidas para perfis de escola: ${blocked.first()}"
+                "Permissoes nao permitidas para perfis de contrato: ${blocked.first()}"
             )
         }
 

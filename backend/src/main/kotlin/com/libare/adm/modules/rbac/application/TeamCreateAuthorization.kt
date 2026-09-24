@@ -25,7 +25,7 @@ object TeamCreateAuthorization {
         if (isSuperAdmin) return
         if (targetSchoolId !in callerAllowedSchoolIds) {
             throw com.libare.adm.shared.exception.ForbiddenException(
-                "Escola nao permitida"
+                "Contrato nao permitida"
             )
         }
     }

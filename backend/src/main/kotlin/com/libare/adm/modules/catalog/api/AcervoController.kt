@@ -2,12 +2,14 @@ package com.libare.adm.modules.catalog.api
 
 import com.libare.adm.modules.catalog.api.dto.AcervoOptionResponse
 import com.libare.adm.modules.catalog.api.dto.AcervoResponse
+import com.libare.adm.modules.catalog.api.dto.SyncAcervoBooksRequest
 import com.libare.adm.modules.catalog.api.dto.UpsertAcervoRequest
 import com.libare.adm.modules.catalog.application.CreateAcervoUseCase
 import com.libare.adm.modules.catalog.application.DeleteAcervoUseCase
 import com.libare.adm.modules.catalog.application.GetAcervoUseCase
 import com.libare.adm.modules.catalog.application.ListAcervoOptionsUseCase
 import com.libare.adm.modules.catalog.application.ListAcervosUseCase
+import com.libare.adm.modules.catalog.application.SyncAcervoBooksUseCase
 import com.libare.adm.modules.catalog.application.UpdateAcervoUseCase
 import com.libare.adm.shared.openapi.AdminSecured
 import com.libare.adm.shared.openapi.AdminWriteResponses
@@ -31,7 +33,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-@Tag(name = OpenApiTags.ACERVOS, description = "Gestao de acervos por escola")
+@Tag(name = OpenApiTags.ACERVOS, description = "Gestao de acervos por contrato")
 @AdminSecured
 @RestController
 @RequestMapping("/api/v1/acervos")
@@ -41,11 +43,12 @@ class AcervoController(
     private val getAcervoUseCase: GetAcervoUseCase,
     private val createAcervoUseCase: CreateAcervoUseCase,
     private val updateAcervoUseCase: UpdateAcervoUseCase,
-    private val deleteAcervoUseCase: DeleteAcervoUseCase
+    private val deleteAcervoUseCase: DeleteAcervoUseCase,
+    private val syncAcervoBooksUseCase: SyncAcervoBooksUseCase
 ) {
     @Operation(
         summary = "Listar acervos",
-        description = "Retorna acervos da escola do contexto. Requer permissao acervos.view. " +
+        description = "Retorna acervos do contrato do contexto. Requer permissao acervos.view. " +
             "Exige Authorize (Bearer JWT). Use o header ${OpenApiHeaders.SCHOOL_CONTEXT} quando necessario."
     )
     @Parameter(
@@ -55,14 +58,14 @@ class AcervoController(
         required = false,
         schema = Schema(type = "integer", format = "int64", example = "1")
     )
-    @ApiResponse(responseCode = "200", description = "Lista de acervos da escola ativa")
+    @ApiResponse(responseCode = "200", description = "Lista de acervos do contrato ativo")
     @GetMapping
     fun list(): ResponseEntity<List<AcervoResponse>> =
         ResponseEntity.ok(listAcervosUseCase.execute())
 
     @Operation(
         summary = "Opcoes de acervos",
-        description = "Lista acervos ativos para selecao em formularios. Filtrado pela escola do contexto."
+        description = "Lista acervos ativos para selecao em formularios. Filtrado pelo contrato do contexto."
     )
     @Parameter(
         name = OpenApiHeaders.SCHOOL_CONTEXT,
@@ -90,7 +93,7 @@ class AcervoController(
 
     @Operation(
         summary = "Criar acervo",
-        description = "Cadastra um novo acervo na escola do contexto. Requer permissao acervos.create."
+        description = "Cadastra um novo acervo no contrato do contexto. Requer permissao acervos.create."
     )
     @AdminWriteResponses
     @ApiResponse(responseCode = "201", description = "Acervo criado")
@@ -115,8 +118,23 @@ class AcervoController(
         ResponseEntity.ok(updateAcervoUseCase.execute(acervoId, request))
 
     @Operation(
+        summary = "Vincular/desvincular livros do acervo",
+        description = "Adiciona e remove livros do acervo numa unica operacao. Recusa remover livros que ficariam " +
+            "sem nenhum acervo. Requer permissao acervos.update."
+    )
+    @AdminWriteResponses
+    @ApiResponse(responseCode = "200", description = "Acervo com contagens atualizadas")
+    @PutMapping("/{acervoId}/books")
+    fun syncBooks(
+        @Parameter(description = "ID do acervo", required = true)
+        @PathVariable acervoId: Long,
+        @Valid @RequestBody request: SyncAcervoBooksRequest
+    ): ResponseEntity<AcervoResponse> =
+        ResponseEntity.ok(syncAcervoBooksUseCase.execute(acervoId, request))
+
+    @Operation(
         summary = "Excluir acervo",
-        description = "Remove um acervo da escola. Requer permissao acervos.delete."
+        description = "Remove um acervo do contrato. Requer permissao acervos.delete."
     )
     @AdminWriteResponses
     @ApiResponse(responseCode = "204", description = "Acervo excluido")

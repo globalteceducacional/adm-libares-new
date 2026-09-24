@@ -8,7 +8,7 @@ import com.libare.adm.modules.users.infrastructure.persistence.repository.UserJp
 import com.libare.adm.shared.util.toAcervoIdLong
 import org.springframework.stereotype.Service
 
-/** Monta [UserResponse]; escola sempre derivada do acervo (ADR 0006). */
+/** Monta [UserResponse]; contrato sempre derivada do acervo (ADR 0006). */
 @Service
 class UserResponseMapper(
     private val acervoRepository: AcervoJpaRepository,

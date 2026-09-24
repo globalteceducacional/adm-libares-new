@@ -31,7 +31,7 @@ class RolePolicy(
 
     fun resolveSchoolIdForWrite(): Long {
         return TenantContext.get().effectiveSchoolId()
-            ?: throw BadRequestException("Informe o contexto de escola via header X-School-Context")
+            ?: throw BadRequestException("Informe o contexto de contrato via header X-School-Context")
     }
 
     fun assertCanModify(role: RoleEntity) {

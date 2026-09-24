@@ -66,7 +66,7 @@ class ToggleTeamMemberStatusUseCase(
             return
         }
         if (allowedSchoolIds.isEmpty()) {
-            throw ForbiddenException("Sem escola no contexto para gerenciar equipe.")
+            throw ForbiddenException("Sem contrato no contexto para gerenciar equipe.")
         }
         val placeholders = allowedSchoolIds.joinToString(",") { "?" }
         val params = mutableListOf<Any>(adminUserId)
@@ -82,7 +82,7 @@ class ToggleTeamMemberStatusUseCase(
             *params.toTypedArray()
         ) ?: 0
         if (count < 1) {
-            throw ForbiddenException("Membro fora do escopo de escolas permitidas.")
+            throw ForbiddenException("Membro fora do escopo de contratos permitidos.")
         }
     }
 

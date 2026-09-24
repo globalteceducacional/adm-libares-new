@@ -13,8 +13,8 @@ import org.springframework.transaction.annotation.Transactional
 
 /**
  * Vincula ou desvincula (`acervoId = null`) o acervo do leitor (ADR 0006).
- * Quem pode agir: quem acessa a escola do acervo atual (ou qualquer admin, se o leitor
- * ainda nao tem acervo). O acervo de destino precisa estar em escola acessivel.
+ * Quem pode agir: quem acessa o contrato do acervo atual (ou qualquer admin, se o leitor
+ * ainda nao tem acervo). O acervo de destino precisa estar em contrato acessivel.
  */
 @Service
 class UpdateUserAcervoUseCase(

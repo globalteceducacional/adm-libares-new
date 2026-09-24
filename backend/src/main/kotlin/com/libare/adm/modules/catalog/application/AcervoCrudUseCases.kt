@@ -29,12 +29,12 @@ class CreateAcervoUseCase(
 
         val schoolId = acervoPolicy.resolveSchoolIdForWrite(request.schoolId)
         if (!schoolRepository.existsById(schoolId)) {
-            throw BadRequestException("Escola invalida")
+            throw BadRequestException("Contrato invalido")
         }
 
         val name = request.name.trim()
         if (acervoRepository.existsByNomeIgnoreCaseAndSchoolId(name, schoolId)) {
-            throw BadRequestException("Ja existe um acervo com este nome nesta escola")
+            throw BadRequestException("Ja existe um acervo com este nome neste contrato")
         }
 
         val saved = acervoRepository.save(
@@ -77,12 +77,12 @@ class UpdateAcervoUseCase(
         val existing = acervoPolicy.loadForUpdate(acervoId)
         val schoolId = acervoPolicy.resolveSchoolIdForUpdate(existing, request.schoolId)
         if (!schoolRepository.existsById(schoolId)) {
-            throw BadRequestException("Escola invalida")
+            throw BadRequestException("Contrato invalido")
         }
 
         val name = request.name.trim()
         if (acervoRepository.existsByNomeIgnoreCaseAndSchoolIdAndIdNot(name, schoolId, existing.id)) {
-            throw BadRequestException("Ja existe um acervo com este nome nesta escola")
+            throw BadRequestException("Ja existe um acervo com este nome neste contrato")
         }
 
         val updated = acervoRepository.save(

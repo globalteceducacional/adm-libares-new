@@ -75,7 +75,7 @@ class CreateRoleUseCase(
         val schoolId = rolePolicy.resolveSchoolIdForWrite()
         val name = request.name.trim()
         if (roleRepository.existsBySchoolIdAndNameIgnoreCase(schoolId, name)) {
-            throw BadRequestException("Ja existe um perfil com este nome nesta escola")
+            throw BadRequestException("Ja existe um perfil com este nome neste contrato")
         }
 
         val saved = roleRepository.save(
@@ -108,7 +108,7 @@ class UpdateRoleUseCase(
 
         val name = request.name.trim()
         if (roleRepository.existsBySchoolIdAndNameIgnoreCaseAndIdNot(schoolId, name, roleId)) {
-            throw BadRequestException("Ja existe um perfil com este nome nesta escola")
+            throw BadRequestException("Ja existe um perfil com este nome neste contrato")
         }
 
         val updated = roleRepository.save(

@@ -38,7 +38,7 @@ class CreateTeamMemberUseCase(
         )
 
         val school = schoolRepository.findById(request.schoolId)
-            .orElseThrow { NotFoundException("Escola nao encontrada") }
+            .orElseThrow { NotFoundException("Contrato nao encontrado") }
 
         val username = request.username.trim()
         if (panelAdminUserRepository.existsByUsernameIgnoreCase(username)) {
@@ -46,7 +46,7 @@ class CreateTeamMemberUseCase(
         }
 
         val role = roleRepository.findBySchoolIdAndName(request.schoolId, roleCode)
-            ?: throw BadRequestException("Perfil $roleCode nao encontrado para a escola")
+            ?: throw BadRequestException("Perfil $roleCode nao encontrado para o contrato")
 
         val saved = panelAdminUserRepository.save(
             PanelAdminUserEntity(

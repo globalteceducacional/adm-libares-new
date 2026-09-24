@@ -51,8 +51,8 @@ interface UserJpaRepository : JpaRepository<UserEntity, Long> {
     ): Long
 
     /**
-     * Escola derivada do acervo (ADR 0006). Leitores sem acervo ("nao reivindicados")
-     * aparecem em qualquer visao de escola para poderem ser vinculados depois.
+     * Contrato derivado do acervo (ADR 0006). Leitores sem acervo ("nao reivindicados")
+     * aparecem em qualquer visao de contrato para poderem ser vinculados depois.
      */
     @Query(
         value = """

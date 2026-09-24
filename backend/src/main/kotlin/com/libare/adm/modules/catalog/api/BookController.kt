@@ -60,11 +60,11 @@ class BookController(
 
     @Operation(
         summary = "Listar livros",
-        description = "Retorna livros acessiveis na escola do contexto. Requer permissao books.view. Use o header ${OpenApiHeaders.SCHOOL_CONTEXT} quando necessario: ${OpenApiHeaders.SCHOOL_CONTEXT_DESC}"
+        description = "Retorna livros acessiveis no contrato do contexto. Requer permissao books.view. Use o header ${OpenApiHeaders.SCHOOL_CONTEXT} quando necessario: ${OpenApiHeaders.SCHOOL_CONTEXT_DESC}"
     )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "Lista de livros da escola ativa")
+            ApiResponse(responseCode = "200", description = "Lista de livros do contrato ativo")
         ]
     )
     @GetMapping
@@ -186,7 +186,7 @@ class BookController(
 
     @Operation(
         summary = "Alternar status do livro",
-        description = "Ativa ou desativa um livro (status 0 ou 1). Requer permissao books.toggle_status (ex.: role PROFESSOR). O livro deve pertencer a um acervo da escola do contexto — use o header ${OpenApiHeaders.SCHOOL_CONTEXT}: ${OpenApiHeaders.SCHOOL_CONTEXT_DESC}"
+        description = "Ativa ou desativa um livro (status 0 ou 1). Requer permissao books.toggle_status (ex.: role PROFESSOR). O livro deve pertencer a um acervo do contrato do contexto — use o header ${OpenApiHeaders.SCHOOL_CONTEXT}: ${OpenApiHeaders.SCHOOL_CONTEXT_DESC}"
     )
     @AdminWriteResponses
     @ApiResponse(responseCode = "200", description = "Status atualizado")

@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size
 
 @Schema(
     description = "Cadastro de leitor do aplicativo (tbl_users). " +
-        "Acervo/escola sao opcionais e podem ser vinculados depois."
+        "Acervo/contrato sao opcionais e podem ser vinculados depois."
 )
 data class CreateUserRequest(
     @field:NotBlank @field:Size(max = 150)
@@ -33,7 +33,7 @@ data class CreateUserRequest(
 
     @field:Positive
     @field:Schema(
-        description = "Acervo opcional. Se omitido, o usuario fica sem escola/acervo ate o vinculo posterior.",
+        description = "Acervo opcional. Se omitido, o usuario fica sem contrato/acervo ate o vinculo posterior.",
         example = "2",
         nullable = true,
         requiredMode = Schema.RequiredMode.NOT_REQUIRED

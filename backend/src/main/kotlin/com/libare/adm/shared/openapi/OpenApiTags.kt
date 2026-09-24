@@ -8,7 +8,7 @@ object OpenApiTags {
     const val AUTH = "Autenticacao"
     const val USERS = "Usuarios do app"
     const val TEAM = "Equipe do painel"
-    const val SCHOOLS = "Escolas"
+    const val SCHOOLS = "Contratos"
     const val ROLES = "Perfis e permissoes"
     const val BOOKS = "Livros"
     const val AUTHORS = "Autores"
@@ -29,10 +29,10 @@ object OpenApiTags {
     const val READER_SITE = "Leitor publico (Site)"
 }
 
-/** Header de contexto de escola usado no multi-tenant. */
+/** Header de contexto de contrato usado no multi-tenant. */
 object OpenApiHeaders {
     const val SCHOOL_CONTEXT = "X-School-Context"
     const val SCHOOL_CONTEXT_DESC =
-        "ID da escola ativa no painel. Obrigatorio quando o usuario tem multiplas escolas " +
+        "ID do contrato ativo no painel. Obrigatorio quando o usuario tem multiplos contratos " +
             "ou quando o SUPER precisa operar em um tenant especifico."
 }

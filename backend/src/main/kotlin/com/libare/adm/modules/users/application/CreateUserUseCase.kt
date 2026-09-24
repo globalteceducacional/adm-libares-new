@@ -42,7 +42,7 @@ class CreateUserUseCase(
             throw BadRequestException("Ja existe um usuario com este email")
         }
 
-        // Acervo informado precisa existir, estar ativo e pertencer a uma escola acessivel.
+        // Acervo informado precisa existir, estar ativo e pertencer a um contrato acessivel.
         val acervoId = request.acervoId?.let { userPolicy.requireLinkableAcervo(it).id }
 
         val registeredOn = (System.currentTimeMillis() / 1000).toString()

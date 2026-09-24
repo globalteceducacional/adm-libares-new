@@ -49,7 +49,7 @@ class AdminUserController(
 ) {
     @Operation(
         summary = "Listar equipe",
-        description = "Lista admins/professores filtrados pela escola do contexto (ou todas, se SUPER sem contexto)."
+        description = "Lista admins/professores filtrados pelo contrato do contexto (ou todas, se SUPER sem contexto)."
     )
     @AdminSecured
     @Parameter(
@@ -74,7 +74,7 @@ class AdminUserController(
 
     @Operation(
         summary = "Criar membro da equipe",
-        description = "Cria login do painel com perfil SCHOOL_ADMIN ou PROFESSOR na escola informada. " +
+        description = "Cria login do painel com perfil SCHOOL_ADMIN ou PROFESSOR no contrato informado. " +
             "SCHOOL_ADMIN so pode criar PROFESSOR."
     )
     @AdminSecured
@@ -116,8 +116,8 @@ class AdminUserController(
         ResponseEntity.ok(toggleTeamMemberStatusUseCase.execute(adminUserId, request.status))
 
     @Operation(
-        summary = "Atribuir escolas ao admin",
-        description = "Substitui os vinculos de escolas do membro da equipe (uso avancado / SUPER)."
+        summary = "Atribuir contratos ao admin",
+        description = "Substitui os vinculos de contratos do membro da equipe (uso avancado / SUPER)."
     )
     @AdminSecured
     @AdminWriteResponses

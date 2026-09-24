@@ -13,10 +13,10 @@ data class TeamMemberResponse(
     @field:Schema(description = "Nome completo", example = "Ana Silva")
     val name: String,
 
-    @field:Schema(description = "ID da escola principal", example = "1")
+    @field:Schema(description = "ID do contrato principal", example = "1")
     val schoolId: Long,
 
-    @field:Schema(description = "Nome da escola principal", example = "Escola Municipal ABC", nullable = true)
+    @field:Schema(description = "Nome do contrato principal", example = "Contrato Prefeitura ABC", nullable = true)
     val schoolName: String?,
 
     @field:Schema(description = "Codigo do perfil", example = "PROFESSOR", allowableValues = ["SUPER", "SCHOOL_ADMIN", "PROFESSOR"])

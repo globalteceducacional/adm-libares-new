@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Positive
 @Schema(description = "Alteracao do acervo vinculado ao leitor. Envie null para desvincular.")
 data class UpdateUserAcervoRequest(
     @field:Schema(
-        description = "ID do novo acervo (escola acessivel pelo ator). null = desvincular",
+        description = "ID do novo acervo (contrato acessivel pelo ator). null = desvincular",
         example = "5",
         nullable = true
     )

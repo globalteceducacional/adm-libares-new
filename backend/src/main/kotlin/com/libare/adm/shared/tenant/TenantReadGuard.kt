@@ -24,7 +24,7 @@ class TenantReadGuard(
         val acervo = acervoRepository.findById(acervoId.toAcervoId())
             .orElseThrow { NotFoundException("Acervo nao encontrado") }
         if (acervo.schoolId != tenantSchoolId) {
-            throw ForbiddenException("Acervo nao pertence a escola do usuario")
+            throw ForbiddenException("Acervo nao pertence o contrato do usuario")
         }
     }
 

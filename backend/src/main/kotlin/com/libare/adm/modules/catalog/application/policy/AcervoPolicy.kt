@@ -28,7 +28,7 @@ class AcervoPolicy(
     }
 
     /**
-     * Resolve a escola do acervo: body.schoolId (preferencial) ou X-School-Context.
+     * Resolve o contrato do acervo: body.schoolId (preferencial) ou X-School-Context.
      */
     fun resolveSchoolIdForWrite(requestedSchoolId: Long?): Long {
         requireCreate()
@@ -37,11 +37,11 @@ class AcervoPolicy(
 
         val schoolId = requestedSchoolId ?: contextSchoolId
             ?: throw BadRequestException(
-                "Informe a escola do acervo (campo schoolId) ou selecione no topo do painel"
+                "Informe o contrato do acervo (campo schoolId) ou selecione no topo do painel"
             )
 
         if (!principal.canAccessSchool(schoolId)) {
-            throw ForbiddenException("Sem acesso a escola informada")
+            throw ForbiddenException("Sem acesso ao contrato informado")
         }
         return schoolId
     }
@@ -52,18 +52,18 @@ class AcervoPolicy(
 
         if (requestedSchoolId == null) {
             return existing.schoolId
-                ?: throw BadRequestException("Acervo sem escola; informe schoolId para vincular")
+                ?: throw BadRequestException("Acervo sem contrato; informe schoolId para vincular")
         }
 
         if (!principal.canAccessSchool(requestedSchoolId)) {
-            throw ForbiddenException("Sem acesso a escola informada")
+            throw ForbiddenException("Sem acesso ao contrato informado")
         }
-        // Trocar escola exige acesso a escola atual (acervo sem escola e livre — ADR 0006).
+        // Trocar contrato exige acesso ao contrato atual (acervo sem contrato e livre — ADR 0006).
         assertCanModify(existing)
         return requestedSchoolId
     }
 
-    /** Acervo com escola: ator precisa acessa-la. Sem escola (legado): nao reivindicado, livre. */
+    /** Acervo com contrato: ator precisa acessa-la. Sem contrato (legado): nao reivindicado, livre. */
     fun assertCanModify(acervo: AcervoEntity) {
         authorizationService.assertSameSchoolOrUnassigned(acervo.schoolId)
     }

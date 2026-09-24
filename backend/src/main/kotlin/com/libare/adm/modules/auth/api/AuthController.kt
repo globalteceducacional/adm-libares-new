@@ -32,7 +32,7 @@ class AuthController(
 
     @Operation(
         summary = "Login no painel",
-        description = "Autentica usuario administrativo com username e senha. Retorna JWT e metadados de escola e permissoes."
+        description = "Autentica usuario administrativo com username e senha. Retorna JWT e metadados de contrato e permissoes."
     )
     @ApiResponses(
         ApiResponse(responseCode = "200", description = "Login realizado com sucesso"),
@@ -46,7 +46,7 @@ class AuthController(
 
     @Operation(
         summary = "Usuario autenticado",
-        description = "Retorna dados do usuario logado, permissoes e contexto de escola ativo."
+        description = "Retorna dados do usuario logado, permissoes e contexto de contrato ativo."
     )
     @AdminSecured
     @ApiResponses(

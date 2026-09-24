@@ -25,17 +25,17 @@ class AssignAdminSchoolsUseCase(
             .orElseThrow { NotFoundException("Administrador nao encontrado") }
 
         if (admin.isSuperAdmin) {
-            throw BadRequestException("Super admin nao possui escolas vinculadas")
+            throw BadRequestException("Super admin nao possui contratos vinculados")
         }
 
         val distinctIds = schoolIds.distinct()
         if (distinctIds.isEmpty()) {
-            throw BadRequestException("Informe ao menos uma escola")
+            throw BadRequestException("Informe ao menos um contrato")
         }
 
         distinctIds.forEach { schoolId ->
             if (!schoolRepository.existsById(schoolId)) {
-                throw NotFoundException("Escola $schoolId nao encontrada")
+                throw NotFoundException("Contrato $schoolId nao encontrado")
             }
         }
 

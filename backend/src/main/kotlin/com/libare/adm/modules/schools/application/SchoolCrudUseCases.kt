@@ -38,7 +38,7 @@ class GetSchoolUseCase(
     fun execute(schoolId: Long): SchoolResponse {
         schoolPolicy.requireView()
         val school = schoolRepository.findById(schoolId)
-            .orElseThrow { NotFoundException("Escola nao encontrada") }
+            .orElseThrow { NotFoundException("Contrato nao encontrado") }
         return toResponse(school)
     }
 }
@@ -90,7 +90,7 @@ class UpdateSchoolUseCase(
         schoolPolicy.requireUpdate()
 
         val existing = schoolRepository.findById(schoolId)
-            .orElseThrow { NotFoundException("Escola nao encontrada") }
+            .orElseThrow { NotFoundException("Contrato nao encontrado") }
 
         val name = request.name.trim()
         val slugInput = request.slug?.trim()?.ifBlank { null }
@@ -98,7 +98,7 @@ class UpdateSchoolUseCase(
             slugInput == null -> existing.slug
             slugInput.equals(existing.slug, ignoreCase = true) -> existing.slug
             schoolRepository.existsBySlugAndIdNot(slugInput, schoolId) ->
-                throw BadRequestException("Ja existe uma escola com este slug")
+                throw BadRequestException("Ja existe um contrato com este slug")
             else -> slugInput
         }
 
@@ -127,7 +127,7 @@ class DeleteSchoolUseCase(
         schoolPolicy.requireDelete()
 
         val existing = schoolRepository.findById(schoolId)
-            .orElseThrow { NotFoundException("Escola nao encontrada") }
+            .orElseThrow { NotFoundException("Contrato nao encontrado") }
 
         schoolRepository.save(
             SchoolEntity(
@@ -156,5 +156,5 @@ private fun slugify(name: String): String {
         .lowercase(Locale.ROOT)
         .replace(Regex("[^a-z0-9]+"), "-")
         .trim('-')
-    return (normalized.ifBlank { "escola" }).take(80)
+    return (normalized.ifBlank { "contrato" }).take(80)
 }

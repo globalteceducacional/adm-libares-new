@@ -42,7 +42,7 @@ class UserEntity(
     val registeredOn: String = "",
 
     /**
-     * Unico vinculo de tenant do leitor (ADR 0006). A escola e derivada de acervos.school_id.
+     * Unico vinculo de tenant do leitor (ADR 0006). O contrato e derivada de acervos.school_id.
      * A coluna legada tbl_users.school_id nao e mais mapeada.
      */
     @Column(name = "acervo_id")

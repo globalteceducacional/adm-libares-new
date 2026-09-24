@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-@Tag(name = OpenApiTags.SCHOOLS, description = "Cadastro e gestao de escolas (tenants do sistema)")
+@Tag(name = OpenApiTags.SCHOOLS, description = "Cadastro e gestao de contratos (tenants do sistema)")
 @RestController
 @RequestMapping("/api/v1/schools")
 class SchoolController(
@@ -42,41 +42,41 @@ class SchoolController(
     private val createSchoolAdminUseCase: CreateSchoolAdminUseCase
 ) {
     @Operation(
-        summary = "Listar escolas",
-        description = "Retorna escolas acessiveis ao usuario logado (SUPER ve todas; demais veem escolas vinculadas)."
+        summary = "Listar contratos",
+        description = "Retorno contratos acessiveis ao usuario logado (SUPER ve todas; demais veem contratos vinculados)."
     )
     @AdminSecured
     @ApiResponses(
-        ApiResponse(responseCode = "200", description = "Lista de escolas")
+        ApiResponse(responseCode = "200", description = "Lista de contratos")
     )
     @GetMapping
     fun list(): ResponseEntity<List<SchoolResponse>> =
         ResponseEntity.ok(listSchoolsUseCase.execute())
 
     @Operation(
-        summary = "Obter escola por ID",
-        description = "Retorna detalhes de uma escola especifica."
+        summary = "Obter contrato por ID",
+        description = "Retorna detalhes de um contrato especifico."
     )
     @AdminSecured
     @ApiResponses(
-        ApiResponse(responseCode = "200", description = "Dados da escola"),
-        ApiResponse(responseCode = "404", description = "Escola nao encontrada")
+        ApiResponse(responseCode = "200", description = "Dados do contrato"),
+        ApiResponse(responseCode = "404", description = "Contrato nao encontrado")
     )
     @GetMapping("/{schoolId}")
     fun get(
-        @Parameter(description = "ID da escola")
+        @Parameter(description = "ID do contrato")
         @PathVariable schoolId: Long
     ): ResponseEntity<SchoolResponse> =
         ResponseEntity.ok(getSchoolUseCase.execute(schoolId))
 
     @Operation(
-        summary = "Criar escola",
-        description = "Cadastra uma nova escola (tenant). Requer perfil SUPER."
+        summary = "Criar contrato",
+        description = "Cadastra uma novo contrato (tenant). Requer perfil SUPER."
     )
     @AdminSecured
     @AdminWriteResponses
     @ApiResponses(
-        ApiResponse(responseCode = "201", description = "Escola criada com sucesso")
+        ApiResponse(responseCode = "201", description = "Contrato criado com sucesso")
     )
     @PostMapping
     fun create(@Valid @RequestBody request: UpsertSchoolRequest): ResponseEntity<SchoolResponse> {
@@ -85,34 +85,34 @@ class SchoolController(
     }
 
     @Operation(
-        summary = "Atualizar escola",
-        description = "Altera nome, slug ou status de uma escola existente."
+        summary = "Atualizar contrato",
+        description = "Altera nome, slug ou status de um contrato existente."
     )
     @AdminSecured
     @AdminWriteResponses
     @ApiResponses(
-        ApiResponse(responseCode = "200", description = "Escola atualizada com sucesso")
+        ApiResponse(responseCode = "200", description = "Contrato atualizado com sucesso")
     )
     @PutMapping("/{schoolId}")
     fun update(
-        @Parameter(description = "ID da escola")
+        @Parameter(description = "ID do contrato")
         @PathVariable schoolId: Long,
         @Valid @RequestBody request: UpsertSchoolRequest
     ): ResponseEntity<SchoolResponse> =
         ResponseEntity.ok(updateSchoolUseCase.execute(schoolId, request))
 
     @Operation(
-        summary = "Excluir escola",
-        description = "Remove permanentemente uma escola e seus vinculos."
+        summary = "Excluir contrato",
+        description = "Remove permanentemente um contrato e seus vinculos."
     )
     @AdminSecured
     @AdminWriteResponses
     @ApiResponses(
-        ApiResponse(responseCode = "204", description = "Escola excluida com sucesso")
+        ApiResponse(responseCode = "204", description = "Contrato excluido com sucesso")
     )
     @DeleteMapping("/{schoolId}")
     fun delete(
-        @Parameter(description = "ID da escola")
+        @Parameter(description = "ID do contrato")
         @PathVariable schoolId: Long
     ): ResponseEntity<Void> {
         deleteSchoolUseCase.execute(schoolId)
@@ -120,17 +120,17 @@ class SchoolController(
     }
 
     @Operation(
-        summary = "Criar administrador da escola",
-        description = "Cadastra um usuario SCHOOL_ADMIN vinculado a escola informada."
+        summary = "Criar administrador do contrato",
+        description = "Cadastra um usuario SCHOOL_ADMIN vinculado ao contrato informado."
     )
     @AdminSecured
     @AdminWriteResponses
     @ApiResponses(
-        ApiResponse(responseCode = "201", description = "Administrador da escola criado com sucesso")
+        ApiResponse(responseCode = "201", description = "Administrador do contrato criado com sucesso")
     )
     @PostMapping("/{schoolId}/admins")
     fun createAdmin(
-        @Parameter(description = "ID da escola")
+        @Parameter(description = "ID do contrato")
         @PathVariable schoolId: Long,
         @Valid @RequestBody request: CreateSchoolAdminRequest
     ): ResponseEntity<SchoolAdminResponse> {

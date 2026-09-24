@@ -28,7 +28,7 @@ class TenantSchoolResolver {
         }
 
         if (requested !in allowed) {
-            throw ForbiddenException("Escola nao autorizada para este usuario")
+            throw ForbiddenException("Contrato nao autorizado para este usuario")
         }
 
         return requested

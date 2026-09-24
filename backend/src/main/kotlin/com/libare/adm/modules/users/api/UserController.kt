@@ -41,7 +41,7 @@ import org.springframework.web.bind.annotation.RestController
 @Tag(
     name = OpenApiTags.USERS,
     description = "Leitores do aplicativo (tbl_users). Nao confunda com Equipe do painel. " +
-        "A escola vem do header ${OpenApiHeaders.SCHOOL_CONTEXT}."
+        "O contrato vem do header ${OpenApiHeaders.SCHOOL_CONTEXT}."
 )
 @RestController
 @RequestMapping("/api/v1/users")
@@ -55,7 +55,7 @@ class UserController(
 ) {
     @Operation(
         summary = "Listar leitores",
-        description = "Lista leitores cujo acervo pertence a escola do contexto, mais os sem acervo. Filtro opcional por acervo."
+        description = "Lista leitores cujo acervo pertence o contrato do contexto, mais os sem acervo. Filtro opcional por acervo."
     )
     @AdminSecured
     @Parameter(
@@ -155,7 +155,7 @@ class UserController(
 
     @Operation(
         summary = "Alterar acervo do leitor",
-        description = "Vincula o leitor a um acervo de escola acessivel. acervoId null desvincula (leitor fica sem catalogo no app)."
+        description = "Vincula o leitor a um acervo de contrato acessivel. acervoId null desvincula (leitor fica sem catalogo no app)."
     )
     @AdminSecured
     @AdminWriteResponses

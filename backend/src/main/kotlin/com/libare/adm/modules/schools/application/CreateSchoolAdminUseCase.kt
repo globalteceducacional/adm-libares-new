@@ -28,7 +28,7 @@ class CreateSchoolAdminUseCase(
         schoolPolicy.requireUpdate()
 
         schoolRepository.findById(schoolId)
-            .orElseThrow { NotFoundException("Escola nao encontrada") }
+            .orElseThrow { NotFoundException("Contrato nao encontrado") }
 
         val username = request.username.trim()
         if (panelAdminUserRepository.existsByUsernameIgnoreCase(username)) {
@@ -47,7 +47,7 @@ class CreateSchoolAdminUseCase(
         )
 
         val schoolAdminRole = roleRepository.findBySchoolIdAndName(schoolId, "SCHOOL_ADMIN")
-            ?: throw BadRequestException("Perfil SCHOOL_ADMIN nao encontrado para a escola")
+            ?: throw BadRequestException("Perfil SCHOOL_ADMIN nao encontrado para o contrato")
 
         jdbcTemplate.update(
             """

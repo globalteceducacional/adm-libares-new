@@ -2,12 +2,12 @@ package com.libare.adm.modules.auth.api.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
 
-@Schema(description = "Escola disponivel para o admin autenticado")
+@Schema(description = "Contrato disponivel para o admin autenticado")
 data class AuthSchoolOption(
-    @field:Schema(description = "ID da escola", example = "1")
+    @field:Schema(description = "ID do contrato", example = "1")
     val id: Long,
 
-    @field:Schema(description = "Nome da escola", example = "Escola Demo")
+    @field:Schema(description = "Nome do contrato", example = "Contrato Demo")
     val name: String
 )
 
@@ -25,10 +25,10 @@ data class AuthMeResponse(
     @field:Schema(description = "Se true, SUPER da plataforma")
     val isSuperAdmin: Boolean,
 
-    @field:Schema(description = "Escola primaria", nullable = true)
+    @field:Schema(description = "Contrato primario", nullable = true)
     val schoolId: Long?,
 
-    @field:Schema(description = "Nome da escola primaria", nullable = true)
+    @field:Schema(description = "Nome do contrato primario", nullable = true)
     val schoolName: String?,
 
     @field:Schema(description = "Permissoes efetivas")
@@ -37,13 +37,13 @@ data class AuthMeResponse(
     @field:Schema(description = "Versao de permissoes (cache/invalidacao)")
     val permVersion: Int,
 
-    @field:Schema(description = "Escolas acessiveis")
+    @field:Schema(description = "Contratos acessiveis")
     val allowedSchools: List<AuthSchoolOption>,
 
     @field:Schema(description = "Se true, exige header X-School-Context")
     val requiresSchoolContext: Boolean,
 
-    @field:Schema(description = "Escola efetiva da requisicao atual", nullable = true)
+    @field:Schema(description = "Contrato efetivo da requisicao atual", nullable = true)
     val effectiveSchoolId: Long?,
 
     @field:Schema(description = "Tema persistido (light/dark)", nullable = true)
