@@ -345,7 +345,7 @@ export function RolesPage() {
         <PageHeroStrip
           icon={Shield}
           title="Perfis e permissoes"
-          description="Gerencie perfis de acesso da escola com permissoes granulares."
+          description="Gerencie perfis de acesso do contrato com permissoes granulares."
           tone="primary"
           actions={
             canCreate ? (
@@ -356,7 +356,7 @@ export function RolesPage() {
                   disabled={saving || needsSchoolContext}
                   title={
                     needsSchoolContext
-                      ? "Selecione uma escola no topo do painel"
+                      ? "Selecione um contrato no topo do painel"
                       : undefined
                   }
                 >
@@ -372,7 +372,7 @@ export function RolesPage() {
     >
       {needsSchoolContext ? (
         <Alert tone="warning">
-          Selecione uma escola no topo do painel para gerenciar perfis como Super Admin.
+          Selecione um contrato no topo do painel para gerenciar perfis como Super Admin.
         </Alert>
       ) : null}
 

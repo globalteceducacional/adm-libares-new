@@ -24,6 +24,8 @@ export type AdminListingSectionProps<T> = {
   loading: boolean;
   keyExtractor: (item: T) => string | number;
   emptyMessage: string;
+  /** Bloco rico exibido quando a lista esta vazia (prioridade sobre emptyMessage). */
+  emptyState?: ReactNode;
   renderMobileCard?: (item: T) => ReactNode;
   countLabel: string;
   error?: string;
@@ -55,6 +57,7 @@ export function AdminListingSection<T>({
   loading,
   keyExtractor,
   emptyMessage,
+  emptyState,
   renderMobileCard,
   countLabel,
   error,
@@ -115,6 +118,7 @@ export function AdminListingSection<T>({
         keyExtractor={keyExtractor}
         caption={title}
         emptyMessage={emptyMessage}
+        emptyState={emptyState}
         renderMobileCard={renderMobileCard}
         onRowClick={onRowClick}
         paginate={paginate}

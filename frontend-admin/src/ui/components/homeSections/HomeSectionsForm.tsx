@@ -93,7 +93,7 @@ export function HomeSectionsForm({
           Livros da secao
         </p>
         {needsSchoolContext ? (
-          <p className="text-xs text-muted">Selecione uma escola para listar livros disponiveis.</p>
+          <p className="text-xs text-muted">Selecione um contrato para listar livros disponiveis.</p>
         ) : booksLoading ? (
           <p className="text-xs text-muted">Carregando livros...</p>
         ) : (

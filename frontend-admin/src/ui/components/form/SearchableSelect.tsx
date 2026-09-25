@@ -47,7 +47,7 @@ function normalize(value: string): string {
 
 /**
  * Select unico com campo de busca e lista filtravel (autocompletar).
- * Ideal para listas longas: autores, acervos, escolas.
+ * Ideal para listas longas: autores, acervos, contratos.
  */
 export function SearchableSelect({
   options,

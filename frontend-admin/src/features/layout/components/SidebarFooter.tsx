@@ -37,7 +37,7 @@ export function SidebarFooter({ collapsed }: SidebarFooterProps) {
     ? "Super Admin"
     : user?.schoolName
       ? user.schoolName
-      : "Admin da escola";
+      : "Admin do contrato";
 
   return (
     <div className={cn("mt-auto space-y-3 border-t border-sidebar-border pt-4", collapsed && "space-y-2")}>

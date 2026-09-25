@@ -33,7 +33,7 @@ import { TableRowActions } from "../components/table/TableRowActions";
 
 function formatRoleLabel(roleCode: string): string {
   if (roleCode === "SCHOOL_ADMIN") {
-    return "Admin da escola";
+    return "Admin do contrato";
   }
   if (roleCode === "PROFESSOR") {
     return "Professor";
@@ -59,7 +59,7 @@ export function TeamPage() {
   const queryError = teamQuery.error
     ? getQueryErrorMessage(teamQuery.error, "Falha ao carregar equipe")
     : schoolsQuery.error
-      ? getQueryErrorMessage(schoolsQuery.error, "Falha ao carregar escolas")
+      ? getQueryErrorMessage(schoolsQuery.error, "Falha ao carregar contratos")
       : undefined;
   const currentUserId = user?.id ?? null;
 
@@ -91,7 +91,7 @@ export function TeamPage() {
   const canToggle = usePermission("team.toggle_status");
   const needsSchoolContext = requiresSchoolContext && !schoolContextId;
 
-  // Preenche escola quando o contexto chega depois da montagem (SCHOOL_ADMIN).
+  // Preenche contrato quando o contexto chega depois da montagem (SCHOOL_ADMIN).
   useEffect(() => {
     if (isSuperAdmin || defaultSchoolId == null) {
       return;
@@ -201,9 +201,9 @@ export function TeamPage() {
       { key: "username", label: "Usuário", render: (member) => member.username },
       {
         key: "school",
-        label: "Escola",
+        label: "Contrato",
         render: (member) =>
-          member.schoolName ? decodeHtmlEntities(member.schoolName) : `Escola #${member.schoolId}`
+          member.schoolName ? decodeHtmlEntities(member.schoolName) : `Contrato #${member.schoolId}`
       },
       {
         key: "role",
@@ -307,7 +307,7 @@ export function TeamPage() {
                   disabled={saving || needsSchoolContext}
                   title={
                     needsSchoolContext
-                      ? "Selecione uma escola no topo do painel"
+                      ? "Selecione um contrato no topo do painel"
                       : undefined
                   }
                 >
@@ -323,7 +323,7 @@ export function TeamPage() {
     >
       {needsSchoolContext ? (
         <Alert tone="warning">
-          Selecione uma escola no topo do painel para cadastrar membros da equipe.
+          Selecione um contrato no topo do painel para cadastrar membros da equipe.
         </Alert>
       ) : null}
 
@@ -337,7 +337,7 @@ export function TeamPage() {
         title="Lista da equipe"
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Buscar por nome, usuario, escola ou perfil"
+        searchPlaceholder="Buscar por nome, usuario, contrato ou perfil"
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
         columns={columns}
@@ -358,7 +358,7 @@ export function TeamPage() {
                 <p className="book-card-author">
                   {member.schoolName
                     ? decodeHtmlEntities(member.schoolName)
-                    : `Escola #${member.schoolId}`}
+                    : `Contrato #${member.schoolId}`}
                 </p>
                 <p className="book-card-author">{formatRoleLabel(member.roleCode)}</p>
                 <StatusBadge active={member.status === "1"} />

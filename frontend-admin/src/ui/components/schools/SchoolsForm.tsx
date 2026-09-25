@@ -73,7 +73,7 @@ export function SchoolsForm({
 
       <FormActions>
         <Button type="submit" disabled={saving || isNameInvalid}>
-          {saving ? "Salvando..." : editingId ? "Salvar escola" : "Criar escola"}
+          {saving ? "Salvando..." : editingId ? "Salvar contrato" : "Criar contrato"}
         </Button>
         <Button type="button" variant="secondary" onClick={onReset} disabled={saving}>
           {inModal ? "Cancelar" : "Limpar formulario"}

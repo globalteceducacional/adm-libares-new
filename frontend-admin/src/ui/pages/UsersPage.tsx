@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Pencil, Plus, Trash2, UserCheck, Users, UserX } from "lucide-react";
+import { Library, Pencil, Plus, Trash2, UserCheck, Users, UserX } from "lucide-react";
 import { FormEvent, useMemo, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -36,7 +36,8 @@ import { UserDetailModal } from "../components/users/UserDetailModal";
 import { UserFormModal } from "../components/users/UserFormModal";
 import { LegacyImage } from "../components/LegacyImage";
 import type { UserResponse } from "../../types/users";
-import { Button, ConfirmDialog, StatusBadge } from "../../shared/ui";
+import { Button, ConfirmDialog, EmptyState, StatusBadge } from "../../shared/ui";
+import { acervoHubPath } from "../components/acervos/acervoRoutes";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
@@ -391,6 +392,52 @@ export function UsersPage() {
     [search, statusFilter, acervoFilter]
   );
 
+  // Empty state rico so quando a lista bruta esta vazia (sem busca/status).
+  const emptyState = useMemo(() => {
+    if (loading || users.length > 0 || search.trim() || statusFilter !== "all" || onlyWithoutAcervo) {
+      return undefined;
+    }
+    if (selectedAcervoId) {
+      const acervoName = acervoOptions.find((acervo) => acervo.id === selectedAcervoId)?.name;
+      return (
+        <EmptyState
+          icon={Library}
+          title="Este acervo ainda nao tem leitores"
+          description={`Vincule leitores existentes ${acervoName ? `a "${decodeHtmlEntities(acervoName)}"` : "a este acervo"} pelo hub do acervo ou cadastre um novo usuario ja escolhendo o acervo.`}
+          action={{
+            label: "Abrir hub do acervo",
+            icon: Library,
+            to: acervoHubPath(selectedAcervoId, "leitores")
+          }}
+          secondaryAction={{ label: "Ver todos os usuarios", to: "/usuarios" }}
+        />
+      );
+    }
+    return (
+      <EmptyState
+        icon={Users}
+        title="Nenhum leitor cadastrado"
+        description={
+          canCreateUser
+            ? "Cadastre o primeiro leitor e vincule-o a um acervo para que ele veja o catalogo no app."
+            : "Ainda nao ha leitores cadastrados para o seu contrato."
+        }
+        action={canCreateUser ? { label: "Novo usuario", icon: Plus, onClick: openCreateForm } : undefined}
+        secondaryAction={{ label: "Ver acervos", to: "/acervos" }}
+      />
+    );
+  }, [
+    loading,
+    users.length,
+    search,
+    statusFilter,
+    onlyWithoutAcervo,
+    selectedAcervoId,
+    acervoOptions,
+    canCreateUser,
+    openCreateForm
+  ]);
+
   const listStats = useMemo(() => {
     const active = users.filter((user) => user.status === "1").length;
     return [
@@ -452,6 +499,7 @@ export function UsersPage() {
         loading={loading}
         keyExtractor={(user) => user.id}
         emptyMessage={emptyMessage}
+        emptyState={emptyState}
         countLabel={`${filteredUsers.length} usuario(s) com o filtro atual`}
         error={listingError}
         onRowClick={setSelectedUser}

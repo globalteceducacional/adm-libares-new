@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { BookOpen, Pencil, Plus, Trash2 } from "lucide-react";
+import { BookOpen, Library, Pencil, Plus, Trash2 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -35,7 +35,8 @@ import { EMPTY_BOOK_FORM } from "../../types/books";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
 import { useAdminMutation } from "../../hooks/useAdminMutation";
 import { useSelectedEntity } from "../../hooks/useSelectedEntity";
-import { ConfirmDialog, StatusBadge, Button } from "../../shared/ui";
+import { ConfirmDialog, EmptyState, StatusBadge, Button } from "../../shared/ui";
+import { acervoHubPath } from "../components/acervos/acervoRoutes";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
@@ -52,8 +53,9 @@ type ToggleBookVariables = {
 
 export function BooksPage() {
   const location = useLocation();
-  const { search, setSearch, statusFilter, setStatusFilter } = useAdminListFilters();
-  const [acervoFilter, setAcervoFilter] = useState<string>("all");
+  // `acervoId` na URL permite deep-link a partir do hub do acervo.
+  const { search, setSearch, statusFilter, setStatusFilter, acervoFilter, setAcervoFilter } =
+    useAdminListFilters({ syncAcervo: true });
   const selectedAcervoId = acervoFilter === "all" ? undefined : Number(acervoFilter);
   const booksQuery = useBooksQuery(selectedAcervoId);
   const invalidate = useInvalidateAdminQueries();
@@ -317,6 +319,38 @@ export function BooksPage() {
     [search, statusFilter]
   );
 
+  // Empty state rico so quando a lista bruta esta vazia (sem busca/status).
+  const emptyState = useMemo(() => {
+    if (loading || books.length > 0 || search.trim() || statusFilter !== "all") {
+      return undefined;
+    }
+    if (selectedAcervoId) {
+      const acervoName = acervoOptions.find((acervo) => acervo.id === selectedAcervoId)?.name;
+      return (
+        <EmptyState
+          icon={Library}
+          title="Este acervo ainda nao tem livros"
+          description={`Vincule livros ${acervoName ? `a "${decodeHtmlEntities(acervoName)}"` : "a este acervo"} pelo hub do acervo ou cadastre um livro novo ja selecionando o acervo.`}
+          action={{ label: "Abrir hub do acervo", icon: Library, to: acervoHubPath(selectedAcervoId) }}
+          secondaryAction={{ label: "Ver todos os livros", to: "/livros" }}
+        />
+      );
+    }
+    return (
+      <EmptyState
+        icon={BookOpen}
+        title="Nenhum livro cadastrado"
+        description={
+          canCreateBook
+            ? "Cadastre o primeiro livro e vincule-o a um acervo para que os leitores o vejam no app."
+            : "Ainda nao ha livros disponiveis para o seu contrato."
+        }
+        action={canCreateBook ? { label: "Novo livro", icon: Plus, onClick: openCreateForm } : undefined}
+        secondaryAction={{ label: "Ver acervos", to: "/acervos" }}
+      />
+    );
+  }, [loading, books.length, search, statusFilter, selectedAcervoId, acervoOptions, canCreateBook, openCreateForm]);
+
   const listStats = useMemo(() => {
     const active = books.filter((book) => book.status === "1").length;
     return [
@@ -450,7 +484,7 @@ export function BooksPage() {
           title="Livros"
           description={
             professorMode
-              ? "Visualize e ative/desative os livros da sua escola."
+              ? "Visualize e ative/desative os livros da seu contrato."
               : "Cadastre, edite e gerencie o catalogo de livros da plataforma."
           }
           tone="primary"
@@ -495,6 +529,7 @@ export function BooksPage() {
         loading={loading}
         keyExtractor={(book) => book.id}
         emptyMessage={tableEmptyMessage}
+        emptyState={emptyState}
         countLabel={`${filteredBooks.length} livro(s) com o filtro atual`}
         error={listingError}
         onRowClick={handleSelectBook}

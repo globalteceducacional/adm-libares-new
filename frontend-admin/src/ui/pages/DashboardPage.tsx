@@ -28,6 +28,7 @@ import type { DashboardDayCount } from "../../types/dashboard";
 import { DashboardAlertStrip } from "../components/dashboard/DashboardAlertStrip";
 import { DashboardChartCard } from "../components/dashboard/DashboardChartCard";
 import { DashboardStatCard } from "../components/dashboard/DashboardStatCard";
+import { OnboardingChecklist } from "../components/dashboard/OnboardingChecklist";
 import { Alert, Button, PageShell, Skeleton } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 
@@ -210,6 +211,8 @@ export function DashboardPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.24 }}
       >
+        <OnboardingChecklist />
+
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {primaryStats.map((item, index) => (
             <DashboardStatCard key={item.title} {...item} index={index} onNavigate={navigate} />

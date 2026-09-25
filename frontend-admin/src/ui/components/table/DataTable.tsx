@@ -20,6 +20,8 @@ type DataTableProps<T = unknown> = {
   /** Legenda da tabela (visualmente oculta) para leitores de tela. */
   caption?: ReactNode;
   emptyMessage?: string;
+  /** Substitui `emptyMessage` por um bloco rico (ex.: `EmptyState` com CTA). */
+  emptyState?: ReactNode;
   loading?: boolean;
   onRowClick?: (item: T, event?: MouseEvent<HTMLTableRowElement>) => void;
   rowClassName?: (item: T) => string;
@@ -43,6 +45,7 @@ export function DataTable<T>({
   keyExtractor,
   caption,
   emptyMessage = "Nenhum registro encontrado",
+  emptyState,
   loading = false,
   onRowClick,
   rowClassName,
@@ -132,7 +135,7 @@ export function DataTable<T>({
               ))}
             </div>
           ) : visibleData.length === 0 ? (
-            <p className="muted-text">{emptyMessage}</p>
+            emptyState ?? <p className="muted-text">{emptyMessage}</p>
           ) : (
             <div className="dt-mobile-card-list">
               {visibleData.map((item) => {
@@ -205,7 +208,9 @@ export function DataTable<T>({
                 </tr>
               ) : visibleData.length === 0 ? (
                 <tr>
-                  <td colSpan={colCount}>{emptyMessage}</td>
+                  <td colSpan={colCount} className={emptyState ? "!p-0" : undefined}>
+                    {emptyState ?? emptyMessage}
+                  </td>
                 </tr>
               ) : (
                 visibleData.map((item) => {

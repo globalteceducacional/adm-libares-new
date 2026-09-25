@@ -32,10 +32,10 @@ export function SchoolFormModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={editingId ? "Editar escola" : "Nova escola"}
+      title={editingId ? "Editar contrato" : "Novo contrato"}
       description={
         editingId
-          ? `Atualize os dados da escola #${editingId}.`
+          ? `Atualize os dados do contrato #${editingId}.`
           : "Defina nome, slug e status para isolar dados por tenant."
       }
       size="lg"

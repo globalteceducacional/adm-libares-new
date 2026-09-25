@@ -3,7 +3,7 @@ import { listBooks, listCategoryOptions, listHomeSectionOptions } from "../../..
 import { listAuthorOptions, listAuthors } from "../../../services/authorsService";
 import { listCategories } from "../../../services/categoriesService";
 import { listHomeSections } from "../../../services/homeSectionsService";
-import { listAcervos, listAcervoOptions } from "../../../services/acervosService";
+import { getAcervo, listAcervos, listAcervoOptions } from "../../../services/acervosService";
 import { listPermissions, listRoles } from "../../../services/rolesService";
 import { listSchools } from "../../../services/schoolsService";
 import { getDashboardSummary } from "../../../services/dashboardService";
@@ -29,6 +29,8 @@ export const queryKeys = {
   homeSections: ["home-sections"] as const,
   homeSectionOptions: ["home-section-options"] as const,
   acervos: ["acervos"] as const,
+  /** Prefixo "acervos" garante que invalidate.acervos() tambem atualiza o detalhe. */
+  acervo: (acervoId: number) => ["acervos", "detail", acervoId] as const,
   acervoOptions: ["acervo-options"] as const,
   dashboard: (periodDays: number) => ["dashboard", periodDays] as const,
   comments: ["comments"] as const,
@@ -53,10 +55,11 @@ export function getQueryErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
-export function useBooksQuery(acervoId?: number) {
+export function useBooksQuery(acervoId?: number, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.books(acervoId),
-    queryFn: () => listBooks(acervoId)
+    queryFn: () => listBooks(acervoId),
+    enabled: options?.enabled ?? true
   });
 }
 
@@ -96,8 +99,22 @@ export function useHomeSectionOptionsQuery(options?: { enabled?: boolean }) {
   });
 }
 
-export function useAcervosQuery() {
-  return useQuery({ queryKey: queryKeys.acervos, queryFn: listAcervos });
+export function useAcervosQuery(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.acervos,
+    queryFn: listAcervos,
+    enabled: options?.enabled ?? true
+  });
+}
+
+export function useAcervoQuery(acervoId: number | null) {
+  return useQuery({
+    queryKey: queryKeys.acervo(acervoId ?? 0),
+    queryFn: () => getAcervo(acervoId as number),
+    enabled: acervoId !== null,
+    // 404/403 nao devem ficar em retry: o hub mostra "nao encontrado" na hora.
+    retry: false
+  });
 }
 
 export function useAcervoOptionsQuery(options?: { enabled?: boolean }) {
@@ -119,10 +136,11 @@ export function useCommentsQuery() {
   return useQuery({ queryKey: queryKeys.comments, queryFn: listComments });
 }
 
-export function useUsersQuery(acervoId?: number) {
+export function useUsersQuery(acervoId?: number, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: acervoId ? (["users", acervoId] as const) : queryKeys.users,
-    queryFn: () => listUsers(acervoId)
+    queryFn: () => listUsers(acervoId),
+    enabled: options?.enabled ?? true
   });
 }
 

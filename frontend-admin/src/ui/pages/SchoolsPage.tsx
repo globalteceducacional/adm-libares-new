@@ -43,7 +43,7 @@ export function SchoolsPage() {
   const schools = schoolsQuery.data ?? [];
   const loading = schoolsQuery.isLoading;
   const listingError = schoolsQuery.error
-    ? getQueryErrorMessage(schoolsQuery.error, "Falha ao carregar escolas")
+    ? getQueryErrorMessage(schoolsQuery.error, "Falha ao carregar contratos")
     : undefined;
 
   const [formError, setFormError] = useState("");
@@ -68,8 +68,8 @@ export function SchoolsPage() {
     mutationFn: async ({ editingId: id, payload }) =>
       id ? updateSchool(id, payload) : createSchool(payload),
     successMessage: (_data, { editingId: id }) =>
-      id ? "Escola atualizada com sucesso." : "Escola criada com sucesso.",
-    errorFallback: "Falha ao salvar escola",
+      id ? "Contrato atualizado com sucesso." : "Contrato criado com sucesso.",
+    errorFallback: "Falha ao salvar contrato",
     toastError: false,
     invalidate: invalidateSchoolQueries,
     onSuccess: () => {
@@ -87,8 +87,8 @@ export function SchoolsPage() {
         slug: school.slug,
         status: "1"
       }),
-    successMessage: "Escola ativada com sucesso.",
-    errorFallback: "Falha ao ativar escola",
+    successMessage: "Contrato ativado com sucesso.",
+    errorFallback: "Falha ao ativar contrato",
     invalidate: invalidateSchoolQueries,
     onError: (error) => {
       setFormError(error.message);
@@ -97,8 +97,8 @@ export function SchoolsPage() {
 
   const deleteMutation = useAdminMutation<void, number>({
     mutationFn: (schoolId) => deleteSchool(schoolId),
-    successMessage: "Escola desativada com sucesso.",
-    errorFallback: "Falha ao desativar escola",
+    successMessage: "Contrato desativado com sucesso.",
+    errorFallback: "Falha ao desativar contrato",
     invalidate: invalidateSchoolQueries,
     onSuccess: (_data, schoolId) => {
       if (editingId === schoolId) {
@@ -262,7 +262,7 @@ export function SchoolsPage() {
   const listStats = useMemo(() => {
     const active = schools.filter((school) => school.status === "1").length;
     return [
-      { label: "Total de escolas", value: schools.length },
+      { label: "Total de contratos", value: schools.length },
       { label: "Ativas", value: active },
       { label: "Inativas", value: schools.length - active },
       {
@@ -279,7 +279,7 @@ export function SchoolsPage() {
       hero={
         <PageHeroStrip
           icon={Building2}
-          title="Escolas"
+          title="Contratos"
           description="Gerencie tenants da plataforma."
           tone="warning"
           actions={
@@ -287,7 +287,7 @@ export function SchoolsPage() {
               <PermissionGate anyOf={["schools.create"]}>
                 <Button type="button" onClick={openCreateForm} disabled={saving}>
                   <Plus size={16} />
-                  Nova escola
+                  Novo contrato
                 </Button>
               </PermissionGate>
             ) : null
@@ -303,7 +303,7 @@ export function SchoolsPage() {
       ) : null}
 
       <AdminListingSection<SchoolResponse>
-        title="Listagem de escolas"
+        title="Listagem de contratos"
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Buscar por nome, slug ou ID"
@@ -313,8 +313,8 @@ export function SchoolsPage() {
         data={filteredSchools}
         loading={loading}
         keyExtractor={(school) => school.id}
-        emptyMessage="Nenhuma escola encontrada."
-        countLabel={`${filteredSchools.length} escola(s) com o filtro atual`}
+        emptyMessage="Nenhum contrato encontrado."
+        countLabel={`${filteredSchools.length} contrato(s) com o filtro atual`}
         error={listingError}
         renderMobileCard={(school) => (
           <article className="book-card">
@@ -390,8 +390,8 @@ export function SchoolsPage() {
 
       <ConfirmDialog
         open={confirmDeleteId !== null}
-        title="Desativar escola"
-        description="A escola sera marcada como inativa. Deseja continuar?"
+        title="Desativar contrato"
+        description="O contrato sera marcado como inativo. Deseja continuar?"
         confirmLabel="Desativar"
         tone="danger"
         loading={saving}

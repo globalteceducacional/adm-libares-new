@@ -453,7 +453,7 @@ select {
   text-align: center;
 }
 
-/* Select com busca (autores, acervos, escolas) */
+/* Select com busca (autores, acervos, contratos) */
 .searchable-select {
   position: relative;
   width: 100%;

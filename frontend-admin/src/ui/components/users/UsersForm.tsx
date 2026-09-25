@@ -67,8 +67,8 @@ export function UsersForm({
     <FormGrid onSubmit={onSubmit}>
       {isCreate ? (
         <Field
-          label="Escola"
-          hint="Opcional. Sem acervo o usuario fica sem escola; o vinculo pode ser feito depois."
+          label="Contrato"
+          hint="Opcional. Sem acervo o usuario fica sem contrato; o vinculo pode ser feito depois."
         >
           <Input
             type="text"
@@ -82,7 +82,7 @@ export function UsersForm({
           />
         </Field>
       ) : schoolLabel ? (
-        <Field label="Escola">
+        <Field label="Contrato">
           <Input type="text" value={schoolLabel} readOnly disabled />
         </Field>
       ) : null}

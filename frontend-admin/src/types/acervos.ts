@@ -14,10 +14,16 @@ export type AcervoResponse = {
   schoolName?: string | null;
 };
 
+/** PUT /acervos/{id}/books — ids de livros a vincular/desvincular (sem sobreposicao). */
+export type SyncAcervoBooksRequest = {
+  add: number[];
+  remove: number[];
+};
+
 export type UpsertAcervoRequest = {
   name: string;
   description?: string;
   status: string;
-  /** Escola dona do acervo (obrigatoria na criacao se nao houver escola no topo). */
+  /** Contrato dono do acervo (obrigatorio na criacao se nao houver contrato no topo). */
   schoolId?: number | null;
 };

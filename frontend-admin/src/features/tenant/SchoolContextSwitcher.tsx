@@ -23,7 +23,7 @@ export function SchoolContextSwitcher() {
     () => [
       {
         value: "",
-        label: canPickAllSchools ? "Todas as escolas" : "Selecione a escola"
+        label: canPickAllSchools ? "Todos os contratos" : "Selecione o contrato"
       },
       ...allowedSchools.map((school) => ({
         value: String(school.id),
@@ -72,15 +72,15 @@ export function SchoolContextSwitcher() {
       )}
     >
       <Building2 size={14} className="shrink-0 text-muted" aria-hidden />
-      <span className="hidden whitespace-nowrap text-muted xs:inline sm:inline">Escola</span>
+      <span className="hidden whitespace-nowrap text-muted xs:inline sm:inline">Contrato</span>
       <div className="min-w-0 flex-1 sm:min-w-[180px] sm:max-w-[240px]">
         <SearchableSelect
           options={schoolOptions}
           value={schoolContextId != null ? String(schoolContextId) : ""}
           onChange={handleChange}
-          placeholder={canPickAllSchools ? "Todas as escolas" : "Selecione a escola"}
-          searchPlaceholder="Buscar escola..."
-          emptyMessage="Nenhuma escola disponivel."
+          placeholder={canPickAllSchools ? "Todos os contratos" : "Selecione o contrato"}
+          searchPlaceholder="Buscar contrato..."
+          emptyMessage="Nenhum contrato disponivel."
           disabled={allowedSchools.length === 0}
           compact
           className="border-0 bg-transparent px-1 shadow-none focus:ring-0"

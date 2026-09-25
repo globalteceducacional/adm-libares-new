@@ -30,6 +30,9 @@ const HomeSectionsPage = lazy(() =>
 const AcervosPage = lazy(() =>
   import("./ui/pages/AcervosPage").then((module) => ({ default: module.AcervosPage }))
 );
+const AcervoHubPage = lazy(() =>
+  import("./ui/pages/AcervoHubPage").then((module) => ({ default: module.AcervoHubPage }))
+);
 const AuditPage = lazy(() =>
   import("./ui/pages/AuditPage").then((module) => ({ default: module.AuditPage }))
 );
@@ -114,6 +117,11 @@ export function AppRouter() {
           <Route path="/categorias" element={<GuardedPage path="/categorias" element={<CategoriesPage />} />} />
           <Route path="/secoes" element={<GuardedPage path="/secoes" element={<HomeSectionsPage />} />} />
           <Route path="/acervos" element={<GuardedPage path="/acervos" element={<AcervosPage />} />} />
+          {/* Hub do acervo reaproveita a permissao de /acervos (acervos.view). */}
+          <Route
+            path="/acervos/:acervoId"
+            element={<GuardedPage path="/acervos" element={<AcervoHubPage />} />}
+          />
           <Route path="/sites" element={<GuardedPage path="/sites" element={<SitesPage />} />} />
           <Route
             path="/sites/autores"
@@ -133,7 +141,7 @@ export function AppRouter() {
           />
           <Route path="/usuarios" element={<GuardedPage path="/usuarios" element={<UsersPage />} />} />
           <Route path="/comentarios" element={<GuardedPage path="/comentarios" element={<CommentsPage />} />} />
-          <Route path="/escolas" element={<GuardedPage path="/escolas" element={<SchoolsPage />} />} />
+          <Route path="/contratos" element={<GuardedPage path="/contratos" element={<SchoolsPage />} />} />
           <Route path="/equipe" element={<GuardedPage path="/equipe" element={<TeamPage />} />} />
           <Route path="/perfis" element={<GuardedPage path="/perfis" element={<RolesPage />} />} />
           <Route path="/auditoria" element={<GuardedPage path="/auditoria" element={<AuditPage />} />} />

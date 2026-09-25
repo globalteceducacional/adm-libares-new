@@ -98,16 +98,16 @@ export function CreateTeamMemberForm({
       </Field>
 
       <FormFullWidth>
-        <Field label="Escola" required>
+        <Field label="Contrato" required>
           <SearchableSelect
             options={schoolSelectOptions}
             value={form.schoolId}
             onChange={(next) => onChange({ ...form, schoolId: next })}
-            placeholder="Selecione uma escola"
-            searchPlaceholder="Buscar escola..."
-            emptyMessage="Nenhuma escola disponivel."
+            placeholder="Selecione um contrato"
+            searchPlaceholder="Buscar contrato..."
+            emptyMessage="Nenhum contrato disponivel."
             allowEmpty
-            emptyLabel="Selecione uma escola"
+            emptyLabel="Selecione um contrato"
             disabled={disabled || (!isSuperAdmin && schoolOptions.length <= 1)}
             required
           />
@@ -123,7 +123,7 @@ export function CreateTeamMemberForm({
             }
             disabled={disabled}
           >
-            <option value="SCHOOL_ADMIN">Admin da escola</option>
+            <option value="SCHOOL_ADMIN">Admin do contrato</option>
             <option value="PROFESSOR">Professor</option>
           </Select>
         </Field>
@@ -136,7 +136,7 @@ export function CreateTeamMemberForm({
       {isFormInvalid ? (
         <FormFullWidth>
           <p className="text-xs text-warning-strong" role="status">
-            Preencha usuario, nome, senha (min. 6) e escola.
+            Preencha usuario, nome, senha (min. 6) e contrato.
           </p>
         </FormFullWidth>
       ) : null}
@@ -144,7 +144,7 @@ export function CreateTeamMemberForm({
       {needsSchoolContext ? (
         <FormFullWidth>
           <p className="text-xs text-warning-strong" role="status">
-            Selecione uma escola no topo do painel para liberar o cadastro.
+            Selecione um contrato no topo do painel para liberar o cadastro.
           </p>
         </FormFullWidth>
       ) : null}

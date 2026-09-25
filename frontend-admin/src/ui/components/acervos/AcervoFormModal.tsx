@@ -43,7 +43,7 @@ export function AcervoFormModal({
       description={
         editingId
           ? `Atualize os dados do acervo #${editingId}.`
-          : "Informe a escola e o nome para organizar livros e usuarios por biblioteca."
+          : "Informe o contrato e o nome para organizar livros e usuarios por biblioteca."
       }
       size="xl"
       className="max-w-3xl"

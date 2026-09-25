@@ -54,10 +54,10 @@ export function AcervosForm({
     <FormGrid onSubmit={onSubmit}>
       <FormFullWidth>
         <Field
-          label="Escola"
+          label="Contrato"
           required
-          error={isSchoolInvalid ? "Selecione a escola do acervo." : undefined}
-          hint="Obrigatoria. Define a qual escola este acervo pertence."
+          error={isSchoolInvalid ? "Selecione o contrato do acervo." : undefined}
+          hint="Obrigatoria. Define a qual contrato este acervo pertence."
         >
           <SearchableSelect
             options={schoolSelectOptions}
@@ -68,11 +68,11 @@ export function AcervosForm({
                 schoolId: next ? Number(next) : null
               })
             }
-            placeholder="Selecione uma escola"
-            searchPlaceholder="Buscar escola..."
-            emptyMessage="Nenhuma escola cadastrada."
+            placeholder="Selecione um contrato"
+            searchPlaceholder="Buscar contrato..."
+            emptyMessage="Nenhum contrato cadastrado."
             allowEmpty
-            emptyLabel="Selecione uma escola"
+            emptyLabel="Selecione um contrato"
             disabled={saving}
             required
             invalid={isSchoolInvalid}

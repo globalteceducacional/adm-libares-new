@@ -329,7 +329,7 @@ export function HomeSectionsPage() {
         <PageHeroStrip
           icon={LayoutList}
           title="Seções"
-          description="Gerencie seções da home e vincule livros do catalogo filtrado por escola."
+          description="Gerencie seções da home e vincule livros do catalogo filtrado por contrato."
           tone="primary"
           actions={
             <PermissionGate permission="books.create">
@@ -349,7 +349,7 @@ export function HomeSectionsPage() {
     >
       {needsSchoolContext ? (
         <Alert tone="warning" className="mb-3">
-          Selecione uma escola no topo do painel para carregar livros e montar seções por tenant.
+          Selecione um contrato no topo do painel para carregar livros e montar seções por tenant.
         </Alert>
       ) : null}
       {formError && !formModalOpen ? (

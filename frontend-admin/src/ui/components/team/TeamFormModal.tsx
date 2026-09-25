@@ -40,7 +40,7 @@ export function TeamFormModal({
       open={open}
       onClose={onClose}
       title="Novo membro da equipe"
-      description="Crie contas de admin da escola ou professor para acesso ao painel."
+      description="Crie contas de admin do contrato ou professor para acesso ao painel."
       size="lg"
       className="max-w-2xl"
       closeOnOverlayClick={!saving}

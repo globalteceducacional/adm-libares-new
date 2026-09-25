@@ -116,10 +116,10 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         to: "/acervos",
         label: "Acervos",
         icon: Library,
-        description: "Bibliotecas digitais por escola",
+        description: "Bibliotecas digitais por contrato",
         badgeKey: "acervos",
         permission: "acervos.view",
-        keywords: ["escola", "biblioteca", "colecao"]
+        keywords: ["contrato", "biblioteca", "colecao"]
       },
       {
         id: "games",
@@ -222,10 +222,10 @@ export const NAV_GROUPS: NavGroupConfig[] = [
     items: [
       {
         id: "schools",
-        to: "/escolas",
-        label: "Escolas",
+        to: "/contratos",
+        label: "Contratos",
         icon: Building2,
-        description: "Tenants e escolas da plataforma",
+        description: "Tenants e contratos da plataforma",
         permission: "schools.view",
         keywords: ["tenant", "instituicao"]
       },
@@ -243,7 +243,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         to: "/perfis",
         label: "Perfis",
         icon: Shield,
-        description: "Perfis e permissões da escola",
+        description: "Perfis e permissões do contrato",
         permission: "roles.view",
         keywords: ["rbac", "permissoes", "acesso"]
       },
