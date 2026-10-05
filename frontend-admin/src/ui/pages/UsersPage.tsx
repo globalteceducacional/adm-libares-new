@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Library, Pencil, Plus, Trash2, UserCheck, Users, UserX } from "lucide-react";
+import { Download, Library, Pencil, Plus, Trash2, UserCheck, Users, UserX } from "lucide-react";
 import { FormEvent, useMemo, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -14,8 +14,10 @@ import {
   useAcervoOptionsQuery,
   useInvalidateAdminQueries,
   useSchoolsQuery,
-  useUsersQuery
+  useUsersQuery,
+  queryKeys
 } from "../../features/shared/api/queries";
+import { useQueryClient } from "@tanstack/react-query";
 import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { useAuth } from "../../features/auth/AuthContext";
 import { PermissionGate } from "../../features/auth/PermissionGate";
@@ -39,6 +41,7 @@ import type { UserResponse } from "../../types/users";
 import { Alert, Button, ConfirmDialog, EmptyState, StatusBadge } from "../../shared/ui";
 import { acervoHubPath } from "../components/acervos/acervoRoutes";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
+import { exportToCsv } from "../../shared/lib/exportCsv";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
 
@@ -64,6 +67,7 @@ type SaveAcervoVariables = {
 
 export function UsersPage() {
   const location = useLocation();
+  const queryClient = useQueryClient();
   const { schoolContextId } = useAuth();
   // `acervoId` na URL permite deep-link a partir do hub do acervo ("none" = sem acervo).
   const { search, setSearch, statusFilter, setStatusFilter, acervoFilter, setAcervoFilter } =
@@ -148,7 +152,7 @@ export function UsersPage() {
     }
   });
 
-  const statusMutation = useAdminMutation<UserResponse, UserResponse>({
+  const statusMutation = useAdminMutation<UserResponse, UserResponse, { previous: UserResponse[] | undefined }>({
     mutationFn: (user) => {
       const nextStatus = user.status === "0" ? "1" : "0";
       return updateUserStatus(user.id, { status: nextStatus });
@@ -156,7 +160,23 @@ export function UsersPage() {
     successMessage: (_data, user) =>
       user.status === "0" ? "Usuário ativado com sucesso." : "Usuário desativado com sucesso.",
     errorFallback: "Falha ao atualizar status",
-    invalidate: invalidateUserQueries
+    invalidate: invalidateUserQueries,
+    onMutate: async (user) => {
+      const queryKey = selectedAcervoId ? (["users", selectedAcervoId] as const) : queryKeys.users;
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<UserResponse[]>(queryKey);
+      const nextStatus = user.status === "0" ? "1" : "0";
+      queryClient.setQueryData<UserResponse[]>(queryKey, (old) =>
+        old?.map((u) => u.id === user.id ? { ...u, status: nextStatus } : u) ?? []
+      );
+      return { previous };
+    },
+    onRollback: (_err, _vars, context) => {
+      if (context?.previous) {
+        const queryKey = selectedAcervoId ? (["users", selectedAcervoId] as const) : queryKeys.users;
+        queryClient.setQueryData(queryKey, context.previous);
+      }
+    }
   });
 
   const deleteMutation = useAdminMutation<void, number>({
@@ -197,6 +217,51 @@ export function UsersPage() {
     statusMutation.isPending ||
     deleteMutation.isPending ||
     acervoMutation.isPending;
+
+  const userBulkActions = useMemo(() => {
+    const actions = [];
+    if (canBlockUser || canUpdateUser) {
+      actions.push({
+        label: "Ativar selecionados",
+        variant: "secondary" as const,
+        onClick: (ids: (string | number)[]) => {
+          ids.forEach((id) => {
+            const user = users.find((u) => u.id === id);
+            if (user && user.status !== "1") {
+              statusMutation.mutate(user);
+            }
+          });
+        }
+      });
+      actions.push({
+        label: "Desativar selecionados",
+        variant: "secondary" as const,
+        onClick: (ids: (string | number)[]) => {
+          ids.forEach((id) => {
+            const user = users.find((u) => u.id === id);
+            if (user && user.status !== "0") {
+              statusMutation.mutate(user);
+            }
+          });
+        }
+      });
+    }
+    return actions;
+  }, [canBlockUser, canUpdateUser, users, statusMutation]);
+
+  function handleExportCsv() {
+    exportToCsv(
+      "usuarios.csv",
+      filteredUsers.map((u) => ({
+        ID: u.id,
+        Nome: decodeHtmlEntities(u.name),
+        Email: u.email,
+        Telefone: u.phone ?? "",
+        Status: u.status === "1" ? "Ativo" : "Inativo",
+        Acervo: u.acervoName ? decodeHtmlEntities(u.acervoName) : ""
+      }))
+    );
+  }
 
   function resetForm() {
     setForm(EMPTY_FORM);
@@ -465,14 +530,20 @@ export function UsersPage() {
           description="Gerencie leitores do aplicativo, status de acesso e vínculo com acervos."
           tone="info"
           actions={
-            canCreateUser ? (
-              <PermissionGate permission="users.create">
-                <Button type="button" onClick={openCreateForm} disabled={saving}>
-                  <Plus size={16} />
-                  Novo usuario
-                </Button>
-              </PermissionGate>
-            ) : null
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button type="button" variant="secondary" size="sm" onClick={handleExportCsv} title="Exportar lista de usuários em CSV">
+                <Download size={15} />
+                Exportar CSV
+              </Button>
+              {canCreateUser ? (
+                <PermissionGate permission="users.create">
+                  <Button type="button" onClick={openCreateForm} disabled={saving}>
+                    <Plus size={16} />
+                    Novo usuario
+                  </Button>
+                </PermissionGate>
+              ) : null}
+            </div>
           }
         />
       }
@@ -493,6 +564,8 @@ export function UsersPage() {
         searchPlaceholder="Buscar por nome, email ou ID"
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
+        selectable={canBlockUser || canUpdateUser}
+        bulkActions={userBulkActions}
         secondaryFilter={
           <SearchableSelect
             label="Acervo"

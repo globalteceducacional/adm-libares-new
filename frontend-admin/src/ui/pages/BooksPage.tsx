@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { BookOpen, Library, Pencil, Plus, Trash2 } from "lucide-react";
+import { BookOpen, Download, Library, Pencil, Plus, Trash2 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -17,8 +17,10 @@ import {
   useBooksQuery,
   useCategoryOptionsQuery,
   useHomeSectionOptionsQuery,
-  useInvalidateAdminQueries
+  useInvalidateAdminQueries,
+  queryKeys
 } from "../../features/shared/api/queries";
+import { useQueryClient } from "@tanstack/react-query";
 import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import { PermissionGate } from "../../features/auth/PermissionGate";
 import { usePermission } from "../../features/auth/usePermission";
@@ -38,6 +40,7 @@ import { useSelectedEntity } from "../../hooks/useSelectedEntity";
 import { Alert, ConfirmDialog, EmptyState, StatusBadge, Button } from "../../shared/ui";
 import { acervoHubPath } from "../components/acervos/acervoRoutes";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
+import { exportToCsv } from "../../shared/lib/exportCsv";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
 
@@ -53,6 +56,7 @@ type ToggleBookVariables = {
 
 export function BooksPage() {
   const location = useLocation();
+  const queryClient = useQueryClient();
   // `acervoId` na URL permite deep-link a partir do hub do acervo.
   const { search, setSearch, statusFilter, setStatusFilter, acervoFilter, setAcervoFilter } =
     useAdminListFilters({ syncAcervo: true });
@@ -151,12 +155,26 @@ export function BooksPage() {
     }
   });
 
-  const toggleMutation = useAdminMutation<BookResponse, ToggleBookVariables>({
+  const toggleMutation = useAdminMutation<BookResponse, ToggleBookVariables, { previous: BookResponse[] | undefined }>({
     mutationFn: ({ book, nextStatus }) => toggleBookStatus(book.id, nextStatus),
     successMessage: (_data, { nextStatus }) =>
       nextStatus === "1" ? "Livro ativado com sucesso." : "Livro desativado com sucesso.",
     errorFallback: "Falha ao alterar status",
-    invalidate: invalidateBookQueries
+    invalidate: invalidateBookQueries,
+    onMutate: async ({ book, nextStatus }) => {
+      const queryKey = queryKeys.books(selectedAcervoId);
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<BookResponse[]>(queryKey);
+      queryClient.setQueryData<BookResponse[]>(queryKey, (old) =>
+        old?.map((b) => b.id === book.id ? { ...b, status: nextStatus } : b) ?? []
+      );
+      return { previous };
+    },
+    onRollback: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKeys.books(selectedAcervoId), context.previous);
+      }
+    }
   });
 
   const deleteMutation = useAdminMutation<void, number>({
@@ -181,6 +199,62 @@ export function BooksPage() {
 
   const saving =
     saveMutation.isPending || toggleMutation.isPending || deleteMutation.isPending;
+
+  const bookBulkActions = useMemo(() => {
+    const actions = [];
+    if (canToggleBookStatus) {
+      actions.push({
+        label: "Ativar selecionados",
+        variant: "secondary" as const,
+        onClick: (ids: (string | number)[]) => {
+          ids.forEach((id) => {
+            const book = books.find((b) => b.id === id);
+            if (book && book.status !== "1") {
+              toggleMutation.mutate({ book, nextStatus: "1" });
+            }
+          });
+        }
+      });
+      actions.push({
+        label: "Desativar selecionados",
+        variant: "secondary" as const,
+        onClick: (ids: (string | number)[]) => {
+          ids.forEach((id) => {
+            const book = books.find((b) => b.id === id);
+            if (book && book.status !== "0") {
+              toggleMutation.mutate({ book, nextStatus: "0" });
+            }
+          });
+        }
+      });
+    }
+    if (canDeleteBook) {
+      actions.push({
+        label: "Excluir selecionados",
+        variant: "danger" as const,
+        onClick: (ids: (string | number)[]) => {
+          ids.forEach((id) => {
+            deleteMutation.mutate(Number(id));
+          });
+        }
+      });
+    }
+    return actions;
+  }, [canToggleBookStatus, canDeleteBook, books, toggleMutation, deleteMutation]);
+
+  function handleExportCsv() {
+    exportToCsv(
+      "livros.csv",
+      filteredBooks.map((b) => ({
+        ID: b.id,
+        Titulo: decodeHtmlEntities(b.title),
+        Autor: b.authorName ? decodeHtmlEntities(b.authorName) : "",
+        Status: b.status === "1" ? "Ativo" : "Inativo",
+        Categorias: b.categoryIds?.join(", ") ?? "",
+        Views: b.views ?? 0
+      }))
+    );
+  }
 
   function resetForm() {
     setForm(EMPTY_BOOK_FORM);
@@ -489,12 +563,18 @@ export function BooksPage() {
           }
           tone="primary"
           actions={
-            <PermissionGate permission="books.create">
-              <Button type="button" onClick={openCreateForm} disabled={saving}>
-                <Plus size={16} />
-                Novo livro
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button type="button" variant="secondary" size="sm" onClick={handleExportCsv} title="Exportar lista de livros em CSV">
+                <Download size={15} />
+                Exportar CSV
               </Button>
-            </PermissionGate>
+              <PermissionGate permission="books.create">
+                <Button type="button" onClick={openCreateForm} disabled={saving}>
+                  <Plus size={16} />
+                  Novo livro
+                </Button>
+              </PermissionGate>
+            </div>
           }
         />
       }
@@ -515,6 +595,8 @@ export function BooksPage() {
         searchPlaceholder="Buscar por titulo, autor ou ID"
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
+        selectable={canToggleBookStatus || canDeleteBook}
+        bulkActions={bookBulkActions}
         secondaryFilter={
           canManageCatalog ? (
           <BerrySelect

@@ -5,6 +5,14 @@ import { PermissionRoute } from "./features/auth/PermissionRoute";
 import { findNavPermissionForPath } from "./features/layout/config/navigation";
 import { isAuthenticated } from "./lib/auth";
 import { AppLayout } from "./features/layout/AppLayout";
+import { ErrorBoundary } from "./shared/ui";
+
+const NotFoundPage = lazy(() =>
+  import("./ui/pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage }))
+);
+const ForbiddenPage = lazy(() =>
+  import("./ui/pages/ForbiddenPage").then((m) => ({ default: m.ForbiddenPage }))
+);
 
 const DashboardPage = lazy(() =>
   import("./ui/pages/DashboardPage").then((module) => ({ default: module.DashboardPage }))
@@ -101,56 +109,60 @@ function GuardedPage({ path, element }: { path: string; element: ReactElement })
 
 export function AppRouter() {
   return (
-    <Suspense fallback={<div className="page-loader">Carregando painel...</div>}>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route
-          element={
-            <ProtectedRoute>
-              <AppLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/dashboard" element={<GuardedPage path="/dashboard" element={<DashboardPage />} />} />
-          <Route path="/livros" element={<GuardedPage path="/livros" element={<BooksPage />} />} />
-          <Route path="/autores" element={<GuardedPage path="/autores" element={<AuthorsPage />} />} />
-          <Route path="/categorias" element={<GuardedPage path="/categorias" element={<CategoriesPage />} />} />
-          <Route path="/secoes" element={<GuardedPage path="/secoes" element={<HomeSectionsPage />} />} />
-          <Route path="/acervos" element={<GuardedPage path="/acervos" element={<AcervosPage />} />} />
-          {/* Hub do acervo reaproveita a permissao de /acervos (acervos.view). */}
+    <ErrorBoundary>
+      <Suspense fallback={<div className="page-loader">Carregando painel...</div>}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
           <Route
-            path="/acervos/:acervoId"
-            element={<GuardedPage path="/acervos" element={<AcervoHubPage />} />}
-          />
-          <Route path="/sites" element={<GuardedPage path="/sites" element={<SitesPage />} />} />
-          <Route
-            path="/sites/autores"
-            element={<GuardedPage path="/sites/autores" element={<SiteAuthorsPage />} />}
-          />
-          <Route
-            path="/sites/categorias"
-            element={<GuardedPage path="/sites/categorias" element={<SiteCategoriesPage />} />}
-          />
-          <Route
-            path="/sites/secoes"
-            element={<GuardedPage path="/sites/secoes" element={<SiteSectionsPage />} />}
-          />
-          <Route
-            path="/sites/comentarios"
-            element={<GuardedPage path="/sites/comentarios" element={<SiteCommentsPage />} />}
-          />
-          <Route path="/usuarios" element={<GuardedPage path="/usuarios" element={<UsersPage />} />} />
-          <Route path="/comentarios" element={<GuardedPage path="/comentarios" element={<CommentsPage />} />} />
-          <Route path="/contratos" element={<GuardedPage path="/contratos" element={<SchoolsPage />} />} />
-          <Route path="/equipe" element={<GuardedPage path="/equipe" element={<TeamPage />} />} />
-          <Route path="/perfis" element={<GuardedPage path="/perfis" element={<RolesPage />} />} />
-          <Route path="/auditoria" element={<GuardedPage path="/auditoria" element={<AuditPage />} />} />
-          <Route path="/jogos" element={<GuardedPage path="/jogos" element={<GamesPage />} />} />
-          <Route path="/definicoes" element={<GuardedPage path="/definicoes" element={<SettingsPage />} />} />
-          <Route path="/notificacoes" element={<GuardedPage path="/notificacoes" element={<NotificationsPage />} />} />
-        </Route>
-        <Route path="*" element={<Navigate to={isAuthenticated() ? "/livros" : "/login"} replace />} />
-      </Routes>
-    </Suspense>
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/dashboard" element={<ErrorBoundary><GuardedPage path="/dashboard" element={<DashboardPage />} /></ErrorBoundary>} />
+            <Route path="/livros" element={<ErrorBoundary><GuardedPage path="/livros" element={<BooksPage />} /></ErrorBoundary>} />
+            <Route path="/autores" element={<ErrorBoundary><GuardedPage path="/autores" element={<AuthorsPage />} /></ErrorBoundary>} />
+            <Route path="/categorias" element={<ErrorBoundary><GuardedPage path="/categorias" element={<CategoriesPage />} /></ErrorBoundary>} />
+            <Route path="/secoes" element={<ErrorBoundary><GuardedPage path="/secoes" element={<HomeSectionsPage />} /></ErrorBoundary>} />
+            <Route path="/acervos" element={<ErrorBoundary><GuardedPage path="/acervos" element={<AcervosPage />} /></ErrorBoundary>} />
+            {/* Hub do acervo reaproveita a permissao de /acervos (acervos.view). */}
+            <Route
+              path="/acervos/:acervoId"
+              element={<ErrorBoundary><GuardedPage path="/acervos" element={<AcervoHubPage />} /></ErrorBoundary>}
+            />
+            <Route path="/sites" element={<ErrorBoundary><GuardedPage path="/sites" element={<SitesPage />} /></ErrorBoundary>} />
+            <Route
+              path="/sites/autores"
+              element={<ErrorBoundary><GuardedPage path="/sites/autores" element={<SiteAuthorsPage />} /></ErrorBoundary>}
+            />
+            <Route
+              path="/sites/categorias"
+              element={<ErrorBoundary><GuardedPage path="/sites/categorias" element={<SiteCategoriesPage />} /></ErrorBoundary>}
+            />
+            <Route
+              path="/sites/secoes"
+              element={<ErrorBoundary><GuardedPage path="/sites/secoes" element={<SiteSectionsPage />} /></ErrorBoundary>}
+            />
+            <Route
+              path="/sites/comentarios"
+              element={<ErrorBoundary><GuardedPage path="/sites/comentarios" element={<SiteCommentsPage />} /></ErrorBoundary>}
+            />
+            <Route path="/usuarios" element={<ErrorBoundary><GuardedPage path="/usuarios" element={<UsersPage />} /></ErrorBoundary>} />
+            <Route path="/comentarios" element={<ErrorBoundary><GuardedPage path="/comentarios" element={<CommentsPage />} /></ErrorBoundary>} />
+            <Route path="/contratos" element={<ErrorBoundary><GuardedPage path="/contratos" element={<SchoolsPage />} /></ErrorBoundary>} />
+            <Route path="/equipe" element={<ErrorBoundary><GuardedPage path="/equipe" element={<TeamPage />} /></ErrorBoundary>} />
+            <Route path="/perfis" element={<ErrorBoundary><GuardedPage path="/perfis" element={<RolesPage />} /></ErrorBoundary>} />
+            <Route path="/auditoria" element={<ErrorBoundary><GuardedPage path="/auditoria" element={<AuditPage />} /></ErrorBoundary>} />
+            <Route path="/jogos" element={<ErrorBoundary><GuardedPage path="/jogos" element={<GamesPage />} /></ErrorBoundary>} />
+            <Route path="/definicoes" element={<ErrorBoundary><GuardedPage path="/definicoes" element={<SettingsPage />} /></ErrorBoundary>} />
+            <Route path="/notificacoes" element={<ErrorBoundary><GuardedPage path="/notificacoes" element={<NotificationsPage />} /></ErrorBoundary>} />
+            <Route path="/403" element={<ForbiddenPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+          <Route path="*" element={<Navigate to={isAuthenticated() ? "/livros" : "/login"} replace />} />
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
   );
 }

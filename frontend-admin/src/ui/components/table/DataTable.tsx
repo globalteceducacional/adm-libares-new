@@ -1,4 +1,5 @@
 import { MouseEvent, ReactNode, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Skeleton, TableSkeleton } from "../../../shared/ui";
 import { TablePagination } from "./TablePagination";
 
@@ -12,6 +13,13 @@ export interface DataTableColumn<T = unknown> {
   render?: (item: T) => ReactNode;
   stopRowClick?: boolean;
 }
+
+export type BulkAction = {
+  label: string;
+  icon?: ReactNode;
+  variant?: "primary" | "secondary" | "danger";
+  onClick: (ids: (string | number)[]) => void;
+};
 
 type DataTableProps<T = unknown> = {
   columns: DataTableColumn<T>[];
@@ -31,6 +39,10 @@ type DataTableProps<T = unknown> = {
   paginate?: boolean;
   initialPageSize?: number;
   pageSizeOptions?: number[];
+  /** Enable checkbox selection. */
+  selectable?: boolean;
+  /** Bulk actions shown when rows are selected. */
+  bulkActions?: BulkAction[];
 };
 
 const alignClass = {
@@ -54,16 +66,19 @@ export function DataTable<T>({
   renderMobileCard,
   paginate = false,
   initialPageSize = 20,
-  pageSizeOptions = [10, 20, 50, 100]
+  pageSizeOptions = [10, 20, 50, 100],
+  selectable = false,
+  bulkActions = []
 }: DataTableProps<T>) {
   const hasMobileCards = Boolean(renderMobileCard);
-  const colCount = columns.length;
+  const colCount = selectable ? columns.length + 1 : columns.length;
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialPageSize);
   const tableScrollRef = useRef<HTMLDivElement | null>(null);
   const topScrollRef = useRef<HTMLDivElement | null>(null);
   const topScrollInnerRef = useRef<HTMLDivElement | null>(null);
   const [showTopScrollbar, setShowTopScrollbar] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
 
   useEffect(() => {
     const syncState = () => {
@@ -122,7 +137,82 @@ export function DataTable<T>({
 
   useEffect(() => {
     setPage(1);
+    setSelectedIds(new Set());
   }, [data, paginate, pageSize]);
+
+  const visibleKeys = visibleData.map((item) => keyExtractor(item));
+  const allVisibleSelected =
+    visibleKeys.length > 0 && visibleKeys.every((k) => selectedIds.has(k));
+  const someVisibleSelected =
+    !allVisibleSelected && visibleKeys.some((k) => selectedIds.has(k));
+
+  function toggleRow(key: string | number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (allVisibleSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        visibleKeys.forEach((k) => next.delete(k));
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        visibleKeys.forEach((k) => next.add(k));
+        return next;
+      });
+    }
+  }
+
+  const selectedCount = selectedIds.size;
+
+  const bulkActionBarEl =
+    selectable && selectedCount > 0 && bulkActions.length > 0
+      ? createPortal(
+          <div className="bulk-action-bar" role="toolbar" aria-label="Ações em lote">
+            <span className="text-sm font-medium text-foreground whitespace-nowrap">
+              {selectedCount} selecionado{selectedCount !== 1 ? "s" : ""}
+            </span>
+            <div className="w-px h-5 bg-border" />
+            {bulkActions.map((action, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${
+                  action.variant === "danger"
+                    ? "bg-danger/10 text-danger hover:bg-danger/20"
+                    : action.variant === "primary"
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "border border-border bg-surface-2 text-foreground hover:bg-surface"
+                }`}
+                onClick={() => {
+                  action.onClick(Array.from(selectedIds));
+                  setSelectedIds(new Set());
+                }}
+              >
+                {action.icon}
+                {action.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="text-xs text-muted hover:text-foreground ml-1"
+              onClick={() => setSelectedIds(new Set())}
+              aria-label="Limpar seleção"
+            >
+              ✕
+            </button>
+          </div>,
+          document.body
+        )
+      : null;
 
   return (
     <>
@@ -183,6 +273,17 @@ export function DataTable<T>({
             {caption ? <caption className="sr-only">{caption}</caption> : null}
             <thead>
               <tr>
+                {selectable ? (
+                  <th scope="col" style={{ width: 40 }} className="text-center">
+                    <input
+                      type="checkbox"
+                      aria-label="Selecionar todos"
+                      checked={allVisibleSelected}
+                      ref={(el) => { if (el) el.indeterminate = someVisibleSelected; }}
+                      onChange={toggleAll}
+                    />
+                  </th>
+                ) : null}
                 {columns.map((col) => {
                   if (col.renderTh) {
                     return col.renderTh();
@@ -217,10 +318,11 @@ export function DataTable<T>({
                   const rowKey = keyExtractor(item);
                   const extraClass = rowClassName ? rowClassName(item) : "";
                   const clickable = Boolean(onRowClick);
+                  const isSelected = selectedIds.has(rowKey);
                   return (
                     <tr
                       key={rowKey}
-                      className={`${clickable ? "dt-row-clickable" : ""} ${extraClass}`}
+                      className={`${clickable ? "dt-row-clickable" : ""} ${extraClass}${isSelected ? " bg-primary/[0.04]" : ""}`}
                       onClick={onRowClick ? (event) => onRowClick(item, event) : undefined}
                       tabIndex={clickable ? 0 : undefined}
                       onKeyDown={
@@ -235,6 +337,20 @@ export function DataTable<T>({
                       }
                       aria-label={clickable ? "Ver detalhes do registro" : undefined}
                     >
+                      {selectable ? (
+                        <td
+                          className="text-center"
+                          style={{ width: 40 }}
+                          onClick={(e) => { e.stopPropagation(); toggleRow(rowKey); }}
+                        >
+                          <input
+                            type="checkbox"
+                            aria-label="Selecionar linha"
+                            checked={isSelected}
+                            onChange={() => toggleRow(rowKey)}
+                          />
+                        </td>
+                      ) : null}
                       {columns.map((col) => (
                         <td
                           key={col.key}
@@ -263,6 +379,7 @@ export function DataTable<T>({
           pageSizeOptions={pageSizeOptions}
         />
       ) : null}
+      {bulkActionBarEl}
     </>
   );
 }

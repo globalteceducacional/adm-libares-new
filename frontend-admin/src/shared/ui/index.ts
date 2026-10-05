@@ -14,3 +14,4 @@ export { DetailField } from "./DetailField";
 export { Tabs, TabPanel, type TabItem } from "./Tabs";
 export { EmptyState, type EmptyStateAction, type EmptyStateProps } from "./EmptyState";
 export { ToastProvider, useToast, type ToastTone } from "./Toast";
+export { ErrorBoundary } from "./ErrorBoundary";

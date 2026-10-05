@@ -14,6 +14,21 @@
       rel="stylesheet"
     />
     <title>ADM Libare - Admin</title>
+    <script>
+      (function() {
+        try {
+          var stored = localStorage.getItem('adm-libare-theme');
+          var isDark = false;
+          if (stored) {
+            var parsed = JSON.parse(stored);
+            isDark = parsed && parsed.state && parsed.state.mode === 'dark';
+          } else {
+            isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          }
+          if (isDark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
