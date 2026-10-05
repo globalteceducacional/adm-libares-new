@@ -35,7 +35,7 @@ import { EMPTY_BOOK_FORM } from "../../types/books";
 import { useAdminListFilters } from "../../hooks/useAdminListFilters";
 import { useAdminMutation } from "../../hooks/useAdminMutation";
 import { useSelectedEntity } from "../../hooks/useSelectedEntity";
-import { ConfirmDialog, EmptyState, StatusBadge, Button } from "../../shared/ui";
+import { Alert, ConfirmDialog, EmptyState, StatusBadge, Button } from "../../shared/ui";
 import { acervoHubPath } from "../components/acervos/acervoRoutes";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
@@ -500,6 +500,14 @@ export function BooksPage() {
       }
       stats={<ListingMiniStats items={listStats} />}
     >
+      {listingError ? (
+        <Alert tone="danger" className="mb-3 flex items-center justify-between gap-3">
+          <span>{listingError}</span>
+          <Button variant="secondary" size="sm" onClick={() => void booksQuery.refetch()}>
+            Tentar novamente
+          </Button>
+        </Alert>
+      ) : null}
       <AdminListingSection<BookResponse>
         title="Listagem de livros"
         search={search}
@@ -531,7 +539,6 @@ export function BooksPage() {
         emptyMessage={tableEmptyMessage}
         emptyState={emptyState}
         countLabel={`${filteredBooks.length} livro(s) com o filtro atual`}
-        error={listingError}
         onRowClick={handleSelectBook}
         renderMobileCard={(book) => (
           <article className="book-card">
@@ -618,13 +625,14 @@ export function BooksPage() {
         categoryOptions={categoryOptions}
         homeSectionOptions={homeSectionOptions}
         selectedAuthorExists={selectedAuthorExists}
-        isAuthorInvalid={showValidation && isAuthorInvalid}
-        isTitleInvalid={showValidation && isTitleInvalid}
-        isAcervosInvalid={showValidation && isAcervosInvalid}
-        isCategoriesInvalid={showValidation && isCategoriesInvalid}
-        isDescriptionInvalid={showValidation && isDescriptionInvalid}
-        isCoverInvalid={showValidation && isCoverInvalid}
-        isFileInvalid={showValidation && isFileInvalid}
+        isAuthorInvalid={isAuthorInvalid}
+        isTitleInvalid={isTitleInvalid}
+        isAcervosInvalid={isAcervosInvalid}
+        isCategoriesInvalid={isCategoriesInvalid}
+        isDescriptionInvalid={isDescriptionInvalid}
+        isCoverInvalid={isCoverInvalid}
+        isFileInvalid={isFileInvalid}
+        showValidation={showValidation}
         saving={saving}
         uploadingCover={uploadingCover}
         uploadingFile={uploadingFile}

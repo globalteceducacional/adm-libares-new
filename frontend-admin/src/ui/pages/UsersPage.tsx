@@ -36,7 +36,7 @@ import { UserDetailModal } from "../components/users/UserDetailModal";
 import { UserFormModal } from "../components/users/UserFormModal";
 import { LegacyImage } from "../components/LegacyImage";
 import type { UserResponse } from "../../types/users";
-import { Button, ConfirmDialog, EmptyState, StatusBadge } from "../../shared/ui";
+import { Alert, Button, ConfirmDialog, EmptyState, StatusBadge } from "../../shared/ui";
 import { acervoHubPath } from "../components/acervos/acervoRoutes";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
@@ -91,6 +91,7 @@ export function UsersPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
   const [form, setForm] = useState<CreateUserFormState>(EMPTY_FORM);
+  const [showValidation, setShowValidation] = useState(false);
   const canCreateUser = usePermission("users.create");
   const canUpdateUser = usePermission("users.update");
   const canBlockUser = usePermission("users.block");
@@ -200,6 +201,7 @@ export function UsersPage() {
   function resetForm() {
     setForm(EMPTY_FORM);
     setEditingId(null);
+    setShowValidation(false);
   }
 
   function closeFormModal() {
@@ -247,6 +249,7 @@ export function UsersPage() {
     } else if (!canCreateUser) {
       return;
     }
+    setShowValidation(true);
     if (isFormInvalid) {
       setFormError("Preencha os campos obrigatorios antes de salvar.");
       return;
@@ -475,6 +478,14 @@ export function UsersPage() {
       }
       stats={<ListingMiniStats items={listStats} />}
     >
+      {listingError ? (
+        <Alert tone="danger" className="mb-3 flex items-center justify-between gap-3">
+          <span>{listingError}</span>
+          <Button variant="secondary" size="sm" onClick={() => void usersQuery.refetch()}>
+            Tentar novamente
+          </Button>
+        </Alert>
+      ) : null}
       <AdminListingSection<UserResponse>
         title="Lista de leitores"
         search={search}
@@ -501,7 +512,6 @@ export function UsersPage() {
         emptyMessage={emptyMessage}
         emptyState={emptyState}
         countLabel={`${filteredUsers.length} usuario(s) com o filtro atual`}
-        error={listingError}
         onRowClick={setSelectedUser}
         renderMobileCard={(user) => (
           <article className="book-card">
@@ -584,6 +594,7 @@ export function UsersPage() {
         saving={saving}
         error={formError}
         isFormInvalid={isFormInvalid}
+        showValidation={showValidation}
         schoolLabel={schoolLabel}
         acervoOptions={acervoOptions}
         onClose={closeFormModal}

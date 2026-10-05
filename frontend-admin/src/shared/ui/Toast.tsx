@@ -21,7 +21,7 @@ type ToastItem = {
 };
 
 type ToastContextValue = {
-  showToast: (message: string, tone?: ToastTone) => void;
+  showToast: (message: string, tone?: ToastTone, duration?: number) => void;
   dismissToast: (id: number) => void;
 };
 
@@ -56,12 +56,19 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const showToast = useCallback(
-    (message: string, tone: ToastTone = "info") => {
-      idRef.current += 1;
-      const id = idRef.current;
-      setToasts((current) => [...current, { id, tone, message }]);
-      const timer = setTimeout(() => dismissToast(id), DEFAULT_DURATION_MS);
-      timersRef.current.set(id, timer);
+    (message: string, tone: ToastTone = "info", duration?: number) => {
+      setToasts((current) => {
+        // Deduplication: skip if an identical message+tone is already visible.
+        if (current.some((t) => t.message === message && t.tone === tone)) {
+          return current;
+        }
+        idRef.current += 1;
+        const id = idRef.current;
+        const ms = duration ?? DEFAULT_DURATION_MS;
+        const timer = setTimeout(() => dismissToast(id), ms);
+        timersRef.current.set(id, timer);
+        return [...current, { id, tone, message }];
+      });
     },
     [dismissToast]
   );

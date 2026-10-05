@@ -7,6 +7,7 @@ import { useLayoutStore } from "../../../stores/layoutStore";
 import { Breadcrumbs, type BreadcrumbItem } from "../../../shared/ui/PageHeader";
 import { NotificationBell } from "./NotificationBell";
 import { uploadAuthAvatar } from "../../../services/authMeService";
+import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
 
 type TopbarProps = {
   breadcrumbs: BreadcrumbItem[];
@@ -14,9 +15,17 @@ type TopbarProps = {
 
 export function Topbar({ breadcrumbs }: TopbarProps) {
   const setMobileSidebarOpen = useLayoutStore((s) => s.setMobileSidebarOpen);
-  const { user, refresh } = useAuth();
+  const { user, refresh, schoolContextId, allowedSchools } = useAuth();
   const displayName = user?.name || user?.username || "Administrador";
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const activeSchoolName = schoolContextId
+    ? allowedSchools.find((s) => s.id === schoolContextId)?.name ?? null
+    : null;
+  const activeSchoolLabel = activeSchoolName
+    ? decodeHtmlEntities(activeSchoolName).slice(0, 24) +
+      (decodeHtmlEntities(activeSchoolName).length > 24 ? "…" : "")
+    : null;
 
   async function handleAvatar(file: File) {
     await uploadAuthAvatar(file);
@@ -48,6 +57,14 @@ export function Topbar({ breadcrumbs }: TopbarProps) {
 
         <div className="flex shrink-0 items-center gap-2">
           <SchoolContextSwitcher />
+          {activeSchoolLabel ? (
+            <span
+              className="hidden max-w-[140px] truncate rounded-lg bg-surface-2 px-2 py-1 text-xs text-muted sm:inline-block"
+              title={activeSchoolName ?? undefined}
+            >
+              {activeSchoolLabel}
+            </span>
+          ) : null}
           <NotificationBell />
           <input
             ref={fileRef}
