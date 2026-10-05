@@ -9,26 +9,14 @@ import com.libare.adm.shared.exception.BadRequestException
 import com.libare.adm.shared.persistence.AuditSessionContext
 import com.libare.adm.shared.security.CurrentActorResolver
 import com.libare.adm.shared.util.toAcervoId
-import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
-/**
- * Cria leitor do app ([tbl_users]).
- * O acervo e o unico vinculo de tenant (ADR 0006); e opcional na criacao e pode ser
- * atribuido depois via [UpdateUserAcervoUseCase]. Sem acervo o leitor ve catalogo vazio.
- *
- * **Gap conhecido de login do leitor:** o PHP legado `adm-libares/user_login_api.php`
- * ainda compara `$row['password'] == $password` (plaintext). Hashes BCrypt gravados
- * aqui **nao** autenticam nessa API ate o PHP passar a usar `password_verify`.
- * Mantemos [PasswordEncoder] (BCrypt) conforme o plano do painel — nao armazenar plaintext.
- */
 @Service
 class CreateUserUseCase(
     private val userRepository: UserJpaRepository,
     private val userResponseMapper: UserResponseMapper,
     private val userPolicy: UserPolicy,
-    private val passwordEncoder: PasswordEncoder,
     private val currentActorResolver: CurrentActorResolver,
     private val auditSessionContext: AuditSessionContext
 ) {
@@ -50,7 +38,7 @@ class CreateUserUseCase(
             UserEntity(
                 name = request.name.trim(),
                 email = email,
-                password = passwordEncoder.encode(request.password),
+                password = request.password,
                 phone = request.phone.trim(),
                 userType = "Normal",
                 userImage = request.userImage?.trim()?.ifBlank { "" } ?: "",

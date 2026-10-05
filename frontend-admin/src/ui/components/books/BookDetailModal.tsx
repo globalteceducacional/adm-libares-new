@@ -120,7 +120,7 @@ export function BookDetailModal({
             }
             className="sm:col-span-2"
           />
-          <DetailField label="Categoria" value={book.categoryId || "—"} />
+          <DetailField label="Categorias" value={book.categoryIds?.length ? book.categoryIds.join(", ") : "—"} />
           <DetailField
             label="Visualizacoes"
             value={(book.views ?? 0).toLocaleString("pt-BR")}

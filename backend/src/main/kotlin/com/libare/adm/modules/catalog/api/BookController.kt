@@ -17,7 +17,6 @@ import com.libare.adm.modules.catalog.application.ListHomeSectionOptionsUseCase
 import com.libare.adm.modules.catalog.application.ToggleBookStatusUseCase
 import com.libare.adm.modules.catalog.application.UpdateBookUseCase
 import com.libare.adm.modules.catalog.infrastructure.storage.LegacyBookAssetStorage
-import com.libare.adm.shared.api.PageResponse
 import com.libare.adm.shared.openapi.AdminSecured
 import com.libare.adm.shared.openapi.AdminWriteResponses
 import com.libare.adm.shared.openapi.OpenApiHeaders
@@ -76,16 +75,15 @@ class BookController(
         @Parameter(description = "Tamanho da pagina (max 500). Usado apenas com page")
         @RequestParam(required = false) size: Int?
     ): ResponseEntity<List<BookResponse>> {
-        val books = listBooksUseCase.execute(acervoId)
+        val result = listBooksUseCase.execute(acervoId, page, size)
         if (page == null) {
-            return ResponseEntity.ok(books)
+            return ResponseEntity.ok(result.items)
         }
-        val paged = PageResponse.of(books, page, size)
         return ResponseEntity.ok()
-            .header("X-Total-Count", paged.total.toString())
-            .header("X-Page", paged.page.toString())
-            .header("X-Size", paged.size.toString())
-            .body(paged.items)
+            .header("X-Total-Count", result.total.toString())
+            .header("X-Page", result.page.toString())
+            .header("X-Size", result.size.toString())
+            .body(result.items)
     }
 
     @Operation(

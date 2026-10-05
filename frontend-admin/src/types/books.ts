@@ -16,7 +16,6 @@ export type BookResponse = {
   fileUrl?: string | null;
   rateAvg?: string | null;
   totalRate?: number;
-  categoryId?: string | null;
   categoryIds?: number[];
   sectionIds?: number[];
   acervos?: AcervoOptionResponse[];

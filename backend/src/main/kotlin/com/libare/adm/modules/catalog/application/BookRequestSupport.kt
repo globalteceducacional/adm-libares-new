@@ -109,7 +109,6 @@ fun BookEntity.toBookResponse(acervos: List<com.libare.adm.modules.catalog.api.d
         fileUrl = fileUrl,
         rateAvg = rateAvg,
         totalRate = totalRate.toLong(),
-        categoryId = categoryIds,
         categoryIds = categoryIds.parseLegacyIdList(),
         sectionIds = sectionIds.parseLegacyIdList(),
         acervos = acervos

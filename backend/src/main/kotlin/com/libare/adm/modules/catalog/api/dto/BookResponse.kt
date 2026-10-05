@@ -43,9 +43,6 @@ data class BookResponse(
     @field:Schema(description = "Total de avaliacoes")
     val totalRate: Long = 0,
 
-    @field:Schema(description = "IDs de categorias em formato legado (string)", nullable = true)
-    val categoryId: String? = null,
-
     @field:Schema(description = "IDs das categorias vinculadas")
     val categoryIds: List<Long> = emptyList(),
 

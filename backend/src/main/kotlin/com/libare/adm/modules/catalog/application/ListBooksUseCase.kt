@@ -5,9 +5,12 @@ import com.libare.adm.modules.catalog.api.dto.BookResponse
 import com.libare.adm.modules.catalog.infrastructure.persistence.repository.AcervoJpaRepository
 import com.libare.adm.modules.catalog.infrastructure.persistence.repository.BookJpaRepository
 import com.libare.adm.modules.catalog.infrastructure.persistence.repository.LivroAcervoJpaRepository
+import com.libare.adm.shared.api.PageResponse
 import com.libare.adm.shared.tenant.TenantReadGuard
 import com.libare.adm.shared.util.parseLegacyIdList
 import com.libare.adm.shared.util.toAcervoIdLong
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 
 @Service
@@ -17,25 +20,25 @@ class ListBooksUseCase(
     private val acervoRepository: AcervoJpaRepository,
     private val tenantReadGuard: TenantReadGuard
 ) {
-    fun execute(acervoId: Long? = null): List<BookResponse> {
+    fun execute(acervoId: Long? = null, page: Int? = null, size: Int? = null): PageResponse<BookResponse> {
         tenantReadGuard.requireViewPermission("books.view")
         if (acervoId != null) {
             tenantReadGuard.assertAcervoAccessible(acervoId)
         }
 
         val tenantSchoolId = tenantReadGuard.tenantSchoolId()
-        val rows = bookRepository.findAllWithAuthorName(tenantSchoolId)
-
-        val filteredRows = if (acervoId != null) {
-            val bookIds = livroAcervoRepository.findBookIdsByAcervoId(acervoId).toSet()
-            rows.filter { bookIds.contains(it.getId()) }
+        val pageable: Pageable = if (page != null) {
+            val effectivePage = page.coerceAtLeast(1) - 1
+            val effectiveSize = (size ?: 20).coerceIn(1, 500)
+            PageRequest.of(effectivePage, effectiveSize)
         } else {
-            rows
+            Pageable.unpaged()
         }
 
-        val acervosByBook = loadAcervosByBook(filteredRows.map { it.getId() })
+        val bookPage = bookRepository.findPage(tenantSchoolId, acervoId, pageable)
+        val acervosByBook = loadAcervosByBook(bookPage.content.map { it.getId() })
 
-        return filteredRows.map { book ->
+        val items = bookPage.content.map { book ->
             BookResponse(
                 id = book.getId(),
                 title = book.getTitle(),
@@ -50,12 +53,17 @@ class ListBooksUseCase(
                 fileUrl = book.getFileUrl(),
                 rateAvg = book.getRateAvg(),
                 totalRate = book.getTotalRate()?.toLong() ?: 0L,
-                categoryId = book.getCategoryId(),
                 categoryIds = book.getCategoryId().parseLegacyIdList(),
                 sectionIds = book.getSectionIds().parseLegacyIdList(),
                 acervos = acervosByBook[book.getId()] ?: emptyList()
             )
         }
+
+        val total = if (pageable.isPaged) bookPage.totalElements else items.size.toLong()
+        val effectivePage = if (pageable.isPaged) pageable.pageNumber + 1 else 1
+        val effectiveSize = if (pageable.isPaged) pageable.pageSize else items.size.coerceAtLeast(1)
+
+        return PageResponse(items = items, total = total, page = effectivePage, size = effectiveSize)
     }
 
     private fun loadAcervosByBook(bookIds: List<Long>): Map<Long, List<AcervoOptionResponse>> {
