@@ -1,5 +1,31 @@
 /* Tokens (:root / dark) vivem só em index.css — ADR 0002 */
 
+/* ── 1. Fade-in de página ───────────────────────────────────────────── */
+.page-enter {
+  animation: pageEnter 0.2s ease-out both;
+}
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── 3. Animação de entrada nos modais ──────────────────────────────── */
+.modal-backdrop-enter {
+  animation: backdropFadeIn 0.18s ease-out both;
+}
+@keyframes backdropFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal-panel-enter {
+  animation: modalPanelEnter 0.2s ease-out both;
+}
+@keyframes modalPanelEnter {
+  from { opacity: 0; transform: scale(0.97) translateY(6px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -85,8 +111,9 @@ select {
 .table.berry-table thead th {
   background: color-mix(in oklab, var(--primary) 6%, var(--surface-2));
   color: var(--text);
-  font-size: 0.78rem;
-  letter-spacing: 0.02em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   border-bottom: 1px solid color-mix(in oklab, var(--primary) 18%, var(--border));
 }
@@ -149,10 +176,11 @@ select {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .elevated {
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 16px rgba(0, 32, 160, 0.07), 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 .stat-card {
@@ -194,6 +222,8 @@ select {
   display: block;
   margin-top: 8px;
   font-size: clamp(1.35rem, 1.7vw, 1.65rem);
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-weight: 700;
 }
 
 .trend-positive {
@@ -227,6 +257,7 @@ select {
   font-size: 1rem;
   min-width: 0;
   overflow-wrap: anywhere;
+  font-family: 'Poppins', 'Inter', sans-serif;
 }
 
 .period-switch {
@@ -260,7 +291,7 @@ select {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, background-color 0.15s ease;
 }
 
 .activity-list li > div {
@@ -312,6 +343,7 @@ select {
 
 .table tr:hover td {
   background: color-mix(in oklab, var(--surface-2) 44%, transparent);
+  transition: background-color 0.15s ease;
 }
 
 .muted-text {
@@ -716,6 +748,7 @@ select {
   line-height: 1.2;
   padding: 4px 10px;
   overflow-wrap: anywhere;
+  border: 1px solid color-mix(in oklab, var(--primary) 22%, var(--border));
 }
 
 .book-form-modal-body {
@@ -842,6 +875,7 @@ select {
 
 .dt-row-clickable {
   cursor: pointer;
+  transition: background-color 0.15s ease;
 }
 
 .dt-row-clickable:focus-visible {
@@ -1336,5 +1370,32 @@ select {
   .dt-pagination-controls {
     flex-wrap: wrap;
     justify-content: center;
+  }
+}
+
+/* ── 7. Ícones dos stat cards com cores distintas por tipo ──────────── */
+.stat-icon-books    { background: color-mix(in oklab, var(--primary)  14%, transparent); color: var(--primary); }
+.stat-icon-users    { background: color-mix(in oklab, #7c3aed         14%, transparent); color: #7c3aed; }
+.stat-icon-comments { background: color-mix(in oklab, var(--teal)     14%, transparent); color: var(--teal); }
+.stat-icon-acervos  { background: color-mix(in oklab, var(--warning)  14%, transparent); color: var(--warning-strong); }
+
+/* ── 10. Barra de progresso de upload animada com gradiente ─────────── */
+.upload-progress-bar {
+  background: linear-gradient(90deg, var(--primary-light) 0%, var(--primary) 50%, var(--primary-light) 100%);
+  background-size: 200% 100%;
+  animation: uploadProgress 1.4s ease-in-out infinite;
+}
+@keyframes uploadProgress {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── prefers-reduced-motion ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .modal-backdrop-enter,
+  .modal-panel-enter,
+  .upload-progress-bar {
+    animation: none;
   }
 }
