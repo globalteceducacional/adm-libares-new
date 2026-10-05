@@ -25,6 +25,7 @@ type BookFormModalProps = {
   isDescriptionInvalid: boolean;
   isCoverInvalid: boolean;
   isFileInvalid: boolean;
+  showValidation: boolean;
   saving: boolean;
   uploadingCover: boolean;
   uploadingFile: boolean;
@@ -54,6 +55,7 @@ export function BookFormModal({
   isDescriptionInvalid,
   isCoverInvalid,
   isFileInvalid,
+  showValidation,
   saving,
   uploadingCover,
   uploadingFile,
@@ -97,6 +99,7 @@ export function BookFormModal({
           isDescriptionInvalid={isDescriptionInvalid}
           isCoverInvalid={isCoverInvalid}
           isFileInvalid={isFileInvalid}
+          showValidation={showValidation}
           editingId={editingId}
           saving={saving}
           uploadingCover={uploadingCover}

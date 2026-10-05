@@ -1,5 +1,5 @@
 import { Star } from "lucide-react";
-import { useId, useMemo, type ChangeEvent, type FormEvent } from "react";
+import { useId, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import type { AcervoOptionResponse } from "../../../types/acervos";
 import type {
   CategoryOptionResponse,
@@ -41,6 +41,7 @@ type BooksFormProps = {
   uploadingCover: boolean;
   uploadingFile: boolean;
   uploadError: string;
+  showValidation: boolean;
   onSubmit: (event: FormEvent) => Promise<void>;
   onReset: () => void;
   onChange: (next: UpsertBookRequest) => void;
@@ -51,6 +52,29 @@ type BooksFormProps = {
 
 function toggleId(current: number[], id: number): number[] {
   return current.includes(id) ? current.filter((value) => value !== id) : [...current, id];
+}
+
+/** Small visual divider for form sections. First section omits the top border. */
+function SectionHeading({ label, first = false }: { label: string; first?: boolean }) {
+  return (
+    <p
+      className={`col-span-full text-xs font-semibold uppercase tracking-wide text-muted mb-3 ${
+        first ? "" : "mt-4 border-t border-border pt-4"
+      }`}
+    >
+      {label}
+    </p>
+  );
+}
+
+/** Animated upload progress indicator. */
+function UploadProgress() {
+  return (
+    <div className="mt-1">
+      <div className="animate-pulse bg-primary/20 rounded h-1 w-full" />
+      <p className="mt-1 text-xs text-muted">Enviando...</p>
+    </div>
+  );
 }
 
 export function BooksForm({
@@ -72,6 +96,7 @@ export function BooksForm({
   uploadingCover,
   uploadingFile,
   uploadError,
+  showValidation,
   inModal = false,
   onSubmit,
   onReset,
@@ -84,6 +109,15 @@ export function BooksForm({
   const acervosLegendId = `${formId}-acervos-legend`;
   const sectionsLegendId = `${formId}-sections-legend`;
   const isBusy = saving || uploadingCover || uploadingFile;
+
+  // Touched state — show per-field error once the user has blurred the field.
+  const [touched, setTouched] = useState<Set<string>>(new Set());
+  function touch(field: string) {
+    setTouched((prev) => new Set(prev).add(field));
+  }
+  function showError(field: string, invalid: boolean) {
+    return invalid && (showValidation || touched.has(field));
+  }
 
   const categoryItems = useMemo(
     () =>
@@ -138,10 +172,13 @@ export function BooksForm({
 
   return (
     <FormGrid onSubmit={onSubmit}>
+      {/* ── Identificação ─────────────────────────────────── */}
+      <SectionHeading label="Identificação" first />
+
       <Field
         label="Titulo"
         required
-        error={isTitleInvalid ? "Informe um titulo valido." : undefined}
+        error={showError("title", isTitleInvalid) ? "Informe um titulo valido." : undefined}
         className="sm:col-span-2"
       >
         <Input
@@ -149,7 +186,8 @@ export function BooksForm({
           value={form.title}
           maxLength={100}
           onChange={(event) => onChange({ ...form, title: event.target.value })}
-          invalid={isTitleInvalid}
+          onBlur={() => touch("title")}
+          invalid={showError("title", isTitleInvalid)}
           disabled={isBusy}
         />
       </Field>
@@ -158,7 +196,7 @@ export function BooksForm({
         <Field
           label="Autor"
           required
-          error={isAuthorInvalid ? "Selecione um autor antes de salvar." : undefined}
+          error={showError("author", isAuthorInvalid) ? "Selecione um autor antes de salvar." : undefined}
           hint={
             form.authorId > 0 && !selectedAuthorExists
               ? "Autor atual nao esta ativo na lista. O vinculo sera preservado se voce salvar sem alterar este campo."
@@ -168,18 +206,134 @@ export function BooksForm({
           <SearchableSelect
             options={authorSelectOptions}
             value={form.authorId > 0 ? String(form.authorId) : ""}
-            onChange={(next) => onChange({ ...form, authorId: Number(next) || 0 })}
+            onChange={(next) => {
+              onChange({ ...form, authorId: Number(next) || 0 });
+              touch("author");
+            }}
             placeholder="Selecione um autor"
             searchPlaceholder="Buscar autor por nome ou ID..."
             emptyMessage="Nenhum autor ativo cadastrado."
             allowEmpty
             emptyLabel="Selecione um autor"
             required
-            invalid={isAuthorInvalid}
+            invalid={showError("author", isAuthorInvalid)}
             disabled={isBusy}
           />
         </Field>
       </FormFullWidth>
+
+      <Field label="Status">
+        <Select
+          value={form.status}
+          onChange={(event) => onChange({ ...form, status: event.target.value })}
+          disabled={isBusy}
+        >
+          <option value="1">Ativo (1)</option>
+          <option value="0">Inativo (0)</option>
+        </Select>
+      </Field>
+
+      <FormFullWidth>
+        <label
+          className={`featured-toggle flex cursor-pointer items-center gap-3 rounded-xl border border-border px-3 py-3${
+            form.featured ? " is-checked" : ""
+          }`}
+        >
+          <input
+            type="checkbox"
+            checked={form.featured}
+            onChange={(event) => onChange({ ...form, featured: event.target.checked })}
+            disabled={isBusy}
+          />
+          <Star
+            size={18}
+            className="featured-toggle__icon"
+            aria-hidden
+            fill={form.featured ? "currentColor" : "none"}
+          />
+          <span className="featured-toggle__copy">
+            <strong>Destacar na home do app</strong>
+            <small>Aparece no bloco de destaques da tela inicial do leitor.</small>
+          </span>
+        </label>
+      </FormFullWidth>
+
+      {/* ── Conteúdo ──────────────────────────────────────── */}
+      <SectionHeading label="Conteúdo" />
+
+      <FormFullWidth>
+        <Field
+          label="Descricao"
+          required
+          error={showError("description", isDescriptionInvalid) ? "A descricao e obrigatoria." : undefined}
+        >
+          <Textarea
+            rows={6}
+            value={form.description}
+            onChange={(event) => onChange({ ...form, description: event.target.value })}
+            onBlur={() => touch("description")}
+            placeholder="Descricao do livro (aceita HTML como no legado)"
+            invalid={showError("description", isDescriptionInvalid)}
+            disabled={isBusy}
+          />
+        </Field>
+      </FormFullWidth>
+
+      <Field label="Tipo de arquivo">
+        <Select
+          value={form.fileType}
+          onChange={(event) =>
+            onChange({
+              ...form,
+              fileType: event.target.value as UpsertBookRequest["fileType"],
+              fileUrl: event.target.value === "server_url" ? form.fileUrl ?? "" : form.fileUrl
+            })
+          }
+          disabled={isBusy}
+        >
+          <option value="server_url">URL externa (server_url)</option>
+          <option value="local">Arquivo local (PDF/EPUB)</option>
+        </Select>
+      </Field>
+
+      {form.fileType === "server_url" ? (
+        <Field
+          label="URL do arquivo"
+          className="sm:col-span-2"
+          error={showError("fileUrl", isFileInvalid) ? "Informe a URL do arquivo do livro." : undefined}
+        >
+          <Input
+            type="url"
+            value={form.fileUrl ?? ""}
+            onChange={(event) => onChange({ ...form, fileUrl: event.target.value })}
+            onBlur={() => touch("fileUrl")}
+            placeholder="https://..."
+            invalid={showError("fileUrl", isFileInvalid)}
+            disabled={isBusy}
+          />
+        </Field>
+      ) : (
+        <FormFullWidth>
+          <Field
+            label="Arquivo do livro (PDF ou EPUB)"
+            error={showError("file", isFileInvalid) ? "Envie o arquivo PDF ou EPUB do livro." : undefined}
+            hint={form.fileUrl || undefined}
+          >
+            <Input
+              type="file"
+              accept=".pdf,.epub,application/pdf,application/epub+zip"
+              onChange={handleBookFileChange}
+              onBlur={() => touch("file")}
+              disabled={isBusy}
+              invalid={showError("file", isFileInvalid)}
+            />
+          </Field>
+          {uploadingFile ? <UploadProgress /> : null}
+        </FormFullWidth>
+      )}
+
+      {/* ── Mídia ─────────────────────────────────────────── */}
+      <SectionHeading label="Mídia" />
 
       <FormFullWidth>
         <Field
@@ -189,22 +343,22 @@ export function BooksForm({
               : "Capa do livro (obrigatoria)"
           }
           required={!editingId}
-          error={isCoverInvalid ? "Envie a imagem da capa." : undefined}
+          error={showError("cover", isCoverInvalid) ? "Envie a imagem da capa." : undefined}
           hint={
-            uploadingCover
-              ? "Enviando capa..."
-              : form.bookCoverImage ||
-                "Selecione um arquivo de imagem (JPG/PNG). O upload grava em /legacy/assets/images."
+            form.bookCoverImage ||
+            "Selecione um arquivo de imagem (JPG/PNG). O upload grava em /legacy/assets/images."
           }
         >
           <Input
             type="file"
             accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
             onChange={handleCoverChange}
+            onBlur={() => touch("cover")}
             disabled={isBusy}
-            invalid={isCoverInvalid}
+            invalid={showError("cover", isCoverInvalid)}
           />
         </Field>
+        {uploadingCover ? <UploadProgress /> : null}
         {form.bookCoverImage ? (
           <div className="mt-2">
             <LegacyImage
@@ -218,6 +372,9 @@ export function BooksForm({
           </div>
         ) : null}
       </FormFullWidth>
+
+      {/* ── Organização ───────────────────────────────────── */}
+      <SectionHeading label="Organização" />
 
       <FormFullWidth>
         <p id={categoriesLegendId} className="mb-2 text-sm font-medium text-foreground">
@@ -239,7 +396,7 @@ export function BooksForm({
           aria-labelledby={categoriesLegendId}
           disabled={isBusy}
         />
-        {isCategoriesInvalid ? (
+        {isCategoriesInvalid && (showValidation || touched.has("categories")) ? (
           <p className="mt-2 text-xs text-danger" role="alert">
             Selecione ao menos uma categoria.
           </p>
@@ -272,73 +429,6 @@ export function BooksForm({
       </FormFullWidth>
 
       <FormFullWidth>
-        <Field
-          label="Descricao"
-          required
-          error={isDescriptionInvalid ? "A descricao e obrigatoria." : undefined}
-        >
-          <Textarea
-            rows={6}
-            value={form.description}
-            onChange={(event) => onChange({ ...form, description: event.target.value })}
-            placeholder="Descricao do livro (aceita HTML como no legado)"
-            invalid={isDescriptionInvalid}
-            disabled={isBusy}
-          />
-        </Field>
-      </FormFullWidth>
-
-      <Field label="Tipo de arquivo">
-        <Select
-          value={form.fileType}
-          onChange={(event) =>
-            onChange({
-              ...form,
-              fileType: event.target.value as UpsertBookRequest["fileType"],
-              fileUrl: event.target.value === "server_url" ? form.fileUrl ?? "" : form.fileUrl
-            })
-          }
-          disabled={isBusy}
-        >
-          <option value="server_url">URL externa (server_url)</option>
-          <option value="local">Arquivo local (PDF/EPUB)</option>
-        </Select>
-      </Field>
-
-      {form.fileType === "server_url" ? (
-        <Field
-          label="URL do arquivo"
-          className="sm:col-span-2"
-          error={isFileInvalid ? "Informe a URL do arquivo do livro." : undefined}
-        >
-          <Input
-            type="url"
-            value={form.fileUrl ?? ""}
-            onChange={(event) => onChange({ ...form, fileUrl: event.target.value })}
-            placeholder="https://..."
-            invalid={isFileInvalid}
-            disabled={isBusy}
-          />
-        </Field>
-      ) : (
-        <FormFullWidth>
-          <Field
-            label="Arquivo do livro (PDF ou EPUB)"
-            error={isFileInvalid ? "Envie o arquivo PDF ou EPUB do livro." : undefined}
-            hint={uploadingFile ? "Enviando arquivo..." : form.fileUrl || undefined}
-          >
-            <Input
-              type="file"
-              accept=".pdf,.epub,application/pdf,application/epub+zip"
-              onChange={handleBookFileChange}
-              disabled={isBusy}
-              invalid={isFileInvalid}
-            />
-          </Field>
-        </FormFullWidth>
-      )}
-
-      <FormFullWidth>
         <p id={sectionsLegendId} className="mb-2 text-sm font-medium text-foreground">
           Secoes da home (opcional)
         </p>
@@ -357,42 +447,6 @@ export function BooksForm({
           disabled={isBusy}
         />
       </FormFullWidth>
-
-      <FormFullWidth>
-        <label
-          className={`featured-toggle flex cursor-pointer items-center gap-3 rounded-xl border border-border px-3 py-3${
-            form.featured ? " is-checked" : ""
-          }`}
-        >
-          <input
-            type="checkbox"
-            checked={form.featured}
-            onChange={(event) => onChange({ ...form, featured: event.target.checked })}
-            disabled={isBusy}
-          />
-          <Star
-            size={18}
-            className="featured-toggle__icon"
-            aria-hidden
-            fill={form.featured ? "currentColor" : "none"}
-          />
-          <span className="featured-toggle__copy">
-            <strong>Destacar na home do app</strong>
-            <small>Aparece no bloco de destaques da tela inicial do leitor.</small>
-          </span>
-        </label>
-      </FormFullWidth>
-
-      <Field label="Status">
-        <Select
-          value={form.status}
-          onChange={(event) => onChange({ ...form, status: event.target.value })}
-          disabled={isBusy}
-        >
-          <option value="1">Ativo (1)</option>
-          <option value="0">Inativo (0)</option>
-        </Select>
-      </Field>
 
       {uploadError ? (
         <FormFullWidth>

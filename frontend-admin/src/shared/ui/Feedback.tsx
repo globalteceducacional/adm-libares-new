@@ -5,6 +5,7 @@ import {
   type ReactElement,
   type ReactNode
 } from "react";
+import { AlertCircle } from "lucide-react";
 import { cn } from "../lib/cn";
 
 export function Alert({
@@ -26,13 +27,13 @@ export function Alert({
   const isAssertive = tone !== "success";
 
   return (
-    <p
+    <div
       className={cn("rounded-xl border px-3 py-2 text-sm font-medium", toneClass, className)}
       role={isAssertive ? "alert" : "status"}
       aria-live={isAssertive ? "assertive" : "polite"}
     >
       {children}
-    </p>
+    </div>
   );
 }
 
@@ -66,7 +67,7 @@ export function Field({
   const controlId = child?.props.id ?? generatedId;
 
   const describedBy =
-    [error ? errorId : null, hint && !error ? hintId : null].filter(Boolean).join(" ") || undefined;
+    [error ? errorId : null, hint ? hintId : null].filter(Boolean).join(" ") || undefined;
 
   // Injeta id/aria no controle para garantir a associacao label <-> input.
   const control = child
@@ -80,7 +81,7 @@ export function Field({
 
   return (
     <div className={cn("flex flex-col gap-2 text-sm", className)}>
-      <label htmlFor={controlId} className="font-medium text-foreground">
+      <label htmlFor={controlId} className="font-medium text-foreground" aria-required={required || undefined}>
         {label}
         {required ? (
           <span className="text-danger" aria-hidden="true">
@@ -91,11 +92,12 @@ export function Field({
       </label>
       {control}
       {error ? (
-        <span id={errorId} role="alert" className="text-xs text-danger">
+        <span id={errorId} role="alert" className="inline-flex items-center gap-1 text-xs text-danger">
+          <AlertCircle size={12} className="shrink-0" aria-hidden="true" />
           {error}
         </span>
       ) : null}
-      {hint && !error ? (
+      {hint ? (
         <span id={hintId} className="text-xs text-muted">
           {hint}
         </span>

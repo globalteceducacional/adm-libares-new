@@ -18,7 +18,7 @@ import { ListingPageShell } from "../components/layout/ListingPageShell";
 import { PageHeroStrip } from "../components/layout/PageHeroStrip";
 import { CommentDetailModal } from "../components/comments/CommentDetailModal";
 import type { CommentResponse } from "../../types/comments";
-import { ConfirmDialog, StatusBadge } from "../../shared/ui";
+import { Alert, Button, ConfirmDialog, EmptyState, StatusBadge } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
@@ -103,7 +103,10 @@ export function CommentsPage() {
         key: "text",
         label: "Comentário",
         tdClassName: "text-truncate-cell",
-        render: (comment) => decodeHtmlEntities(comment.commentText)
+        render: (comment) => {
+          const raw = decodeHtmlEntities(comment.commentText);
+          return raw.length > 60 ? `${raw.slice(0, 60)}…` : raw;
+        }
       },
       {
         key: "status",
@@ -197,6 +200,14 @@ export function CommentsPage() {
       }
       stats={<ListingMiniStats items={listStats} />}
     >
+      {queryError ? (
+        <Alert tone="danger" className="mb-3 flex items-center justify-between gap-3">
+          <span>{queryError}</span>
+          <Button variant="secondary" size="sm" onClick={() => void commentsQuery.refetch()}>
+            Tentar novamente
+          </Button>
+        </Alert>
+      ) : null}
       <AdminListingSection<CommentResponse>
         title="Lista de comentários"
         search={search}
@@ -211,8 +222,17 @@ export function CommentsPage() {
         loading={loading}
         keyExtractor={(comment) => comment.id}
         emptyMessage={emptyMessage}
+        emptyState={
+          !loading && comments.length === 0 && !search && statusFilter === "all" ? (
+            <EmptyState
+              icon={MessageSquare}
+              title="Nenhum comentário cadastrado"
+              description="Os comentários dos leitores nos livros aparecerão aqui para moderação."
+            />
+          ) : undefined
+        }
         countLabel={`${filteredComments.length} comentario(s) com o filtro atual`}
-        error={error}
+        error={actionError || undefined}
         legendActiveLabel="Publicado"
         legendInactiveLabel="Oculto"
         onRowClick={setSelectedComment}

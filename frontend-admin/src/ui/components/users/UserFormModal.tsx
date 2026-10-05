@@ -10,6 +10,7 @@ type UserFormModalProps = {
   saving: boolean;
   error: string;
   isFormInvalid: boolean;
+  showValidation: boolean;
   schoolLabel: string | null;
   acervoOptions: AcervoOptionResponse[];
   onClose: () => void;
@@ -25,6 +26,7 @@ export function UserFormModal({
   saving,
   error,
   isFormInvalid,
+  showValidation,
   schoolLabel,
   acervoOptions,
   onClose,
@@ -53,6 +55,7 @@ export function UserFormModal({
           inModal
           saving={saving}
           isFormInvalid={isFormInvalid}
+          showValidation={showValidation}
           schoolLabel={schoolLabel}
           acervoOptions={acervoOptions}
           onSubmit={onSubmit}

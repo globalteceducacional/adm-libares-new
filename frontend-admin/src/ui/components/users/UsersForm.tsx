@@ -1,5 +1,5 @@
 import type { FormEvent } from "react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { AcervoOptionResponse } from "../../../types/acervos";
 import type { CreateUserRequest, UpdateUserProfileRequest } from "../../../types/users";
 import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
@@ -29,6 +29,7 @@ type UsersFormProps = {
   inModal?: boolean;
   saving: boolean;
   isFormInvalid: boolean;
+  showValidation: boolean;
   schoolLabel: string | null;
   acervoOptions: AcervoOptionResponse[];
   onSubmit: (event: FormEvent) => Promise<void>;
@@ -42,6 +43,7 @@ export function UsersForm({
   inModal = false,
   saving,
   isFormInvalid,
+  showValidation,
   schoolLabel,
   acervoOptions,
   onSubmit,
@@ -50,10 +52,26 @@ export function UsersForm({
 }: UsersFormProps) {
   const isCreate = mode === "create";
   const disabled = saving;
+
+  // Touched state for per-field blur validation
+  const [touched, setTouched] = useState<Set<string>>(new Set());
+  function touch(field: string) {
+    setTouched((prev) => new Set(prev).add(field));
+  }
+  function showFieldError(field: string, invalid: boolean) {
+    return invalid && (showValidation || touched.has(field));
+  }
+
+  const isNameInvalid = form.name.trim().length === 0;
+  const isEmailInvalid = form.email.trim().length === 0;
+  const isPhoneInvalid = form.phone.trim().length === 0;
   const passwordError =
     isCreate && form.password.length > 0 && form.password.length < 6
       ? "A senha deve ter no minimo 6 caracteres."
-      : undefined;
+      : isCreate && showValidation && form.password.length === 0
+        ? "A senha e obrigatoria."
+        : undefined;
+
   const acervoSelectOptions = useMemo(
     () =>
       acervoOptions.map((acervo) => ({
@@ -87,22 +105,34 @@ export function UsersForm({
         </Field>
       ) : null}
 
-      <Field label="Nome" required>
+      <Field
+        label="Nome"
+        required
+        error={showFieldError("name", isNameInvalid) ? "Informe o nome do usuario." : undefined}
+      >
         <Input
           type="text"
           value={form.name}
           maxLength={150}
           onChange={(event) => onChange({ ...form, name: event.target.value })}
+          onBlur={() => touch("name")}
+          invalid={showFieldError("name", isNameInvalid)}
           disabled={disabled}
         />
       </Field>
 
-      <Field label="Email" required>
+      <Field
+        label="Email"
+        required
+        error={showFieldError("email", isEmailInvalid) ? "Informe o email do usuario." : undefined}
+      >
         <Input
           type="email"
           value={form.email}
           maxLength={190}
           onChange={(event) => onChange({ ...form, email: event.target.value })}
+          onBlur={() => touch("email")}
+          invalid={showFieldError("email", isEmailInvalid)}
           disabled={disabled}
         />
       </Field>
@@ -116,18 +146,25 @@ export function UsersForm({
             maxLength={100}
             autoComplete="new-password"
             onChange={(event) => onChange({ ...form, password: event.target.value })}
+            onBlur={() => touch("password")}
             disabled={disabled}
             invalid={Boolean(passwordError)}
           />
         </Field>
       ) : null}
 
-      <Field label="Telefone" required>
+      <Field
+        label="Telefone"
+        required
+        error={showFieldError("phone", isPhoneInvalid) ? "Informe o telefone do usuario." : undefined}
+      >
         <Input
           type="text"
           value={form.phone}
           maxLength={40}
           onChange={(event) => onChange({ ...form, phone: event.target.value })}
+          onBlur={() => touch("phone")}
+          invalid={showFieldError("phone", isPhoneInvalid)}
           disabled={disabled}
         />
       </Field>

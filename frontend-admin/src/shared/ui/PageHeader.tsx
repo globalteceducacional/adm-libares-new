@@ -13,7 +13,9 @@ export function Breadcrumbs({ items, className }: { items: BreadcrumbItem[]; cla
   }
 
   return (
-    <nav aria-label="Breadcrumb" className={cn("flex flex-wrap items-center gap-1 text-sm", className)}>
+    <nav aria-label="Breadcrumb" className={cn("text-sm", className)}>
+      <div className="overflow-x-auto scrollbar-none">
+      <span className="flex flex-nowrap items-center gap-1 whitespace-nowrap">
       {items.map((item, index) => {
         const isLast = index === items.length - 1;
         return (
@@ -29,6 +31,8 @@ export function Breadcrumbs({ items, className }: { items: BreadcrumbItem[]; cla
           </span>
         );
       })}
+      </span>
+      </div>
     </nav>
   );
 }

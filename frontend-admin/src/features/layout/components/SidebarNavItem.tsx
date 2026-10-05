@@ -41,6 +41,7 @@ export function SidebarNavItem({ item, collapsed, badge, onNavigate }: SidebarNa
                   : "text-white"
                 : "text-sidebar-muted group-hover:bg-white/5 group-hover:text-sidebar-foreground"
             )}
+            title={collapsed ? item.label : undefined}
           >
             <Icon size={18} />
           </span>

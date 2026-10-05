@@ -234,8 +234,10 @@ export function UserDetailModal({
       <ConfirmDialog
         open={confirmUnlinkOpen}
         title="Desvincular acervo"
-        description={`${name} ficara sem acervo e nao vera nenhum livro no app ate ser vinculado novamente.`}
+        description="Sem acervo, este leitor não verá nenhum livro até receber um novo. Deseja continuar?"
         confirmLabel="Desvincular"
+        cancelLabel="Cancelar"
+        tone="danger"
         loading={saving}
         onConfirm={() => {
           void handleConfirmUnlink();

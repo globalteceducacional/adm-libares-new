@@ -1,3 +1,4 @@
+import { CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "../lib/cn";
 
 const toneMap = {
@@ -33,7 +34,11 @@ export function StatusBadge({ active, activeLabel = "Ativo", inactiveLabel = "In
   activeLabel?: string;
   inactiveLabel?: string;
 }) {
+  const Icon = active ? CheckCircle2 : XCircle;
   return (
-    <Badge tone={active ? "success" : "danger"}>{active ? activeLabel : inactiveLabel}</Badge>
+    <Badge tone={active ? "success" : "danger"}>
+      <Icon size={12} className="mr-1 shrink-0" aria-hidden="true" />
+      {active ? activeLabel : inactiveLabel}
+    </Badge>
   );
 }

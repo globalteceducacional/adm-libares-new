@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Settings } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { updateSettings } from "../../services/settingsService";
@@ -45,12 +45,31 @@ export function SettingsPage() {
   const canUpdate = usePermission("settings.update");
   const [form, setForm] = useState<UpdateSettingsRequest>({});
   const [formError, setFormError] = useState("");
+  const [isDirty, setIsDirty] = useState(false);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     if (query.data) {
       setForm(toForm(query.data));
+      // Don't mark dirty on initial hydration
+      initializedRef.current = true;
     }
   }, [query.data]);
+
+  // Unsaved changes warning on page unload
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  const handleFieldChange = useCallback((next: UpdateSettingsRequest) => {
+    setForm(next);
+    if (initializedRef.current) {
+      setIsDirty(true);
+    }
+  }, []);
 
   const saveMutation = useAdminMutation<SettingsResponse, UpdateSettingsRequest>({
     mutationFn: updateSettings,
@@ -58,6 +77,7 @@ export function SettingsPage() {
     errorFallback: "Falha ao salvar definições",
     toastError: false,
     invalidate: () => invalidate.settings(),
+    onSuccess: () => setIsDirty(false),
     onError: (error) => setFormError(error.message)
   });
 
@@ -82,45 +102,52 @@ export function SettingsPage() {
         />
       }
     >
-      {listingError ? <Alert>{listingError}</Alert> : null}
+      {listingError ? (
+        <Alert tone="danger" className="mb-3 flex items-center justify-between gap-3">
+          <span>{listingError}</span>
+          <Button variant="secondary" size="sm" onClick={() => void query.refetch()}>
+            Tentar novamente
+          </Button>
+        </Alert>
+      ) : null}
       <BerryFormPanel title="Aplicativo leitor" description="Campos usados em app_details e privacyPolicy.php.">
         <form className="mt-4 grid gap-3 md:grid-cols-2" onSubmit={handleSubmit}>
           {formError ? <Alert className="md:col-span-2">{formError}</Alert> : null}
           <Field label="Nome do app">
-            <Input value={form.appName ?? ""} onChange={(e) => setForm({ ...form, appName: e.target.value })} disabled={!canUpdate} />
+            <Input value={form.appName ?? ""} onChange={(e) => handleFieldChange({ ...form, appName: e.target.value })} disabled={!canUpdate} />
           </Field>
           <Field label="E-mail">
-            <Input value={form.appEmail ?? ""} onChange={(e) => setForm({ ...form, appEmail: e.target.value })} disabled={!canUpdate} />
+            <Input value={form.appEmail ?? ""} onChange={(e) => handleFieldChange({ ...form, appEmail: e.target.value })} disabled={!canUpdate} />
           </Field>
           <Field label="Versão">
-            <Input value={form.appVersion ?? ""} onChange={(e) => setForm({ ...form, appVersion: e.target.value })} disabled={!canUpdate} />
+            <Input value={form.appVersion ?? ""} onChange={(e) => handleFieldChange({ ...form, appVersion: e.target.value })} disabled={!canUpdate} />
           </Field>
           <Field label="Autor">
-            <Input value={form.appAuthor ?? ""} onChange={(e) => setForm({ ...form, appAuthor: e.target.value })} disabled={!canUpdate} />
+            <Input value={form.appAuthor ?? ""} onChange={(e) => handleFieldChange({ ...form, appAuthor: e.target.value })} disabled={!canUpdate} />
           </Field>
           <Field label="Contato">
-            <Input value={form.appContact ?? ""} onChange={(e) => setForm({ ...form, appContact: e.target.value })} disabled={!canUpdate} />
+            <Input value={form.appContact ?? ""} onChange={(e) => handleFieldChange({ ...form, appContact: e.target.value })} disabled={!canUpdate} />
           </Field>
           <Field label="Website">
-            <Input value={form.appWebsite ?? ""} onChange={(e) => setForm({ ...form, appWebsite: e.target.value })} disabled={!canUpdate} />
+            <Input value={form.appWebsite ?? ""} onChange={(e) => handleFieldChange({ ...form, appWebsite: e.target.value })} disabled={!canUpdate} />
           </Field>
           <Field label="Limite latest API">
             <Input
               type="number"
               value={form.apiLatestLimit ?? 10}
-              onChange={(e) => setForm({ ...form, apiLatestLimit: Number(e.target.value) })}
+              onChange={(e) => handleFieldChange({ ...form, apiLatestLimit: Number(e.target.value) })}
               disabled={!canUpdate}
             />
           </Field>
           <Field label="OneSignal App ID">
-            <Input value={form.onesignalAppId ?? ""} onChange={(e) => setForm({ ...form, onesignalAppId: e.target.value })} disabled={!canUpdate} />
+            <Input value={form.onesignalAppId ?? ""} onChange={(e) => handleFieldChange({ ...form, onesignalAppId: e.target.value })} disabled={!canUpdate} />
           </Field>
           <Field label="OneSignal REST key" hint={query.data?.hasOnesignalRestKey ? "Já cadastrada. Deixe vazio para manter." : "Ainda não cadastrada."}>
             <Input
               type="password"
               autoComplete="new-password"
               value={form.onesignalRestKey ?? ""}
-              onChange={(e) => setForm({ ...form, onesignalRestKey: e.target.value })}
+              onChange={(e) => handleFieldChange({ ...form, onesignalRestKey: e.target.value })}
               disabled={!canUpdate}
             />
           </Field>
@@ -129,7 +156,7 @@ export function SettingsPage() {
             <textarea
               className="min-h-20 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm"
               value={form.appDescription ?? ""}
-              onChange={(e) => setForm({ ...form, appDescription: e.target.value })}
+              onChange={(e) => handleFieldChange({ ...form, appDescription: e.target.value })}
               disabled={!canUpdate}
             />
             </Field>
@@ -139,7 +166,7 @@ export function SettingsPage() {
             <textarea
               className="min-h-40 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm"
               value={form.appPrivacyPolicy ?? ""}
-              onChange={(e) => setForm({ ...form, appPrivacyPolicy: e.target.value })}
+              onChange={(e) => handleFieldChange({ ...form, appPrivacyPolicy: e.target.value })}
               disabled={!canUpdate}
             />
             </Field>
