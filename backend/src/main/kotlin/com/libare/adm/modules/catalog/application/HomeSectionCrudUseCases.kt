@@ -103,6 +103,7 @@ class UpdateHomeSectionUseCase(
 @Service
 class DeleteHomeSectionUseCase(
     private val homeSectionRepository: HomeSectionJpaRepository,
+    private val bookRepository: BookJpaRepository,
     private val bookPolicy: BookPolicy
 ) {
     @Transactional
@@ -110,6 +111,15 @@ class DeleteHomeSectionUseCase(
         bookPolicy.requireDelete()
         val existing = homeSectionRepository.findById(sectionId)
             .orElseThrow { NotFoundException("Secao nao encontrada") }
+
+        val previousBookIds = existing.sectionBooks.parseLegacyIdList()
+        syncSectionIdsOnBooks(
+            sectionId = existing.id.toLong(),
+            previousBookIds = previousBookIds,
+            nextBookIds = emptyList(),
+            bookRepository = bookRepository
+        )
+
         homeSectionRepository.save(
             HomeSectionEntity(
                 id = existing.id,
@@ -118,6 +128,29 @@ class DeleteHomeSectionUseCase(
                 status = 0
             )
         )
+    }
+}
+
+@Service
+class ToggleHomeSectionStatusUseCase(
+    private val homeSectionRepository: HomeSectionJpaRepository,
+    private val bookPolicy: BookPolicy
+) {
+    @Transactional
+    fun execute(sectionId: Int, rawStatus: String): HomeSectionResponse {
+        bookPolicy.requireUpdate()
+        val existing = homeSectionRepository.findById(sectionId)
+            .orElseThrow { NotFoundException("Secao nao encontrada") }
+        val status = if (rawStatus.trim() == "0") 0 else 1
+        val saved = homeSectionRepository.save(
+            HomeSectionEntity(
+                id = existing.id,
+                title = existing.title,
+                sectionBooks = existing.sectionBooks,
+                status = status
+            )
+        )
+        return toResponse(saved)
     }
 }
 

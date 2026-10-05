@@ -47,6 +47,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const allowedSchools = user?.allowedSchools ?? [];
   const requiresSchoolContext = user?.requiresSchoolContext ?? false;
 
+  // Limpa schoolContextId do localStorage se nao pertencer ao usuario logado,
+  // evitando race condition que dispara queries com contrato de outra sessao.
+  useEffect(() => {
+    if (!user || allowedSchools.length === 0) return;
+    if (schoolContextId == null) return;
+    const isValid = isSuperAdmin || allowedSchools.some((s) => s.id === schoolContextId);
+    if (!isValid) {
+      saveSchoolContextId(null);
+      setSchoolContextIdState(null);
+    }
+  }, [user, allowedSchools, isSuperAdmin, schoolContextId]);
+
   const hasPermission = useCallback(
     (permission: string) => isSuperAdmin || permissions.has(permission),
     [isSuperAdmin, permissions]

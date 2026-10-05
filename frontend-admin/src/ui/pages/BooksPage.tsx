@@ -103,7 +103,7 @@ export function BooksPage() {
       : authorOptions;
   const isAuthorInvalid = form.authorId <= 0;
   const isTitleInvalid = form.title.trim().length === 0;
-  const isAcervosInvalid = form.acervoIds.length === 0;
+  const isAcervosInvalid = false;
   const isCategoriesInvalid = form.categoryIds.length === 0;
   const isDescriptionInvalid = form.description.trim().length === 0;
   const isCoverInvalid = !editingId && !form.bookCoverImage;

@@ -5,6 +5,7 @@ import com.libare.adm.modules.catalog.api.dto.UpsertAcervoRequest
 import com.libare.adm.modules.catalog.application.policy.AcervoPolicy
 import com.libare.adm.modules.catalog.infrastructure.persistence.entity.AcervoEntity
 import com.libare.adm.modules.catalog.infrastructure.persistence.repository.AcervoJpaRepository
+import com.libare.adm.modules.catalog.infrastructure.persistence.repository.LivroAcervoJpaRepository
 import com.libare.adm.modules.schools.infrastructure.persistence.repository.SchoolJpaRepository
 import com.libare.adm.shared.exception.BadRequestException
 import com.libare.adm.shared.exception.NotFoundException
@@ -28,9 +29,8 @@ class CreateAcervoUseCase(
         auditSessionContext.applyActor(currentActorResolver.resolveActorId())
 
         val schoolId = acervoPolicy.resolveSchoolIdForWrite(request.schoolId)
-        if (!schoolRepository.existsById(schoolId)) {
-            throw BadRequestException("Contrato invalido")
-        }
+        val school = schoolRepository.findById(schoolId)
+            .orElseThrow { BadRequestException("Contrato invalido") }
 
         val name = request.name.trim()
         if (acervoRepository.existsByNomeIgnoreCaseAndSchoolId(name, schoolId)) {
@@ -46,8 +46,6 @@ class CreateAcervoUseCase(
             )
         )
 
-        val schoolName = schoolRepository.findById(schoolId).orElse(null)?.name
-
         return AcervoResponse(
             id = saved.id.toAcervoIdLong(),
             name = saved.nome,
@@ -56,7 +54,7 @@ class CreateAcervoUseCase(
             bookCount = 0,
             userCount = 0,
             schoolId = schoolId,
-            schoolName = schoolName
+            schoolName = school.name
         )
     }
 }
@@ -116,6 +114,7 @@ class UpdateAcervoUseCase(
 @Service
 class DeleteAcervoUseCase(
     private val acervoRepository: AcervoJpaRepository,
+    private val livroAcervoRepository: LivroAcervoJpaRepository,
     private val acervoPolicy: AcervoPolicy,
     private val currentActorResolver: CurrentActorResolver,
     private val auditSessionContext: AuditSessionContext
@@ -125,6 +124,9 @@ class DeleteAcervoUseCase(
         auditSessionContext.applyActor(currentActorResolver.resolveActorId())
 
         val existing = acervoPolicy.loadForDelete(acervoId)
+
+        livroAcervoRepository.deleteByAcervoId(existing.id)
+        livroAcervoRepository.flush()
 
         acervoRepository.save(
             AcervoEntity(

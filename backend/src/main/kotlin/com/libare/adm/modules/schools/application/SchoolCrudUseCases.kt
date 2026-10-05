@@ -7,6 +7,7 @@ import com.libare.adm.modules.schools.infrastructure.persistence.entity.SchoolEn
 import com.libare.adm.modules.schools.infrastructure.persistence.repository.SchoolJpaRepository
 import com.libare.adm.shared.exception.BadRequestException
 import com.libare.adm.shared.exception.NotFoundException
+import com.libare.adm.shared.security.AuthorizationService
 import com.libare.adm.shared.tenant.TenantContext
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -33,10 +34,12 @@ class ListSchoolsUseCase(
 @Service
 class GetSchoolUseCase(
     private val schoolRepository: SchoolJpaRepository,
-    private val schoolPolicy: SchoolPolicy
+    private val schoolPolicy: SchoolPolicy,
+    private val authorizationService: AuthorizationService
 ) {
     fun execute(schoolId: Long): SchoolResponse {
         schoolPolicy.requireView()
+        authorizationService.assertSameSchool(schoolId)
         val school = schoolRepository.findById(schoolId)
             .orElseThrow { NotFoundException("Contrato nao encontrado") }
         return toResponse(school)
@@ -83,11 +86,13 @@ class CreateSchoolUseCase(
 @Service
 class UpdateSchoolUseCase(
     private val schoolRepository: SchoolJpaRepository,
-    private val schoolPolicy: SchoolPolicy
+    private val schoolPolicy: SchoolPolicy,
+    private val authorizationService: AuthorizationService
 ) {
     @Transactional
     fun execute(schoolId: Long, request: UpsertSchoolRequest): SchoolResponse {
         schoolPolicy.requireUpdate()
+        authorizationService.assertSameSchool(schoolId)
 
         val existing = schoolRepository.findById(schoolId)
             .orElseThrow { NotFoundException("Contrato nao encontrado") }
@@ -120,11 +125,13 @@ class UpdateSchoolUseCase(
 @Service
 class DeleteSchoolUseCase(
     private val schoolRepository: SchoolJpaRepository,
-    private val schoolPolicy: SchoolPolicy
+    private val schoolPolicy: SchoolPolicy,
+    private val authorizationService: AuthorizationService
 ) {
     @Transactional
     fun execute(schoolId: Long) {
         schoolPolicy.requireDelete()
+        authorizationService.assertSameSchool(schoolId)
 
         val existing = schoolRepository.findById(schoolId)
             .orElseThrow { NotFoundException("Contrato nao encontrado") }

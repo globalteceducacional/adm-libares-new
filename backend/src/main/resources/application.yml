@@ -4,6 +4,10 @@
 spring:
   application:
     name: adm-libare-backend
+  servlet:
+    multipart:
+      max-file-size: ${UPLOAD_MAX_FILE_SIZE:50MB}
+      max-request-size: ${UPLOAD_MAX_REQUEST_SIZE:52MB}
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/adm_libare?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&useUnicode=true}
     username: ${DB_USER:root}

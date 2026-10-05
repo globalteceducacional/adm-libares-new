@@ -3,11 +3,13 @@ package com.libare.adm.modules.catalog.api
 import com.libare.adm.modules.catalog.api.dto.AuthorImageUploadResponse
 import com.libare.adm.modules.catalog.api.dto.AuthorOptionResponse
 import com.libare.adm.modules.catalog.api.dto.AuthorResponse
+import com.libare.adm.modules.catalog.api.dto.ToggleBookStatusRequest
 import com.libare.adm.modules.catalog.api.dto.UpsertAuthorRequest
 import com.libare.adm.modules.catalog.application.CreateAuthorUseCase
 import com.libare.adm.modules.catalog.application.DeleteAuthorUseCase
 import com.libare.adm.modules.catalog.application.ListAuthorOptionsUseCase
 import com.libare.adm.modules.catalog.application.ListAuthorsUseCase
+import com.libare.adm.modules.catalog.application.ToggleAuthorStatusUseCase
 import com.libare.adm.modules.catalog.application.UpdateAuthorUseCase
 import com.libare.adm.modules.catalog.infrastructure.storage.LegacyBookAssetStorage
 import com.libare.adm.shared.exception.ForbiddenException
@@ -24,6 +26,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -42,6 +45,7 @@ class AuthorController(
     private val listAuthorOptionsUseCase: ListAuthorOptionsUseCase,
     private val createAuthorUseCase: CreateAuthorUseCase,
     private val updateAuthorUseCase: UpdateAuthorUseCase,
+    private val toggleAuthorStatusUseCase: ToggleAuthorStatusUseCase,
     private val deleteAuthorUseCase: DeleteAuthorUseCase,
     private val legacyBookAssetStorage: LegacyBookAssetStorage,
     private val authorizationService: AuthorizationService
@@ -105,6 +109,20 @@ class AuthorController(
         @Valid @RequestBody request: UpsertAuthorRequest
     ): ResponseEntity<AuthorResponse> =
         ResponseEntity.ok(updateAuthorUseCase.execute(authorId, request))
+
+    @Operation(
+        summary = "Alternar status do autor",
+        description = "Ativa ou desativa um autor. Requer permissao books.update."
+    )
+    @AdminWriteResponses
+    @ApiResponse(responseCode = "200", description = "Status atualizado")
+    @PatchMapping("/{authorId}/status")
+    fun toggleStatus(
+        @Parameter(description = "ID do autor", required = true)
+        @PathVariable authorId: Long,
+        @Valid @RequestBody request: ToggleBookStatusRequest
+    ): ResponseEntity<AuthorResponse> =
+        ResponseEntity.ok(toggleAuthorStatusUseCase.execute(authorId, request.status))
 
     @Operation(
         summary = "Excluir autor",

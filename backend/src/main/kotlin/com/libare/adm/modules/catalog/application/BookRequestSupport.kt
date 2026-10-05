@@ -18,7 +18,8 @@ object BookRequestValidator {
         if (request.bookCoverImage.isNullOrBlank()) {
             throw BadRequestException("A capa do livro e obrigatoria")
         }
-        validateFilePayload(request, requireFileUrl = true)
+        val effectiveFileType = normalizeFileType(request.fileType)
+        validateFilePayload(request.copy(fileType = effectiveFileType), requireFileUrl = true)
     }
 
     fun validateForUpdate(request: UpsertBookRequest, existing: BookEntity) {
@@ -26,8 +27,17 @@ object BookRequestValidator {
         if (request.bookCoverImage.isNullOrBlank() && existing.bookCoverImage.isBlank()) {
             throw BadRequestException("A capa do livro e obrigatoria")
         }
-        val requiresFileUrl = request.fileType == "local" && existing.fileUrl.isBlank()
-        validateFilePayload(request, requireFileUrl = requiresFileUrl)
+        // Normaliza tipos legados (pdf, epub) para "local" antes de validar
+        val effectiveFileType = normalizeFileType(request.fileType)
+        val requiresFileUrl = effectiveFileType == "local" && existing.fileUrl.isBlank()
+        validateFilePayload(request.copy(fileType = effectiveFileType), requireFileUrl = requiresFileUrl)
+    }
+
+    fun normalizeFileType(raw: String): String {
+        return when (raw.trim().lowercase()) {
+            "pdf", "epub", "local" -> "local"
+            else -> "server_url"
+        }
     }
 
     private fun validateCommon(request: UpsertBookRequest) {
@@ -75,7 +85,7 @@ fun UpsertBookRequest.toBookEntity(
         title = title.trim(),
         description = description.trim(),
         bookCoverImage = cover,
-        fileType = fileType.trim().lowercase(),
+        fileType = BookRequestValidator.normalizeFileType(fileType),
         fileUrl = resolvedFileUrl,
         totalRate = existing?.totalRate ?: 0,
         rateAvg = existing?.rateAvg ?: "0",

@@ -100,6 +100,30 @@ class DeleteAuthorUseCase(
     }
 }
 
+@Service
+class ToggleAuthorStatusUseCase(
+    private val authorRepository: AuthorJpaRepository,
+    private val bookPolicy: BookPolicy
+) {
+    @Transactional
+    fun execute(authorId: Long, rawStatus: String): AuthorResponse {
+        bookPolicy.requireUpdate()
+        val existing = authorRepository.findById(authorId)
+            .orElseThrow { NotFoundException("Autor nao encontrado") }
+        val status = if (rawStatus.trim() == "0") "0" else "1"
+        val saved = authorRepository.save(
+            AuthorEntity(
+                id = existing.id,
+                name = existing.name,
+                image = existing.image,
+                description = existing.description ?: "",
+                status = status
+            )
+        )
+        return toResponse(saved)
+    }
+}
+
 private fun toResponse(row: AuthorEntity) = AuthorResponse(
     id = row.id,
     name = row.name,

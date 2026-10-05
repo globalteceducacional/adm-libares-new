@@ -3,6 +3,7 @@ package com.libare.adm.modules.catalog.application
 import com.libare.adm.modules.catalog.infrastructure.persistence.entity.BookEntity
 import com.libare.adm.modules.catalog.application.policy.BookPolicy
 import com.libare.adm.modules.catalog.infrastructure.persistence.repository.BookJpaRepository
+import com.libare.adm.modules.catalog.infrastructure.persistence.repository.LivroAcervoJpaRepository
 import com.libare.adm.shared.exception.NotFoundException
 import com.libare.adm.shared.persistence.AuditSessionContext
 import com.libare.adm.shared.security.CurrentActorResolver
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class DeleteBookUseCase(
     private val bookRepository: BookJpaRepository,
+    private val livroAcervoRepository: LivroAcervoJpaRepository,
     private val bookPolicy: BookPolicy,
     private val currentActorResolver: CurrentActorResolver,
     private val auditSessionContext: AuditSessionContext
@@ -24,6 +26,9 @@ class DeleteBookUseCase(
 
         val existing = bookRepository.findById(bookId)
             .orElseThrow { NotFoundException("Livro nao encontrado") }
+
+        livroAcervoRepository.deleteByBookId(bookId)
+        livroAcervoRepository.flush()
 
         bookRepository.save(
             BookEntity(

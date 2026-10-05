@@ -22,9 +22,8 @@ data class UpsertBookRequest(
     @field:Size(max = 1, message = "Status deve ser 0 ou 1")
     val status: String,
 
-    @field:Schema(description = "IDs dos acervos onde o livro sera publicado", example = "[1]")
-    @field:NotEmpty(message = "Selecione ao menos um acervo")
-    val acervoIds: List<Long>,
+    @field:Schema(description = "IDs dos acervos onde o livro sera publicado (opcional; sem acervo o livro nao aparece no app)", example = "[1]")
+    val acervoIds: List<Long> = emptyList(),
 
     @field:Schema(description = "IDs das categorias do livro", example = "[2, 5]")
     @field:NotEmpty(message = "Selecione ao menos uma categoria")

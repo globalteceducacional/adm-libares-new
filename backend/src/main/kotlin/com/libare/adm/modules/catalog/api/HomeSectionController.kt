@@ -2,11 +2,13 @@ package com.libare.adm.modules.catalog.api
 
 import com.libare.adm.modules.catalog.api.dto.HomeSectionOptionResponse
 import com.libare.adm.modules.catalog.api.dto.HomeSectionResponse
+import com.libare.adm.modules.catalog.api.dto.ToggleBookStatusRequest
 import com.libare.adm.modules.catalog.api.dto.UpsertHomeSectionRequest
 import com.libare.adm.modules.catalog.application.CreateHomeSectionUseCase
 import com.libare.adm.modules.catalog.application.DeleteHomeSectionUseCase
 import com.libare.adm.modules.catalog.application.ListHomeSectionOptionsUseCase
 import com.libare.adm.modules.catalog.application.ListHomeSectionsUseCase
+import com.libare.adm.modules.catalog.application.ToggleHomeSectionStatusUseCase
 import com.libare.adm.modules.catalog.application.UpdateHomeSectionUseCase
 import com.libare.adm.shared.openapi.AdminSecured
 import com.libare.adm.shared.openapi.AdminWriteResponses
@@ -20,6 +22,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -36,6 +39,7 @@ class HomeSectionController(
     private val listHomeSectionOptionsUseCase: ListHomeSectionOptionsUseCase,
     private val createHomeSectionUseCase: CreateHomeSectionUseCase,
     private val updateHomeSectionUseCase: UpdateHomeSectionUseCase,
+    private val toggleHomeSectionStatusUseCase: ToggleHomeSectionStatusUseCase,
     private val deleteHomeSectionUseCase: DeleteHomeSectionUseCase
 ) {
     @Operation(
@@ -79,6 +83,20 @@ class HomeSectionController(
         @Valid @RequestBody request: UpsertHomeSectionRequest
     ): ResponseEntity<HomeSectionResponse> =
         ResponseEntity.ok(updateHomeSectionUseCase.execute(sectionId, request))
+
+    @Operation(
+        summary = "Alternar status da secao da home",
+        description = "Ativa ou desativa uma secao. Requer permissao books.update."
+    )
+    @AdminWriteResponses
+    @ApiResponse(responseCode = "200", description = "Status atualizado")
+    @PatchMapping("/{sectionId}/status")
+    fun toggleStatus(
+        @Parameter(description = "ID da secao", required = true)
+        @PathVariable sectionId: Int,
+        @Valid @RequestBody request: ToggleBookStatusRequest
+    ): ResponseEntity<HomeSectionResponse> =
+        ResponseEntity.ok(toggleHomeSectionStatusUseCase.execute(sectionId, request.status))
 
     @Operation(
         summary = "Excluir secao da home",

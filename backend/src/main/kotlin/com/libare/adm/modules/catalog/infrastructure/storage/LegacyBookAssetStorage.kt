@@ -9,7 +9,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
-import kotlin.random.Random
+import java.util.UUID
 
 @Service
 class LegacyBookAssetStorage(
@@ -77,14 +77,17 @@ class LegacyBookAssetStorage(
 
     private fun buildStoredFilename(originalFilename: String?): String {
         val sanitized = sanitizeFilename(originalFilename)
-        return "${Random.nextInt(0, 100_000)}_$sanitized"
+        return "${UUID.randomUUID()}_$sanitized"
     }
 
     private fun sanitizeFilename(originalFilename: String?): String {
         val raw = originalFilename?.trim().orEmpty().ifBlank { "arquivo" }
-        val decoded = decodeHtmlEntities(raw)
+        // Strip any directory component to prevent path traversal
+        val basename = Paths.get(raw).fileName?.toString() ?: "arquivo"
+        val decoded = decodeHtmlEntities(basename)
         val withoutSpaces = decoded.replace(" ", "-")
-        return withoutSpaces.replace(Regex("[<>:\"|?*\\\\]"), "")
+        // Remove all characters that are unsafe in filenames on any OS
+        return withoutSpaces.replace(Regex("[^a-zA-Z0-9._\\-]"), "_").ifBlank { "arquivo" }
     }
 
     private fun decodeHtmlEntities(value: String): String =

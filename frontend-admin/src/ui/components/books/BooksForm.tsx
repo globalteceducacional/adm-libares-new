@@ -248,7 +248,7 @@ export function BooksForm({
 
       <FormFullWidth>
         <p id={acervosLegendId} className="mb-2 text-sm font-medium text-foreground">
-          Acervos
+          Acervos <span className="text-muted font-normal">(opcional)</span>
         </p>
         <SearchableCheckboxList
           items={acervoItems}
@@ -266,14 +266,9 @@ export function BooksForm({
           disabled={isBusy}
         />
         <p className="mt-2 text-xs text-muted">
-          Selecione em quais acervos o livro ficara disponivel. Sem acervo, o livro nao aparece no
-          app.
+          Vincule o livro a um ou mais acervos para que apareca no app. Sem acervo, o livro fica
+          salvo no catalogo mas invisivel para os leitores.
         </p>
-        {isAcervosInvalid ? (
-          <p className="mt-2 text-xs text-danger" role="alert">
-            Selecione ao menos um acervo.
-          </p>
-        ) : null}
       </FormFullWidth>
 
       <FormFullWidth>

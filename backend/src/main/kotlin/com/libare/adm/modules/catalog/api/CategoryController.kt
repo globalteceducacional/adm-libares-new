@@ -3,11 +3,13 @@ package com.libare.adm.modules.catalog.api
 import com.libare.adm.modules.catalog.api.dto.CategoryImageUploadResponse
 import com.libare.adm.modules.catalog.api.dto.CategoryOptionResponse
 import com.libare.adm.modules.catalog.api.dto.CategoryResponse
+import com.libare.adm.modules.catalog.api.dto.ToggleBookStatusRequest
 import com.libare.adm.modules.catalog.api.dto.UpsertCategoryRequest
 import com.libare.adm.modules.catalog.application.CreateCategoryUseCase
 import com.libare.adm.modules.catalog.application.DeleteCategoryUseCase
 import com.libare.adm.modules.catalog.application.ListCategoriesUseCase
 import com.libare.adm.modules.catalog.application.ListCategoryOptionsUseCase
+import com.libare.adm.modules.catalog.application.ToggleCategoryStatusUseCase
 import com.libare.adm.modules.catalog.application.UpdateCategoryUseCase
 import com.libare.adm.modules.catalog.infrastructure.storage.LegacyBookAssetStorage
 import com.libare.adm.shared.exception.ForbiddenException
@@ -24,6 +26,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -42,6 +45,7 @@ class CategoryController(
     private val listCategoryOptionsUseCase: ListCategoryOptionsUseCase,
     private val createCategoryUseCase: CreateCategoryUseCase,
     private val updateCategoryUseCase: UpdateCategoryUseCase,
+    private val toggleCategoryStatusUseCase: ToggleCategoryStatusUseCase,
     private val deleteCategoryUseCase: DeleteCategoryUseCase,
     private val legacyBookAssetStorage: LegacyBookAssetStorage,
     private val authorizationService: AuthorizationService
@@ -105,6 +109,20 @@ class CategoryController(
         @Valid @RequestBody request: UpsertCategoryRequest
     ): ResponseEntity<CategoryResponse> =
         ResponseEntity.ok(updateCategoryUseCase.execute(categoryId, request))
+
+    @Operation(
+        summary = "Alternar status da categoria",
+        description = "Ativa ou desativa uma categoria. Requer permissao books.update."
+    )
+    @AdminWriteResponses
+    @ApiResponse(responseCode = "200", description = "Status atualizado")
+    @PatchMapping("/{categoryId}/status")
+    fun toggleStatus(
+        @Parameter(description = "ID da categoria", required = true)
+        @PathVariable categoryId: Int,
+        @Valid @RequestBody request: ToggleBookStatusRequest
+    ): ResponseEntity<CategoryResponse> =
+        ResponseEntity.ok(toggleCategoryStatusUseCase.execute(categoryId, request.status))
 
     @Operation(
         summary = "Excluir categoria",

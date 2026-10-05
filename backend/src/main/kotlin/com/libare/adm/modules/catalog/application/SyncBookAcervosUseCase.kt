@@ -5,6 +5,7 @@ import com.libare.adm.modules.catalog.infrastructure.persistence.repository.Acer
 import com.libare.adm.modules.catalog.infrastructure.persistence.repository.LivroAcervoJpaRepository
 import com.libare.adm.shared.exception.BadRequestException
 import com.libare.adm.shared.security.AuthorizationService
+import com.libare.adm.shared.tenant.TenantContext
 import com.libare.adm.shared.util.toAcervoIds
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -18,8 +19,10 @@ class SyncBookAcervosUseCase(
     @Transactional
     fun execute(bookId: Long, acervoIds: List<Long>) {
         val distinctIds = acervoIds.toAcervoIds()
+
         if (distinctIds.isEmpty()) {
-            throw BadRequestException("Selecione ao menos um acervo")
+            livroAcervoRepository.deleteByBookId(bookId)
+            return
         }
 
         val acervos = acervoRepository.findAllById(distinctIds)
@@ -36,10 +39,17 @@ class SyncBookAcervosUseCase(
         if (schoolIds.isEmpty()) {
             throw BadRequestException("Acervos sem contrato vinculado")
         }
-        if (schoolIds.size != 1) {
-            throw BadRequestException("Acervos devem pertencer a mesmo contrato")
+
+        // Super-admin sem contexto de escola gerencia o catalogo global:
+        // pode vincular um livro a acervos de contratos diferentes.
+        val principal = TenantContext.get()
+        val isGlobalSuperAdmin = principal.isSuperAdmin && principal.activeSchoolId == null
+        if (!isGlobalSuperAdmin) {
+            if (schoolIds.size != 1) {
+                throw BadRequestException("Acervos devem pertencer a mesmo contrato")
+            }
+            authorizationService.assertSameSchool(schoolIds.single())
         }
-        authorizationService.assertSameSchool(schoolIds.single())
 
         livroAcervoRepository.deleteByBookId(bookId)
         livroAcervoRepository.flush()

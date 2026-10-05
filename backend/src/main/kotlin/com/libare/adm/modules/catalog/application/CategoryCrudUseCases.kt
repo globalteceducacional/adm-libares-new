@@ -92,6 +92,29 @@ class DeleteCategoryUseCase(
     }
 }
 
+@Service
+class ToggleCategoryStatusUseCase(
+    private val categoryRepository: CategoryJpaRepository,
+    private val bookPolicy: BookPolicy
+) {
+    @Transactional
+    fun execute(categoryId: Int, rawStatus: String): CategoryResponse {
+        bookPolicy.requireUpdate()
+        val existing = categoryRepository.findById(categoryId)
+            .orElseThrow { NotFoundException("Categoria nao encontrada") }
+        val status = if (rawStatus.trim() == "0") 0 else 1
+        val saved = categoryRepository.save(
+            CategoryEntity(
+                id = existing.id,
+                name = existing.name,
+                image = existing.image,
+                status = status
+            )
+        )
+        return toResponse(saved)
+    }
+}
+
 private fun toResponse(row: CategoryEntity) = CategoryResponse(
     id = row.id,
     name = row.name,

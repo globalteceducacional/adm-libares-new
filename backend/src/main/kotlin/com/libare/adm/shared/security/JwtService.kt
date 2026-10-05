@@ -88,12 +88,12 @@ class JwtService(
                     permVersion = permVersion
                 )
             }
-            val role = claims[ROLE_CLAIM]?.toString()?.uppercase() ?: "ADMIN"
+            // Legacy tokens (sem claim 'uid') nunca ganham super-admin — exigem relogin
             AdminPrincipal(
                 userId = 0,
                 username = username,
                 schoolId = null,
-                isSuperAdmin = role == "ADMIN",
+                isSuperAdmin = false,
                 permissions = emptySet(),
                 permVersion = 1
             )
