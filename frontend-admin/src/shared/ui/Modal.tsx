@@ -132,7 +132,7 @@ export function Modal({
           onKeyDown={handleKeyDown}
         >
           <div
-            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            className="modal-backdrop-enter absolute inset-0 bg-black/40 backdrop-blur-sm"
             aria-hidden="true"
             onClick={closeOnOverlayClick ? onClose : undefined}
           />
@@ -144,7 +144,7 @@ export function Modal({
             aria-describedby={description ? descriptionId : undefined}
             tabIndex={-1}
             className={cn(
-              "relative z-10 flex w-full max-w-[calc(100vw-1.5rem)] max-h-[min(100dvh-1.5rem,920px)] flex-col rounded-2xl border border-border bg-surface shadow-card outline-none",
+              "modal-panel-enter relative z-10 flex w-full max-w-[calc(100vw-1.5rem)] max-h-[min(100dvh-1.5rem,920px)] flex-col rounded-2xl border border-border bg-surface shadow-card outline-none",
               sizeMap[size],
               className
             )}

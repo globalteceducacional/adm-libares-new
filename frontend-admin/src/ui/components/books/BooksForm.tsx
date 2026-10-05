@@ -71,7 +71,9 @@ function SectionHeading({ label, first = false }: { label: string; first?: boole
 function UploadProgress() {
   return (
     <div className="mt-1">
-      <div className="animate-pulse bg-primary/20 rounded h-1 w-full" />
+      <div className="h-1 w-full overflow-hidden rounded-full bg-primary/10">
+        <div className="upload-progress-bar h-full w-full rounded-full" />
+      </div>
       <p className="mt-1 text-xs text-muted">Enviando...</p>
     </div>
   );

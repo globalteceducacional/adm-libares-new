@@ -87,6 +87,7 @@ export function AppLayout() {
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
+              className="page-enter"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}

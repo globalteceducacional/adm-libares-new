@@ -4,7 +4,7 @@ import { cn } from "../lib/cn";
 
 const variants = {
   primary:
-    "bg-primary text-primary-foreground hover:bg-primary-dark shadow-sm disabled:opacity-60 disabled:cursor-not-allowed",
+    "bg-gradient-to-r from-primary to-primary-light text-primary-foreground hover:from-primary-dark hover:to-primary shadow-sm disabled:opacity-60 disabled:cursor-not-allowed",
   secondary:
     "border border-border bg-surface text-foreground hover:bg-surface-2 disabled:opacity-60 disabled:cursor-not-allowed",
   ghost: "text-foreground hover:bg-surface-2 disabled:opacity-60 disabled:cursor-not-allowed",
