@@ -7,6 +7,8 @@ import { useAuth } from "../auth/AuthContext";
 import { buildBreadcrumbs } from "./config/navigation";
 import { Sidebar } from "./components/Sidebar";
 import { Topbar } from "./components/Topbar";
+import { BottomNav } from "./components/BottomNav";
+import { GlobalSearch } from "../../ui/components/GlobalSearch";
 
 export function AppLayout() {
   const location = useLocation();
@@ -98,6 +100,8 @@ export function AppLayout() {
           </AnimatePresence>
         </main>
       </div>
+      <BottomNav />
+      <GlobalSearch />
     </div>
   );
 }

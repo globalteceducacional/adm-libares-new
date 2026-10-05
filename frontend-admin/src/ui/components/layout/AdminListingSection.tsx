@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import type { AdminStatusFilter } from "../../../types/adminList";
 import { Alert, Card, CardHeader, SearchInput } from "../../../shared/ui";
 import { BerrySelect } from "./BerrySelect";
-import { DataTable, type DataTableColumn } from "../table/DataTable";
+import { DataTable, type DataTableColumn, type BulkAction } from "../table/DataTable";
 
 export type { AdminStatusFilter } from "../../../types/adminList";
 
@@ -38,6 +38,8 @@ export type AdminListingSectionProps<T> = {
   pageSizeOptions?: number[];
   onRowClick?: (item: T) => void;
   secondaryFilter?: ReactNode;
+  selectable?: boolean;
+  bulkActions?: BulkAction[];
 };
 
 export function AdminListingSection<T>({
@@ -69,7 +71,9 @@ export function AdminListingSection<T>({
   initialPageSize = 20,
   pageSizeOptions = [10, 20, 50, 100],
   onRowClick,
-  secondaryFilter
+  secondaryFilter,
+  selectable = false,
+  bulkActions = []
 }: AdminListingSectionProps<T>) {
   const hasStatusFilter = Boolean(onStatusFilterChange && statusFilter !== undefined);
 
@@ -126,6 +130,8 @@ export function AdminListingSection<T>({
         pageSizeOptions={pageSizeOptions}
         tableClassName="berry-table"
         wrapperClassName="berry-table-shell"
+        selectable={selectable}
+        bulkActions={bulkActions}
       />
 
       <div className="mt-4 flex flex-col gap-2 text-sm text-muted sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">

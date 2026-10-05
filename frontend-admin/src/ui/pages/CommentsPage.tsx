@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Eye, EyeOff, MessageSquare, Trash2 } from "lucide-react";
+import { Download, Eye, EyeOff, MessageSquare, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { deleteComment, updateCommentStatus } from "../../services/commentsService";
@@ -20,6 +20,7 @@ import { CommentDetailModal } from "../components/comments/CommentDetailModal";
 import type { CommentResponse } from "../../types/comments";
 import { Alert, Button, ConfirmDialog, EmptyState, StatusBadge } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
+import { exportToCsv } from "../../shared/lib/exportCsv";
 import { type DataTableColumn } from "../components/table/DataTable";
 import { TableRowActions } from "../components/table/TableRowActions";
 
@@ -76,6 +77,19 @@ export function CommentsPage() {
   });
 
   const saving = toggleStatusMutation.isPending || deleteMutation.isPending;
+
+  function handleExportCsv() {
+    exportToCsv(
+      "comentarios.csv",
+      filteredComments.map((c) => ({
+        ID: c.id,
+        Livro: decodeHtmlEntities(c.bookTitle ?? "") || `#${c.bookId}`,
+        Usuario: decodeHtmlEntities(c.userName ?? "") || (c.userId ? `#${c.userId}` : ""),
+        Comentario: decodeHtmlEntities(c.commentText),
+        Status: c.status === "1" ? "Publicado" : "Oculto"
+      }))
+    );
+  }
 
   function handleToggleStatus(comment: CommentResponse) {
     setActionError("");
@@ -196,6 +210,12 @@ export function CommentsPage() {
           title="Comentários"
           description="Modere comentarios publicados nos livros e controle a visibilidade."
           tone="primary"
+          actions={
+            <Button type="button" variant="secondary" size="sm" onClick={handleExportCsv} title="Exportar lista de comentários em CSV">
+              <Download size={15} />
+              Exportar CSV
+            </Button>
+          }
         />
       }
       stats={<ListingMiniStats items={listStats} />}

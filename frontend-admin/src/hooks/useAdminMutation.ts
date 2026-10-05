@@ -8,7 +8,7 @@ type SuccessMessage<TData, TVariables> =
   | string
   | ((data: TData, variables: TVariables) => string);
 
-export type UseAdminMutationOptions<TData, TVariables> = {
+export type UseAdminMutationOptions<TData, TVariables, TContext = unknown> = {
   mutationFn: (variables: TVariables) => Promise<TData>;
   /** Toast de sucesso; omitir para nao exibir. */
   successMessage?: SuccessMessage<TData, TVariables>;
@@ -21,18 +21,23 @@ export type UseAdminMutationOptions<TData, TVariables> = {
   /** Se false, nao mostra toast de erro (util em forms com Alert). Default: true. */
   toastError?: boolean;
   successTone?: ToastTone;
+  /** Optimistic update callback — chamado antes da mutacao. */
+  onMutate?: (variables: TVariables) => Promise<TContext> | TContext;
+  /** Rollback callback — chamado quando a mutacao falha. */
+  onRollback?: (error: Error, variables: TVariables, context: TContext | undefined) => void;
 };
 
 /**
  * Wrapper de useMutation com toast + invalidate padrao do painel admin.
  */
-export function useAdminMutation<TData = unknown, TVariables = void>(
-  options: UseAdminMutationOptions<TData, TVariables>
-): UseMutationResult<TData, Error, TVariables> {
+export function useAdminMutation<TData = unknown, TVariables = void, TContext = unknown>(
+  options: UseAdminMutationOptions<TData, TVariables, TContext>
+): UseMutationResult<TData, Error, TVariables, TContext> {
   const { showToast } = useToast();
 
-  return useMutation<TData, Error, TVariables>({
+  return useMutation<TData, Error, TVariables, TContext>({
     mutationFn: options.mutationFn,
+    onMutate: options.onMutate,
     onSuccess: async (data, variables) => {
       if (options.successMessage) {
         const message =
@@ -44,7 +49,7 @@ export function useAdminMutation<TData = unknown, TVariables = void>(
       await options.invalidate?.();
       options.onSuccess?.(data, variables);
     },
-    onError: (error, variables) => {
+    onError: (error, variables, context) => {
       const message =
         error instanceof Error
           ? error.message
@@ -55,6 +60,11 @@ export function useAdminMutation<TData = unknown, TVariables = void>(
       options.onError?.(
         error instanceof Error ? error : new Error(message),
         variables
+      );
+      options.onRollback?.(
+        error instanceof Error ? error : new Error(message),
+        variables,
+        context
       );
     }
   });

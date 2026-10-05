@@ -1,9 +1,10 @@
-import { Menu } from "lucide-react";
+import { Menu, Moon, Sun } from "lucide-react";
 import { useRef } from "react";
 import { Button } from "../../../shared/ui";
 import { useAuth } from "../../auth/AuthContext";
 import { SchoolContextSwitcher } from "../../tenant/SchoolContextSwitcher";
 import { useLayoutStore } from "../../../stores/layoutStore";
+import { useThemeStore } from "../../../stores/themeStore";
 import { Breadcrumbs, type BreadcrumbItem } from "../../../shared/ui/PageHeader";
 import { NotificationBell } from "./NotificationBell";
 import { uploadAuthAvatar } from "../../../services/authMeService";
@@ -18,6 +19,8 @@ export function Topbar({ breadcrumbs }: TopbarProps) {
   const { user, refresh, schoolContextId, allowedSchools } = useAuth();
   const displayName = user?.name || user?.username || "Administrador";
   const fileRef = useRef<HTMLInputElement>(null);
+  const themeMode = useThemeStore((s) => s.mode);
+  const toggleTheme = useThemeStore((s) => s.toggle);
 
   const activeSchoolName = schoolContextId
     ? allowedSchools.find((s) => s.id === schoolContextId)?.name ?? null
@@ -65,6 +68,15 @@ export function Topbar({ breadcrumbs }: TopbarProps) {
               {activeSchoolLabel}
             </span>
           ) : null}
+          <button
+            type="button"
+            className="grid h-9 w-9 place-items-center rounded-xl border border-border/60 bg-transparent text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+            title="Alternar tema"
+            aria-label="Alternar tema claro/escuro"
+            onClick={toggleTheme}
+          >
+            {themeMode === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
           <NotificationBell />
           <input
             ref={fileRef}
