@@ -36,3 +36,9 @@ data class AuditConsistencyRow(
     val checkName: String,
     val invalidCount: Long,
 )
+
+data class AuditLogResponse(
+    val id: Long,
+    val userId: Long,
+    val dateTime: String
+)

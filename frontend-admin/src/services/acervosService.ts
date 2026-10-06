@@ -42,6 +42,16 @@ export function updateAcervo(acervoId: number, payload: UpsertAcervoRequest): Pr
   });
 }
 
+export function toggleAcervoStatus(
+  acervoId: number,
+  status: "0" | "1"
+): Promise<AcervoResponse> {
+  return apiRequest<AcervoResponse>(`/api/v1/acervos/${acervoId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status })
+  });
+}
+
 export function deleteAcervo(acervoId: number): Promise<void> {
   return apiRequest<void>(`/api/v1/acervos/${acervoId}`, {
     method: "DELETE"

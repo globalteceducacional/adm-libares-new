@@ -5,10 +5,12 @@ import com.libare.adm.modules.rbac.api.dto.AssignAdminSchoolsRequest
 import com.libare.adm.modules.rbac.api.dto.CreateTeamMemberRequest
 import com.libare.adm.modules.rbac.api.dto.TeamMemberResponse
 import com.libare.adm.modules.rbac.api.dto.ToggleTeamMemberStatusRequest
+import com.libare.adm.modules.rbac.api.dto.UpdateTeamMemberRequest
 import com.libare.adm.modules.rbac.application.AssignAdminSchoolsUseCase
 import com.libare.adm.modules.rbac.application.CreateTeamMemberUseCase
 import com.libare.adm.modules.rbac.application.ListTeamMembersUseCase
 import com.libare.adm.modules.rbac.application.ToggleTeamMemberStatusUseCase
+import com.libare.adm.modules.rbac.application.UpdateTeamMemberUseCase
 import com.libare.adm.shared.openapi.AdminSecured
 import com.libare.adm.shared.openapi.AdminWriteResponses
 import com.libare.adm.shared.openapi.OpenApiHeaders
@@ -45,7 +47,8 @@ class AdminUserController(
     private val assignAdminSchoolsUseCase: AssignAdminSchoolsUseCase,
     private val listTeamMembersUseCase: ListTeamMembersUseCase,
     private val createTeamMemberUseCase: CreateTeamMemberUseCase,
-    private val toggleTeamMemberStatusUseCase: ToggleTeamMemberStatusUseCase
+    private val toggleTeamMemberStatusUseCase: ToggleTeamMemberStatusUseCase,
+    private val updateTeamMemberUseCase: UpdateTeamMemberUseCase
 ) {
     @Operation(
         summary = "Listar equipe",
@@ -91,6 +94,28 @@ class AdminUserController(
     @PostMapping
     fun create(@Valid @RequestBody request: CreateTeamMemberRequest): ResponseEntity<TeamMemberResponse> =
         ResponseEntity.status(HttpStatus.CREATED).body(createTeamMemberUseCase.execute(request))
+
+    @Operation(
+        summary = "Editar membro da equipe",
+        description = "Atualiza nome e, opcionalmente, senha de um admin/professor."
+    )
+    @AdminSecured
+    @AdminWriteResponses
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Membro atualizado",
+                content = [Content(schema = Schema(implementation = TeamMemberResponse::class))]
+            )
+        ]
+    )
+    @PutMapping("/{adminUserId}")
+    fun update(
+        @Parameter(description = "ID do admin do painel") @PathVariable adminUserId: Long,
+        @Valid @RequestBody request: UpdateTeamMemberRequest
+    ): ResponseEntity<TeamMemberResponse> =
+        ResponseEntity.ok(updateTeamMemberUseCase.execute(adminUserId, request))
 
     @Operation(
         summary = "Ativar ou desativar membro da equipe",

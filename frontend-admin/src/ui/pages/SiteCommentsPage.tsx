@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
-import { MessageSquare, Trash2 } from "lucide-react";
+import { CheckCircle, MessageSquare, Trash2, XCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { deleteSiteComment } from "../../services/siteCommentsService";
+import { deleteSiteComment, updateSiteCommentStatus } from "../../services/siteCommentsService";
 import {
   getQueryErrorMessage,
   useInvalidateAdminQueries,
@@ -44,6 +44,17 @@ export function SiteCommentsPage() {
     await invalidate.siteComments();
   }
 
+  const updateStatusMutation = useAdminMutation<SiteCommentResponse, { id: number; status: "0" | "1" }>({
+    mutationFn: ({ id, status }) => updateSiteCommentStatus(id, status),
+    successMessage: (_data, { status }) =>
+      status === "1" ? "Comentário aprovado." : "Comentário rejeitado.",
+    errorFallback: "Falha ao moderar comentario",
+    invalidate: invalidateSiteCommentQueries,
+    onError: (error) => {
+      setActionError(error.message);
+    }
+  });
+
   const deleteMutation = useAdminMutation<void, number>({
     mutationFn: (commentId) => deleteSiteComment(commentId),
     successMessage: "Comentário excluído com sucesso.",
@@ -61,7 +72,7 @@ export function SiteCommentsPage() {
     }
   });
 
-  const saving = deleteMutation.isPending;
+  const saving = deleteMutation.isPending || updateStatusMutation.isPending;
 
   function handleConfirmDelete() {
     if (confirmDeleteId === null) {
@@ -102,12 +113,50 @@ export function SiteCommentsPage() {
         render: (comment) => comment.commentOn || comment.dtRate || "-"
       },
       {
+        key: "status",
+        label: "Status",
+        render: (comment) =>
+          comment.status === "1" ? (
+            <span className="text-success text-xs font-medium">Aprovado</span>
+          ) : (
+            <span className="text-danger text-xs font-medium">Rejeitado</span>
+          )
+      },
+      {
         key: "actions",
         label: "Ações",
         stopRowClick: true,
         render: (comment) =>
           canModerate ? (
             <TableRowActions>
+              {comment.status !== "1" ? (
+                <motion.button
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="table-btn icon"
+                  type="button"
+                  onClick={() => updateStatusMutation.mutate({ id: comment.id, status: "1" })}
+                  disabled={saving}
+                  aria-label={`Aprovar comentario #${comment.id}`}
+                >
+                  <CheckCircle size={14} />
+                  Aprovar
+                </motion.button>
+              ) : null}
+              {comment.status !== "0" ? (
+                <motion.button
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="table-btn icon"
+                  type="button"
+                  onClick={() => updateStatusMutation.mutate({ id: comment.id, status: "0" })}
+                  disabled={saving}
+                  aria-label={`Rejeitar comentario #${comment.id}`}
+                >
+                  <XCircle size={14} />
+                  Rejeitar
+                </motion.button>
+              ) : null}
               <motion.button
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.98 }}
@@ -219,6 +268,14 @@ export function SiteCommentsPage() {
         canModerate={canModerate}
         onClose={() => setSelectedComment(null)}
         onDelete={(comment) => setConfirmDeleteId(comment.id)}
+        onApprove={(comment) => {
+          setActionError("");
+          updateStatusMutation.mutate({ id: comment.id, status: "1" });
+        }}
+        onReject={(comment) => {
+          setActionError("");
+          updateStatusMutation.mutate({ id: comment.id, status: "0" });
+        }}
       />
 
       <ConfirmDialog

@@ -1,4 +1,4 @@
-import { Trash2 } from "lucide-react";
+import { CheckCircle, Trash2, XCircle } from "lucide-react";
 import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
 import { Button, DetailField, Modal } from "../../../shared/ui";
 import type { SiteCommentResponse } from "../../../types/siteComments";
@@ -10,6 +10,8 @@ type SiteCommentDetailModalProps = {
   canModerate?: boolean;
   onClose: () => void;
   onDelete?: (comment: SiteCommentResponse) => void;
+  onApprove?: (comment: SiteCommentResponse) => void;
+  onReject?: (comment: SiteCommentResponse) => void;
 };
 
 export function SiteCommentDetailModal({
@@ -18,7 +20,9 @@ export function SiteCommentDetailModal({
   saving = false,
   canModerate = false,
   onClose,
-  onDelete
+  onDelete,
+  onApprove,
+  onReject
 }: SiteCommentDetailModalProps) {
   if (!comment) {
     return null;
@@ -44,6 +48,31 @@ export function SiteCommentDetailModal({
           <Button variant="secondary" onClick={onClose} disabled={saving}>
             Fechar
           </Button>
+          {canModerate && onReject && comment.status !== "0" ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                onReject(comment);
+                onClose();
+              }}
+              disabled={saving}
+            >
+              <XCircle size={16} />
+              Rejeitar
+            </Button>
+          ) : null}
+          {canModerate && onApprove && comment.status !== "1" ? (
+            <Button
+              onClick={() => {
+                onApprove(comment);
+                onClose();
+              }}
+              disabled={saving}
+            >
+              <CheckCircle size={16} />
+              Aprovar
+            </Button>
+          ) : null}
           {canModerate && onDelete ? (
             <Button
               variant="danger"

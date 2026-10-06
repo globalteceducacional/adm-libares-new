@@ -31,3 +31,16 @@ export type AuditOverviewResponse = {
   actorActivity: AuditActorActivityRow[];
   softDeleteConsistency: AuditConsistencyRow[];
 };
+
+export type AuditLogResponse = {
+  id: number;
+  userId: number;
+  dateTime: string;
+};
+
+export type PageResponse<T> = {
+  items: T[];
+  total: number;
+  page: number;
+  size: number;
+};

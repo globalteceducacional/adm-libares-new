@@ -1,5 +1,5 @@
 import { apiRequest } from "../lib/api";
-import type { CreateTeamMemberRequest, TeamMemberResponse } from "../types/team";
+import type { CreateTeamMemberRequest, TeamMemberResponse, UpdateTeamMemberRequest } from "../types/team";
 
 export function listTeamMembers(): Promise<TeamMemberResponse[]> {
   return apiRequest<TeamMemberResponse[]>("/api/v1/admin-users");
@@ -8,6 +8,16 @@ export function listTeamMembers(): Promise<TeamMemberResponse[]> {
 export function createTeamMember(payload: CreateTeamMemberRequest): Promise<TeamMemberResponse> {
   return apiRequest<TeamMemberResponse>("/api/v1/admin-users", {
     method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function updateTeamMember(
+  adminUserId: number,
+  payload: UpdateTeamMemberRequest
+): Promise<TeamMemberResponse> {
+  return apiRequest<TeamMemberResponse>(`/api/v1/admin-users/${adminUserId}`, {
+    method: "PUT",
     body: JSON.stringify(payload)
   });
 }

@@ -17,3 +17,8 @@ export type CreateTeamMemberRequest = {
   schoolId: number;
   roleCode: TeamRoleCode;
 };
+
+export type UpdateTeamMemberRequest = {
+  name: string;
+  newPassword?: string;
+};

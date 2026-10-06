@@ -142,6 +142,50 @@ class DeleteAcervoUseCase(
 }
 
 @Service
+class ToggleAcervoStatusUseCase(
+    private val acervoRepository: AcervoJpaRepository,
+    private val schoolRepository: SchoolJpaRepository,
+    private val acervoPolicy: AcervoPolicy,
+    private val currentActorResolver: CurrentActorResolver,
+    private val auditSessionContext: AuditSessionContext,
+    private val tenantReadGuard: TenantReadGuard
+) {
+    @Transactional
+    fun execute(acervoId: Long, status: String): AcervoResponse {
+        auditSessionContext.applyActor(currentActorResolver.resolveActorId())
+
+        val existing = acervoPolicy.loadForUpdate(acervoId)
+
+        val updated = acervoRepository.save(
+            AcervoEntity(
+                id = existing.id,
+                nome = existing.nome,
+                descricao = existing.descricao,
+                status = status.trim() != "0",
+                schoolId = existing.schoolId,
+                createdAt = existing.createdAt
+            )
+        )
+
+        val stats = acervoRepository.findAllWithStats(tenantReadGuard.tenantSchoolId())
+            .firstOrNull { it.getId() == acervoId }
+
+        val schoolId = existing.schoolId
+        return AcervoResponse(
+            id = updated.id.toAcervoIdLong(),
+            name = updated.nome,
+            description = updated.descricao,
+            status = if (updated.status) "1" else "0",
+            bookCount = stats?.getBookCount()?.toLong() ?: 0,
+            userCount = stats?.getUserCount()?.toLong() ?: 0,
+            schoolId = schoolId,
+            schoolName = stats?.getSchoolName()
+                ?: schoolId?.let { schoolRepository.findById(it).orElse(null)?.name }
+        )
+    }
+}
+
+@Service
 class GetAcervoUseCase(
     private val acervoRepository: AcervoJpaRepository,
     private val tenantReadGuard: TenantReadGuard

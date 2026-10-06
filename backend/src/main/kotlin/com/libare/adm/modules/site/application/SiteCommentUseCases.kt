@@ -30,8 +30,36 @@ class DeleteSiteCommentUseCase(
         if (!repo.existsById(commentId.toInt())) {
             throw NotFoundException("Comentario Site nao encontrado")
         }
-        // Hard delete — PHP legado estava incompleto; completar com remocao real
         repo.deleteById(commentId.toInt())
+    }
+}
+
+@Service
+class UpdateSiteCommentStatusUseCase(
+    private val repo: SiteCommentJpaRepository,
+    private val siteCommentPolicy: SiteCommentPolicy
+) {
+    @Transactional
+    fun execute(commentId: Long, status: String): SiteCommentResponse {
+        siteCommentPolicy.requireModerate()
+        val existing = repo.findById(commentId.toInt())
+            .orElseThrow { NotFoundException("Comentario Site nao encontrado") }
+        val updated = repo.save(
+            SiteCommentEntity(
+                id = existing.id,
+                bookId = existing.bookId,
+                userId = existing.userId,
+                userType = existing.userType,
+                userName = existing.userName,
+                userImage = existing.userImage,
+                userEmail = existing.userEmail,
+                commentText = existing.commentText,
+                dtRate = existing.dtRate,
+                commentOn = existing.commentOn,
+                status = status
+            )
+        )
+        return toResponse(updated)
     }
 }
 
@@ -46,5 +74,6 @@ private fun toResponse(e: SiteCommentEntity) = SiteCommentResponse(
     userType = e.userType,
     commentText = e.commentText,
     dtRate = e.dtRate?.toString(),
-    commentOn = e.commentOn
+    commentOn = e.commentOn,
+    status = e.status
 )

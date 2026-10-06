@@ -10,7 +10,7 @@ import { getDashboardSummary } from "../../../services/dashboardService";
 import { listComments } from "../../../services/commentsService";
 import { listUsers } from "../../../services/usersService";
 import { listTeamMembers } from "../../../services/teamService";
-import { getAuditOverview } from "../../../services/auditService";
+import { getAuditOverview, listAuditLogs } from "../../../services/auditService";
 import { listSiteAuthors } from "../../../services/siteAuthorsService";
 import { listSiteCategories } from "../../../services/siteCategoriesService";
 import { listSiteSections } from "../../../services/siteSectionsService";
@@ -37,6 +37,7 @@ export const queryKeys = {
   users: ["users"] as const,
   team: ["team"] as const,
   audit: ["audit"] as const,
+  auditLogs: (page: number, size: number) => ["audit-logs", page, size] as const,
   schools: ["schools"] as const,
   roles: ["roles"] as const,
   permissions: ["permissions"] as const,
@@ -157,6 +158,13 @@ export function useTeamMembersQuery() {
 
 export function useAuditQuery() {
   return useQuery({ queryKey: queryKeys.audit, queryFn: getAuditOverview });
+}
+
+export function useAuditLogsQuery(page: number, size: number) {
+  return useQuery({
+    queryKey: queryKeys.auditLogs(page, size),
+    queryFn: () => listAuditLogs(page, size)
+  });
 }
 
 export function useSchoolsQuery() {

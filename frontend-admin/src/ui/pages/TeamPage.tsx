@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Plus, UserCog } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { createTeamMember, toggleTeamMemberStatus } from "../../services/teamService";
+import { createTeamMember, toggleTeamMemberStatus, updateTeamMember } from "../../services/teamService";
 import {
   getQueryErrorMessage,
   useInvalidateAdminQueries,
@@ -24,8 +24,9 @@ import {
   type CreateTeamMemberFormState,
   toCreateTeamMemberRequest
 } from "../components/team/CreateTeamMemberForm";
+import { EditTeamMemberModal } from "../components/team/EditTeamMemberModal";
 import { TeamFormModal } from "../components/team/TeamFormModal";
-import type { TeamMemberResponse } from "../../types/team";
+import type { TeamMemberResponse, UpdateTeamMemberRequest } from "../../types/team";
 import { Alert, Button, StatusBadge } from "../../shared/ui";
 import { decodeHtmlEntities } from "../../shared/lib/decodeHtmlEntities";
 import { type DataTableColumn } from "../components/table/DataTable";
@@ -43,6 +44,11 @@ function formatRoleLabel(roleCode: string): string {
 
 type ToggleTeamMemberVariables = {
   member: TeamMemberResponse;
+};
+
+type UpdateTeamMemberVariables = {
+  adminUserId: number;
+  payload: UpdateTeamMemberRequest;
 };
 
 export function TeamPage() {
@@ -91,6 +97,10 @@ export function TeamPage() {
   const canToggle = usePermission("team.toggle_status");
   const needsSchoolContext = requiresSchoolContext && !schoolContextId;
 
+  const [editingMember, setEditingMember] = useState<TeamMemberResponse | null>(null);
+  const [editForm, setEditForm] = useState<UpdateTeamMemberRequest>({ name: "" });
+  const [editError, setEditError] = useState("");
+
   // Preenche contrato quando o contexto chega depois da montagem (SCHOOL_ADMIN).
   useEffect(() => {
     if (isSuperAdmin || defaultSchoolId == null) {
@@ -133,6 +143,21 @@ export function TeamPage() {
     }
   });
 
+  const updateMutation = useAdminMutation<TeamMemberResponse, UpdateTeamMemberVariables>({
+    mutationFn: ({ adminUserId, payload }) => updateTeamMember(adminUserId, payload),
+    successMessage: "Membro atualizado com sucesso.",
+    errorFallback: "Falha ao atualizar membro",
+    toastError: false,
+    invalidate: invalidateTeamQueries,
+    onSuccess: () => {
+      setEditingMember(null);
+      setEditError("");
+    },
+    onError: (error) => {
+      setEditError(error.message);
+    }
+  });
+
   const toggleMutation = useAdminMutation<TeamMemberResponse, ToggleTeamMemberVariables>({
     mutationFn: ({ member }) => {
       const nextStatus: "0" | "1" = member.status === "1" ? "0" : "1";
@@ -147,7 +172,7 @@ export function TeamPage() {
     invalidate: invalidateTeamQueries
   });
 
-  const saving = createMutation.isPending || toggleMutation.isPending;
+  const saving = createMutation.isPending || toggleMutation.isPending || updateMutation.isPending;
 
   function resetCreateForm() {
     setCreateForm(buildInitialTeamMemberForm(isSuperAdmin, defaultSchoolId));
@@ -187,6 +212,31 @@ export function TeamPage() {
     }
   }
 
+  function openEditMember(member: TeamMemberResponse) {
+    setEditingMember(member);
+    setEditForm({ name: member.name, newPassword: undefined });
+    setEditError("");
+  }
+
+  async function handleUpdateMember(event: FormEvent) {
+    event.preventDefault();
+    if (!editingMember) {
+      return;
+    }
+    setEditError("");
+    try {
+      await updateMutation.mutateAsync({
+        adminUserId: editingMember.id,
+        payload: {
+          name: editForm.name.trim(),
+          newPassword: editForm.newPassword || undefined
+        }
+      });
+    } catch {
+      // Erro ja tratado em onError (editError).
+    }
+  }
+
   function handleToggleStatus(member: TeamMemberResponse) {
     if (!canToggle || currentUserId === member.id) {
       return;
@@ -215,40 +265,51 @@ export function TeamPage() {
         label: "Status",
         render: (member) => <StatusBadge active={member.status === "1"} />
       },
-      ...(canToggle
-        ? [
-            {
-              key: "actions",
-              label: "Ações",
-              stopRowClick: true,
-              render: (member: TeamMemberResponse) => {
-                const isSelf = currentUserId === member.id;
-                return (
-                  <TableRowActions>
-                    <motion.button
-                      whileHover={{ scale: 1.04 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="table-btn icon"
-                      type="button"
-                      onClick={() => handleToggleStatus(member)}
-                      disabled={saving || isSelf}
-                      title={isSelf ? "Nao e permitido alterar o proprio usuario" : undefined}
-                      aria-label={
-                        member.status === "1"
-                          ? `Desativar ${decodeHtmlEntities(member.name)}`
-                          : `Ativar ${decodeHtmlEntities(member.name)}`
-                      }
-                    >
-                      {member.status === "1" ? "Desativar" : "Ativar"}
-                    </motion.button>
-                  </TableRowActions>
-                );
-              }
-            } satisfies DataTableColumn<TeamMemberResponse>
-          ]
-        : [])
+      {
+        key: "actions",
+        label: "Ações",
+        stopRowClick: true,
+        render: (member: TeamMemberResponse) => {
+          const isSelf = currentUserId === member.id;
+          return (
+            <TableRowActions>
+              {canCreate ? (
+                <motion.button
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="table-btn icon"
+                  type="button"
+                  onClick={() => openEditMember(member)}
+                  disabled={saving}
+                  aria-label={`Editar ${decodeHtmlEntities(member.name)}`}
+                >
+                  Editar
+                </motion.button>
+              ) : null}
+              {canToggle ? (
+                <motion.button
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="table-btn icon"
+                  type="button"
+                  onClick={() => handleToggleStatus(member)}
+                  disabled={saving || isSelf}
+                  title={isSelf ? "Nao e permitido alterar o proprio usuario" : undefined}
+                  aria-label={
+                    member.status === "1"
+                      ? `Desativar ${decodeHtmlEntities(member.name)}`
+                      : `Ativar ${decodeHtmlEntities(member.name)}`
+                  }
+                >
+                  {member.status === "1" ? "Desativar" : "Ativar"}
+                </motion.button>
+              ) : null}
+            </TableRowActions>
+          );
+        }
+      } satisfies DataTableColumn<TeamMemberResponse>
     ],
-    [canToggle, currentUserId, saving]
+    [canCreate, canToggle, currentUserId, saving]
   );
 
   const filteredMembers = useMemo(() => {
@@ -394,6 +455,20 @@ export function TeamPage() {
         onSubmit={handleCreateMember}
         onReset={closeFormModal}
         onFormChange={setCreateForm}
+      />
+
+      <EditTeamMemberModal
+        open={editingMember !== null}
+        member={editingMember}
+        form={editForm}
+        saving={updateMutation.isPending}
+        error={editError}
+        onClose={() => {
+          setEditingMember(null);
+          setEditError("");
+        }}
+        onSubmit={handleUpdateMember}
+        onFormChange={setEditForm}
       />
     </ListingPageShell>
   );

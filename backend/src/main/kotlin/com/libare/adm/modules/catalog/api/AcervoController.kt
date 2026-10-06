@@ -3,6 +3,7 @@ package com.libare.adm.modules.catalog.api
 import com.libare.adm.modules.catalog.api.dto.AcervoOptionResponse
 import com.libare.adm.modules.catalog.api.dto.AcervoResponse
 import com.libare.adm.modules.catalog.api.dto.SyncAcervoBooksRequest
+import com.libare.adm.modules.catalog.api.dto.ToggleAcervoStatusRequest
 import com.libare.adm.modules.catalog.api.dto.UpsertAcervoRequest
 import com.libare.adm.modules.catalog.application.CreateAcervoUseCase
 import com.libare.adm.modules.catalog.application.DeleteAcervoUseCase
@@ -10,6 +11,7 @@ import com.libare.adm.modules.catalog.application.GetAcervoUseCase
 import com.libare.adm.modules.catalog.application.ListAcervoOptionsUseCase
 import com.libare.adm.modules.catalog.application.ListAcervosUseCase
 import com.libare.adm.modules.catalog.application.SyncAcervoBooksUseCase
+import com.libare.adm.modules.catalog.application.ToggleAcervoStatusUseCase
 import com.libare.adm.modules.catalog.application.UpdateAcervoUseCase
 import com.libare.adm.shared.openapi.AdminSecured
 import com.libare.adm.shared.openapi.AdminWriteResponses
@@ -26,6 +28,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -43,6 +46,7 @@ class AcervoController(
     private val getAcervoUseCase: GetAcervoUseCase,
     private val createAcervoUseCase: CreateAcervoUseCase,
     private val updateAcervoUseCase: UpdateAcervoUseCase,
+    private val toggleAcervoStatusUseCase: ToggleAcervoStatusUseCase,
     private val deleteAcervoUseCase: DeleteAcervoUseCase,
     private val syncAcervoBooksUseCase: SyncAcervoBooksUseCase
 ) {
@@ -131,6 +135,20 @@ class AcervoController(
         @Valid @RequestBody request: SyncAcervoBooksRequest
     ): ResponseEntity<AcervoResponse> =
         ResponseEntity.ok(syncAcervoBooksUseCase.execute(acervoId, request))
+
+    @Operation(
+        summary = "Ativar ou desativar acervo",
+        description = "Altera apenas o status do acervo sem remover livros vinculados. Requer permissao acervos.update."
+    )
+    @AdminWriteResponses
+    @ApiResponse(responseCode = "200", description = "Status do acervo atualizado")
+    @PatchMapping("/{acervoId}/status")
+    fun toggleStatus(
+        @Parameter(description = "ID do acervo", required = true)
+        @PathVariable acervoId: Long,
+        @Valid @RequestBody request: ToggleAcervoStatusRequest
+    ): ResponseEntity<AcervoResponse> =
+        ResponseEntity.ok(toggleAcervoStatusUseCase.execute(acervoId, request.status))
 
     @Operation(
         summary = "Excluir acervo",

@@ -12,4 +12,6 @@ class TeamPolicy(
     fun requireCreate() = authorizationService.check("team.create")
 
     fun requireToggleStatus() = authorizationService.check("team.toggle_status")
+
+    fun requireUpdate() = authorizationService.check("team.create")
 }

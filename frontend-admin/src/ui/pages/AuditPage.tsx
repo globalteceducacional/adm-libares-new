@@ -1,12 +1,13 @@
 import { motion } from "framer-motion";
-import { ClipboardList, RefreshCw } from "lucide-react";
-import { useMemo } from "react";
+import { ChevronLeft, ChevronRight, ClipboardList, RefreshCw } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { getQueryErrorMessage, useAuditQuery } from "../../features/shared/api/queries";
+import { getQueryErrorMessage, useAuditLogsQuery, useAuditQuery } from "../../features/shared/api/queries";
 import { buildBreadcrumbs } from "../../features/layout/config/navigation";
 import type {
   AuditActorActivityRow,
   AuditConsistencyRow,
+  AuditLogResponse,
   AuditModuleSummaryRow,
   AuditSoftDeleteRow
 } from "../../types/audit";
@@ -29,9 +30,13 @@ function auditReasonMessage(reason: string | undefined | null): string {
   }
 }
 
+const LOGS_PAGE_SIZE = 50;
+
 export function AuditPage() {
   const location = useLocation();
   const auditQuery = useAuditQuery();
+  const [logsPage, setLogsPage] = useState(1);
+  const logsQuery = useAuditLogsQuery(logsPage, LOGS_PAGE_SIZE);
   const data = auditQuery.data ?? null;
   const loading = auditQuery.isLoading;
   const error = auditQuery.error
@@ -112,6 +117,15 @@ export function AuditPage() {
         align: "right",
         render: (row) => row.totalChanges.toLocaleString("pt-BR")
       }
+    ],
+    []
+  );
+
+  const logColumns = useMemo<DataTableColumn<AuditLogResponse>[]>(
+    () => [
+      { key: "id", label: "ID", align: "right", render: (row) => row.id },
+      { key: "userId", label: "Leitor (ID)", align: "right", render: (row) => row.userId },
+      { key: "dateTime", label: "Data / hora", render: (row) => row.dateTime || "—" }
     ],
     []
   );
@@ -255,6 +269,58 @@ export function AuditPage() {
             />
           </Card>
         </div>
+
+        <Card elevated padding="lg">
+          <CardHeader
+            title="Atividade de leitores recentes"
+            description={`Logins registrados em tbl_active_log (pagina ${logsPage})`}
+          />
+          {logsQuery.isLoading ? (
+            <TableSkeleton rows={5} />
+          ) : (
+            <>
+              <DataTable<AuditLogResponse>
+                columns={logColumns}
+                data={logsQuery.data?.items ?? []}
+                keyExtractor={(row) => String(row.id)}
+                emptyMessage="Nenhum registro de atividade encontrado."
+              />
+              <div className="mt-3 flex items-center justify-between text-sm text-muted">
+                <span>
+                  {logsQuery.data
+                    ? `${logsQuery.data.total.toLocaleString("pt-BR")} registros no total`
+                    : ""}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={logsPage <= 1 || logsQuery.isLoading}
+                    onClick={() => setLogsPage((p) => Math.max(1, p - 1))}
+                  >
+                    <ChevronLeft size={16} />
+                    Anterior
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={
+                      !logsQuery.data ||
+                      logsPage * LOGS_PAGE_SIZE >= logsQuery.data.total ||
+                      logsQuery.isLoading
+                    }
+                    onClick={() => setLogsPage((p) => p + 1)}
+                  >
+                    Próxima
+                    <ChevronRight size={16} />
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </Card>
       </motion.div>
     </ListingPageShell>
   );

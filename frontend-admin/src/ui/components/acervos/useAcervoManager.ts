@@ -6,7 +6,7 @@ import {
   useSchoolsQuery
 } from "../../../features/shared/api/queries";
 import { useAdminMutation } from "../../../hooks/useAdminMutation";
-import { createAcervo, deleteAcervo, updateAcervo } from "../../../services/acervosService";
+import { createAcervo, toggleAcervoStatus, updateAcervo } from "../../../services/acervosService";
 import { decodeHtmlEntities } from "../../../shared/lib/decodeHtmlEntities";
 import { stripHtml } from "../../../shared/lib/stripHtml";
 import type { AcervoResponse, UpsertAcervoRequest } from "../../../types/acervos";
@@ -95,33 +95,20 @@ export function useAcervoManager(options?: UseAcervoManagerOptions) {
     }
   });
 
-  const activateMutation = useAdminMutation<AcervoResponse, AcervoResponse>({
-    mutationFn: (acervo) =>
-      updateAcervo(acervo.id, {
-        name: acervo.name,
-        description: acervo.description ?? undefined,
-        status: "1",
-        schoolId: acervo.schoolId ?? undefined
-      }),
-    successMessage: "Acervo ativado com sucesso.",
-    errorFallback: "Falha ao ativar acervo",
+  const toggleStatusMutation = useAdminMutation<AcervoResponse, { acervoId: number; status: "0" | "1" }>({
+    mutationFn: ({ acervoId, status }) => toggleAcervoStatus(acervoId, status),
+    successMessage: (_data, { status }) =>
+      status === "1" ? "Acervo ativado com sucesso." : "Acervo desativado com sucesso.",
+    errorFallback: "Falha ao alterar status do acervo",
     invalidate: invalidateAcervoQueries,
-    onError: (error) => {
-      setFormError(error.message);
-    }
-  });
-
-  const deactivateMutation = useAdminMutation<void, number>({
-    mutationFn: (acervoId) => deleteAcervo(acervoId),
-    successMessage: "Acervo desativado com sucesso.",
-    errorFallback: "Falha ao desativar acervo",
-    invalidate: invalidateAcervoQueries,
-    onSuccess: (_data, acervoId) => {
-      if (editingId === acervoId) {
-        closeFormModal();
+    onSuccess: (_data, { acervoId, status }) => {
+      if (status === "0") {
+        if (editingId === acervoId) {
+          closeFormModal();
+        }
+        setConfirmDeactivateId(null);
+        options?.onDeactivated?.(acervoId);
       }
-      setConfirmDeactivateId(null);
-      options?.onDeactivated?.(acervoId);
     },
     onError: (error) => {
       setFormError(error.message);
@@ -129,8 +116,7 @@ export function useAcervoManager(options?: UseAcervoManagerOptions) {
     }
   });
 
-  const saving =
-    saveMutation.isPending || activateMutation.isPending || deactivateMutation.isPending;
+  const saving = saveMutation.isPending || toggleStatusMutation.isPending;
 
   function openCreateForm() {
     resetForm();
@@ -177,7 +163,7 @@ export function useAcervoManager(options?: UseAcervoManagerOptions) {
 
   function activate(acervo: AcervoResponse) {
     setFormError("");
-    activateMutation.mutate(acervo);
+    toggleStatusMutation.mutate({ acervoId: acervo.id, status: "1" });
   }
 
   function confirmDeactivate() {
@@ -185,7 +171,7 @@ export function useAcervoManager(options?: UseAcervoManagerOptions) {
       return;
     }
     setFormError("");
-    deactivateMutation.mutate(confirmDeactivateId);
+    toggleStatusMutation.mutate({ acervoId: confirmDeactivateId, status: "0" });
   }
 
   return {

@@ -41,5 +41,8 @@ class SiteCommentEntity(
     val dtRate: Instant? = null,
 
     @Column(name = "comment_on", nullable = false, length = 255)
-    val commentOn: String = ""
+    val commentOn: String = "",
+
+    @Column(name = "status", nullable = false, length = 1)
+    val status: String = "1"
 )
