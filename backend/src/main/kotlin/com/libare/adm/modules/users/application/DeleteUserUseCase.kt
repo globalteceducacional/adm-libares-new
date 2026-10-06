@@ -35,10 +35,10 @@ class DeleteUserUseCase(
                 userType = existing.userType,
                 userImage = existing.userImage,
                 authId = existing.authId,
-                isDeleted = existing.isDeleted,
+                isDeleted = 1,
                 registeredOn = existing.registeredOn,
                 acervoId = existing.acervoId,
-                status = "0"
+                status = existing.status
             )
         )
     }

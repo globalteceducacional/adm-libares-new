@@ -105,7 +105,7 @@ fun BookEntity.toBookResponse(acervos: List<com.libare.adm.modules.catalog.api.d
         description = description,
         views = bookViews.toLong(),
         featured = featured == 1,
-        fileType = fileType,
+        fileType = BookRequestValidator.normalizeFileType(fileType),
         fileUrl = fileUrl,
         rateAvg = rateAvg,
         totalRate = totalRate.toLong(),

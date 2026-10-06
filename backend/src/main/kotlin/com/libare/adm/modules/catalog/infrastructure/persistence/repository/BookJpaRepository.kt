@@ -46,7 +46,8 @@ interface BookJpaRepository : JpaRepository<BookEntity, Long> {
                 b.section_ids       AS sectionIds
             FROM tbl_books b
             LEFT JOIN tbl_author a ON a.author_id = b.aid
-            WHERE (
+            WHERE b.status != '2'
+            AND (
                 :tenantSchoolId IS NULL
                 OR EXISTS (
                     SELECT 1
@@ -70,7 +71,8 @@ interface BookJpaRepository : JpaRepository<BookEntity, Long> {
         countQuery = """
             SELECT COUNT(*)
             FROM tbl_books b
-            WHERE (
+            WHERE b.status != '2'
+            AND (
                 :tenantSchoolId IS NULL
                 OR EXISTS (
                     SELECT 1

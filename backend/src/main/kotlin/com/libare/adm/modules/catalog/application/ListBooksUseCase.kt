@@ -49,7 +49,7 @@ class ListBooksUseCase(
                 description = book.getDescription(),
                 views = book.getViews()?.toLong() ?: 0L,
                 featured = (book.getFeatured()?.toInt() ?: 0) == 1,
-                fileType = book.getFileType(),
+                fileType = BookRequestValidator.normalizeFileType(book.getFileType() ?: ""),
                 fileUrl = book.getFileUrl(),
                 rateAvg = book.getRateAvg(),
                 totalRate = book.getTotalRate()?.toLong() ?: 0L,

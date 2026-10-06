@@ -71,7 +71,8 @@ interface UserJpaRepository : JpaRepository<UserEntity, Long> {
             FROM tbl_users u
             LEFT JOIN acervos a ON a.id = u.acervo_id
             LEFT JOIN app_schools s ON s.id = a.school_id
-            WHERE (:tenantSchoolId IS NULL OR a.school_id = :tenantSchoolId OR u.acervo_id IS NULL)
+            WHERE (u.is_deleted = 0 OR u.is_deleted IS NULL)
+              AND (:tenantSchoolId IS NULL OR a.school_id = :tenantSchoolId OR u.acervo_id IS NULL)
             ORDER BY u.id DESC
         """,
         nativeQuery = true
@@ -95,7 +96,8 @@ interface UserJpaRepository : JpaRepository<UserEntity, Long> {
             FROM tbl_users u
             LEFT JOIN acervos a ON a.id = u.acervo_id
             LEFT JOIN app_schools s ON s.id = a.school_id
-            WHERE u.acervo_id = :acervoId
+            WHERE (u.is_deleted = 0 OR u.is_deleted IS NULL)
+              AND u.acervo_id = :acervoId
               AND (:tenantSchoolId IS NULL OR a.school_id = :tenantSchoolId)
             ORDER BY u.id DESC
         """,

@@ -45,7 +45,7 @@ class DeleteBookUseCase(
                 totalRate = existing.totalRate,
                 rateAvg = existing.rateAvg,
                 bookViews = existing.bookViews,
-                status = "0"
+                status = "2"
             )
         )
     }
