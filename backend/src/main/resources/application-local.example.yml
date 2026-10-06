@@ -9,3 +9,7 @@ spring:
     url: jdbc:mysql://localhost:3306/adm_libare?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: root
     password: SUA_SENHA_MYSQL_AQUI
+
+app:
+  security:
+    jwt-secret: dev-only-secret-change-in-production-min-32-chars

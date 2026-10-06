@@ -20,8 +20,6 @@ interface UserJpaRepository : JpaRepository<UserEntity, Long> {
         fun getSchoolName(): String?
     }
 
-    fun findAllByStatus(status: String): List<UserEntity>
-
     fun findByIdAndStatus(id: Long, status: String): UserEntity?
 
     @Query(

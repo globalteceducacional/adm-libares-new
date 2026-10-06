@@ -94,12 +94,15 @@ fun UpsertBookRequest.toBookEntity(
     )
 }
 
-fun BookEntity.toBookResponse(acervos: List<com.libare.adm.modules.catalog.api.dto.AcervoOptionResponse>): BookResponse =
+fun BookEntity.toBookResponse(
+    acervos: List<com.libare.adm.modules.catalog.api.dto.AcervoOptionResponse>,
+    authorName: String? = null
+): BookResponse =
     BookResponse(
         id = id,
         title = title,
         authorId = authorId,
-        authorName = null,
+        authorName = authorName,
         bookCoverImage = bookCoverImage,
         status = status,
         description = description,

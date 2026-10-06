@@ -5,6 +5,7 @@ import com.libare.adm.modules.catalog.api.dto.BookResponse
 import com.libare.adm.modules.catalog.application.policy.BookPolicy
 import com.libare.adm.modules.catalog.infrastructure.persistence.entity.BookEntity
 import com.libare.adm.modules.catalog.infrastructure.persistence.repository.AcervoJpaRepository
+import com.libare.adm.modules.catalog.infrastructure.persistence.repository.AuthorJpaRepository
 import com.libare.adm.modules.catalog.infrastructure.persistence.repository.BookJpaRepository
 import com.libare.adm.modules.catalog.infrastructure.persistence.repository.LivroAcervoJpaRepository
 import com.libare.adm.shared.exception.BadRequestException
@@ -20,6 +21,7 @@ class ToggleBookStatusUseCase(
     private val bookRepository: BookJpaRepository,
     private val livroAcervoRepository: LivroAcervoJpaRepository,
     private val acervoRepository: AcervoJpaRepository,
+    private val authorRepository: AuthorJpaRepository,
     private val bookPolicy: BookPolicy,
     private val currentActorResolver: CurrentActorResolver,
     private val auditSessionContext: AuditSessionContext
@@ -37,6 +39,10 @@ class ToggleBookStatusUseCase(
 
         val existing = bookRepository.findById(bookId)
             .orElseThrow { NotFoundException("Livro nao encontrado") }
+
+        if (existing.status == "2") {
+            throw BadRequestException("Livro excluido nao pode ter status alterado")
+        }
 
         val updated = bookRepository.save(
             BookEntity(
@@ -61,7 +67,8 @@ class ToggleBookStatusUseCase(
             val acervo = acervoRepository.findById(link.acervoId).orElse(null) ?: return@mapNotNull null
             AcervoOptionResponse(id = acervo.id.toAcervoIdLong(), name = acervo.nome)
         }
+        val authorName = authorRepository.findById(updated.authorId).orElse(null)?.name
 
-        return updated.toBookResponse(acervos)
+        return updated.toBookResponse(acervos, authorName)
     }
 }

@@ -63,38 +63,43 @@ export function useBooksQuery(acervoId?: number, options?: { enabled?: boolean }
   });
 }
 
+const STALE_5MIN = 5 * 60 * 1000;
+
 export function useAuthorsQuery() {
-  return useQuery({ queryKey: queryKeys.authors, queryFn: listAuthors });
+  return useQuery({ queryKey: queryKeys.authors, queryFn: listAuthors, staleTime: STALE_5MIN });
 }
 
 export function useAuthorOptionsQuery(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.authorOptions,
     queryFn: listAuthorOptions,
+    staleTime: STALE_5MIN,
     enabled: options?.enabled ?? true
   });
 }
 
 export function useCategoriesQuery() {
-  return useQuery({ queryKey: queryKeys.categories, queryFn: listCategories });
+  return useQuery({ queryKey: queryKeys.categories, queryFn: listCategories, staleTime: STALE_5MIN });
 }
 
 export function useCategoryOptionsQuery(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.categoryOptions,
     queryFn: listCategoryOptions,
+    staleTime: STALE_5MIN,
     enabled: options?.enabled ?? true
   });
 }
 
 export function useHomeSectionsQuery() {
-  return useQuery({ queryKey: queryKeys.homeSections, queryFn: listHomeSections });
+  return useQuery({ queryKey: queryKeys.homeSections, queryFn: listHomeSections, staleTime: STALE_5MIN });
 }
 
 export function useHomeSectionOptionsQuery(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.homeSectionOptions,
     queryFn: listHomeSectionOptions,
+    staleTime: STALE_5MIN,
     enabled: options?.enabled ?? true
   });
 }
@@ -103,6 +108,7 @@ export function useAcervosQuery(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.acervos,
     queryFn: listAcervos,
+    staleTime: STALE_5MIN,
     enabled: options?.enabled ?? true
   });
 }
@@ -121,6 +127,7 @@ export function useAcervoOptionsQuery(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.acervoOptions,
     queryFn: listAcervoOptions,
+    staleTime: STALE_5MIN,
     enabled: options?.enabled ?? true
   });
 }
@@ -153,25 +160,26 @@ export function useAuditQuery() {
 }
 
 export function useSchoolsQuery() {
-  return useQuery({ queryKey: queryKeys.schools, queryFn: listSchools });
+  return useQuery({ queryKey: queryKeys.schools, queryFn: listSchools, staleTime: STALE_5MIN });
 }
 
 export function useRolesQuery() {
-  return useQuery({ queryKey: queryKeys.roles, queryFn: listRoles });
+  return useQuery({ queryKey: queryKeys.roles, queryFn: listRoles, staleTime: STALE_5MIN });
 }
 
 export function usePermissionsQuery() {
-  return useQuery({ queryKey: queryKeys.permissions, queryFn: listPermissions });
+  return useQuery({ queryKey: queryKeys.permissions, queryFn: listPermissions, staleTime: STALE_5MIN });
 }
 
 export function useSitesQuery() {
-  return useQuery({ queryKey: queryKeys.sites, queryFn: listSites });
+  return useQuery({ queryKey: queryKeys.sites, queryFn: listSites, staleTime: STALE_5MIN });
 }
 
 export function useSiteAuthorsQuery(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.siteAuthors,
     queryFn: listSiteAuthors,
+    staleTime: STALE_5MIN,
     enabled: options?.enabled ?? true
   });
 }
@@ -180,12 +188,13 @@ export function useSiteCategoriesQuery(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.siteCategories,
     queryFn: listSiteCategories,
+    staleTime: STALE_5MIN,
     enabled: options?.enabled ?? true
   });
 }
 
 export function useSiteSectionsQuery() {
-  return useQuery({ queryKey: queryKeys.siteSections, queryFn: listSiteSections });
+  return useQuery({ queryKey: queryKeys.siteSections, queryFn: listSiteSections, staleTime: STALE_5MIN });
 }
 
 export function useSiteCommentsQuery() {

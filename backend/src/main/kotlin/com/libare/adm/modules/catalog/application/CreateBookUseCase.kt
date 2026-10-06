@@ -5,6 +5,7 @@ import com.libare.adm.modules.catalog.api.dto.BookResponse
 import com.libare.adm.modules.catalog.api.dto.UpsertBookRequest
 import com.libare.adm.modules.catalog.application.policy.BookPolicy
 import com.libare.adm.modules.catalog.infrastructure.persistence.repository.AcervoJpaRepository
+import com.libare.adm.modules.catalog.infrastructure.persistence.repository.AuthorJpaRepository
 import com.libare.adm.modules.catalog.infrastructure.persistence.repository.BookJpaRepository
 import com.libare.adm.modules.catalog.infrastructure.persistence.repository.LivroAcervoJpaRepository
 import com.libare.adm.shared.persistence.AuditSessionContext
@@ -19,6 +20,7 @@ class CreateBookUseCase(
     private val syncBookAcervosUseCase: SyncBookAcervosUseCase,
     private val livroAcervoRepository: LivroAcervoJpaRepository,
     private val acervoRepository: AcervoJpaRepository,
+    private val authorRepository: AuthorJpaRepository,
     private val bookPolicy: BookPolicy,
     private val currentActorResolver: CurrentActorResolver,
     private val auditSessionContext: AuditSessionContext
@@ -40,7 +42,8 @@ class CreateBookUseCase(
             val acervo = acervoRepository.findById(link.acervoId).orElse(null) ?: return@mapNotNull null
             AcervoOptionResponse(id = acervo.id.toAcervoIdLong(), name = acervo.nome)
         }
+        val authorName = authorRepository.findById(book.authorId).orElse(null)?.name
 
-        return book.toBookResponse(acervos)
+        return book.toBookResponse(acervos, authorName)
     }
 }
