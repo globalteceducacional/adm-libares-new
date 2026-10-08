@@ -48,7 +48,7 @@ export function SiteCommentDetailModal({
           <Button variant="secondary" onClick={onClose} disabled={saving}>
             Fechar
           </Button>
-          {canModerate && onReject && comment.status !== "0" ? (
+          {canModerate && onReject && (comment.status ?? "1") !== "0" ? (
             <Button
               variant="secondary"
               onClick={() => {
@@ -61,7 +61,7 @@ export function SiteCommentDetailModal({
               Rejeitar
             </Button>
           ) : null}
-          {canModerate && onApprove && comment.status !== "1" ? (
+          {canModerate && onApprove && (comment.status ?? "1") !== "1" ? (
             <Button
               onClick={() => {
                 onApprove(comment);

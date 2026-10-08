@@ -12,5 +12,5 @@ export type SiteCommentResponse = {
   commentText: string;
   dtRate?: string | null;
   commentOn: string;
-  status: string;
+  status?: string | null;
 };

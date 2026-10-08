@@ -262,7 +262,7 @@ export function AcervosPage() {
       <ConfirmDialog
         open={confirmDeactivateId !== null}
         title="Desativar acervo"
-        description="O acervo sera marcado como inativo. Deseja continuar?"
+        description="O acervo sera marcado como inativo. Os livros vinculados serao mantidos. Deseja continuar?"
         confirmLabel="Desativar"
         loading={saving}
         onConfirm={confirmDeactivate}

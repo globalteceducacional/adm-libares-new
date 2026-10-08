@@ -212,7 +212,7 @@ class SiteReaderQueries(
 
     fun getAllComments(booksId: String): List<Map<String, Any?>> {
         return jdbc.query(
-            "SELECT * FROM Comentarios_site WHERE book_id = ?",
+            "SELECT * FROM Comentarios_site WHERE book_id = ? AND (status = '1' OR status IS NULL)",
             { rs, _ ->
                 linkedMapOf(
                     "id" to rs.getObject("id"),
@@ -356,7 +356,7 @@ class SiteReaderQueries(
 
     private fun commentsForBookId(bookId: String): List<Map<String, Any?>> {
         return jdbc.query(
-            "SELECT * FROM Comentarios_site WHERE book_id = ? ORDER BY id",
+            "SELECT * FROM Comentarios_site WHERE book_id = ? AND (status = '1' OR status IS NULL) ORDER BY id",
             { rs, _ ->
                 linkedMapOf(
                     "book_id" to rs.getObject("book_id"),

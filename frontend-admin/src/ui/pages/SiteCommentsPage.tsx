@@ -116,7 +116,7 @@ export function SiteCommentsPage() {
         key: "status",
         label: "Status",
         render: (comment) =>
-          comment.status === "1" ? (
+          (comment.status ?? "1") === "1" ? (
             <span className="text-success text-xs font-medium">Aprovado</span>
           ) : (
             <span className="text-danger text-xs font-medium">Rejeitado</span>
@@ -129,7 +129,7 @@ export function SiteCommentsPage() {
         render: (comment) =>
           canModerate ? (
             <TableRowActions>
-              {comment.status !== "1" ? (
+              {(comment.status ?? "1") !== "1" ? (
                 <motion.button
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.98 }}
@@ -143,7 +143,7 @@ export function SiteCommentsPage() {
                   Aprovar
                 </motion.button>
               ) : null}
-              {comment.status !== "0" ? (
+              {(comment.status ?? "1") !== "0" ? (
                 <motion.button
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.98 }}
